@@ -5,10 +5,6 @@ import querySelectionDecorator from './querySelection';
 const myQuery = (() => {
   const proto = querySelectionDecorator({});
 
-  return function myQuery(element) {
-    if (element == null) return;
-    if (typeof element == 'string') element = document.querySelector(element);
-
   function myQuery(element) {
     if (element == null) return null;
     if (typeof element == 'string') element = getElement(element);
