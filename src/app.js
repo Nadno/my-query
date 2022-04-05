@@ -1,9 +1,12 @@
 'use strict';
 
+import { serialize } from './utils';
+
+import attributeDecorator from './attribute';
 import querySelectionDecorator from './querySelection';
 
 const myQuery = (() => {
-  const proto = querySelectionDecorator({});
+  const proto = serialize({}, [querySelectionDecorator, attributeDecorator]);
 
   function myQuery(element) {
     if (element == null) return null;
