@@ -6,7 +6,14 @@ import attributeDecorator from './attribute';
 import querySelectionDecorator from './querySelection';
 
 const myQuery = (() => {
-  const proto = serialize({}, [querySelectionDecorator, attributeDecorator]);
+  const proto = serialize(
+    {
+      get classList() {
+        return this.element.classList;
+      },
+    },
+    [querySelectionDecorator, attributeDecorator]
+  );
 
   function myQuery(element) {
     if (element == null) return null;
