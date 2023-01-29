@@ -17,4 +17,5 @@ const myQuery = function myQuery(queryOrElement: unknown): unknown {
   return new MyQueryClass(element);
 } as MyQuery;
 
+export { MyQueryClass as MyQuery };
 export default myQuery;
