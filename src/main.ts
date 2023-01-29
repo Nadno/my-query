@@ -3,7 +3,7 @@ import MyQueryClass from './modules/my-query';
 import getElement from './utils/getElement';
 
 declare interface MyQuery {
-  <T extends Element>(query: string): MyQueryClass<T> | null;
+  <T extends Element>(query: string): MyQueryClass<T>;
   <T extends Element>(element: T): MyQueryClass<T>;
 }
 
