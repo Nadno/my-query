@@ -4,9 +4,11 @@ import getElement from './utils/getElement';
 import * as myQueryUtils from './utils/my-query';
 import type { MyQueryUtils } from './utils/my-query';
 
+import { IMyQuery } from './types';
+
 declare interface MyQuery extends MyQueryUtils {
-  <T extends Element>(query: string): MyQueryClass<T>;
-  <T extends Element>(element: T): MyQueryClass<T>;
+  <T extends Element>(query: string): IMyQuery<T>;
+  <T extends Element>(element: T): IMyQuery<T>;
 }
 
 const myQuery = function myQuery(queryOrElement: unknown): unknown {

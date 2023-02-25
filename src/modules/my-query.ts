@@ -1,6 +1,12 @@
-import { MyQueryBase } from '../types';
+import { Mixin } from 'ts-mixer';
+import { IMyQuery } from '../types';
+import { QuerySelection } from './query-selection';
 
-export default class MyQuery implements MyQueryBase {
-  constructor(public element: Element) {}
+export default class MyQuery<T extends Element>
+  extends Mixin(QuerySelection)
+  implements IMyQuery<T>
+{
+  constructor(public element: T) {
+    super(element);
+  }
 }
-
