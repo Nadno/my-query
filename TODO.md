@@ -1,9 +1,9 @@
 # Modules
 
-- [] Query selection
+- [x] Query selection
 - [] Element manipulation
-- [] classes
-  - [] attributes
+  - [] classes
+  - [x] attributes
   - [] data
   - [] DOM insertion, removal, replacement
 - [] Events

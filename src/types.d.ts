@@ -16,4 +16,20 @@ export interface IQuerySelection<T extends Element> extends MyQueryBase<T> {
   prevAll<S extends Element = T>(query?: string): S[];
 }
 
-export type IMyQuery<T extends Element> = IQuerySelection<T>;
+export type IQueryAttributeValue = string | boolean | number;
+
+export interface IQueryAttribute<T extends Element> extends MyQueryBase<T> {
+  has(name: string): boolean;
+  has(name: string, value: IQueryAttributeValue): boolean;
+  get(name: string): IQueryAttributeValue | null;
+  get<TValue>(name: string): TValue | null;
+  get<TValue>(name: string, defaultValue: TValue): TValue;
+  set(name: string, value: IQueryAttributeValue): this;
+  remove(name: string): IQueryAttributeValue | null;
+  remove<TValue>(name: string): TValue | null;
+  assign(attributes: Record<string, IQueryAttributeValue>): this;
+}
+
+export type IMyQuery<T extends Element> = {
+  attribute: IQueryAttribute<T>;
+} & IQuerySelection<T>;

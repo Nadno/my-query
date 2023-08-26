@@ -15,7 +15,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:query-selection": "vitest run ./src/__tests__/query-selection.test.ts --reporter verbose"
   },
   "devDependencies": {
     "jsdom": "^20.0.3",
