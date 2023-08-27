@@ -1,5 +1,5 @@
 /* eslint-disable no-use-before-define */
-export interface MyQueryBase<T extends Element> {
+export interface MyQueryBase<T extends Element = Element> {
   element: T;
 }
 
@@ -100,6 +100,53 @@ export interface IQuerySelection<T extends Element> extends MyQueryBase<T> {
   prevAll<S extends Element = T>(query?: string): S[];
 }
 
+export interface IQueryValidation<T extends Element> extends MyQueryBase<T> {
+  is(selector: string): boolean;
+  is(selector: string[]): boolean;
+
+  matches(selector: string): boolean;
+  matches(selector: string[]): boolean;
+
+  hasFocus(): boolean;
+  contains(node: null | Node): boolean;
+}
+
+export interface IQueryManipulation<T extends Element> extends MyQueryBase<T> {
+  html(raw: string): this;
+  html(): string;
+
+  text(text: string): this;
+  text(): string;
+
+  replace(newElement: Element | MyQueryBase): this;
+  replace(selector: string): this;
+  swap(element: Element | MyQueryBase): this;
+  swap(selector: string): this;
+
+  before(...elements: Array<string | Element | MyQueryBase>): this;
+  prepend(...elements: Array<string | Element | MyQueryBase>): this;
+  append(...elements: Array<string | Element | MyQueryBase>): this;
+  after(...elements: Array<string | Element | MyQueryBase>): this;
+
+  beforeHTML(...raws: string[]): this;
+  prependHTML(...raws: string[]): this;
+  appendHTML(...raws: string[]): this;
+  afterHTML(...raws: string[]): this;
+
+  beforeText(...texts: string[]): this;
+  prependText(...texts: string[]): this;
+  appendText(...texts: string[]): this;
+  afterText(...texts: string[]): this;
+
+  beforeElement(...elements: Array<Element | MyQueryBase>): this;
+  appendElement(...elements: Array<Element | MyQueryBase>): this;
+  prependElement(...elements: Array<Element | MyQueryBase>): this;
+  afterElement(...elements: Array<Element | MyQueryBase>): this;
+
+  clear(): this;
+  remove(): this;
+}
+
 export type IQueryAttributeValue = string | boolean | number;
 
 export interface IQueryAttribute<T extends Element> extends MyQueryBase<T> {
@@ -156,6 +203,7 @@ export interface IQueryDataSet<T extends Element> extends MyQueryBase<T> {
 }
 
 export type IMyQuery<T extends Element> = IQuerySelection<T> &
+  IQueryManipulation<T> &
   IQueryEventHandler<T> & {
     data: T extends HTMLElement ? IQueryDataSet<T> : undefined;
     attribute: IQueryAttribute<T>;

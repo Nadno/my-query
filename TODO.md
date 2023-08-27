@@ -1,11 +1,11 @@
 # Modules
 
 - [x] Query selection
-- [] Element manipulation
+- [x] Element manipulation
   - [x] classes
   - [x] attributes
   - [x] data
-  - [] DOM insertion, removal, replacement
+  - [x] DOM insertion, removal, replacement
 - [x] Events
   - [x] Delegation
   - [] Modifiers (Optional)
