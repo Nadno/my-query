@@ -3,6 +3,90 @@ export interface MyQueryBase<T extends Element> {
   element: T;
 }
 
+export type IQueryEventOptions = AddEventListenerOptions;
+
+export type IQueryEventMap =
+  | WindowEventMap
+  | DocumentEventMap
+  | HTMLElementEventMap;
+
+export type IQueryEventKeyMap =
+  | keyof WindowEventMap
+  | keyof DocumentEventMap
+  | keyof HTMLElementEventMap;
+
+export interface IQueryEventHandler<T extends Window | Document | Element> {
+  target: T;
+
+  on<TEvent extends keyof WindowEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: WindowEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  on<TEvent extends keyof DocumentEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: DocumentEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  on<TEvent extends keyof HTMLElementEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: HTMLElementEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  on<TEvent extends keyof WindowEventMap>(
+    event: TEvent,
+    handler: (e: WindowEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  on<TEvent extends keyof DocumentEventMap>(
+    event: TEvent,
+    handler: (e: DocumentEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  on<TEvent extends keyof HTMLElementEventMap>(
+    event: TEvent,
+    handler: (e: HTMLElementEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+
+  off<TEvent extends keyof WindowEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: WindowEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  off<TEvent extends keyof DocumentEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: DocumentEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  off<TEvent extends keyof HTMLElementEventMap>(
+    event: TEvent,
+    target: string,
+    handler: (e: HTMLElementEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  off<TEvent extends keyof WindowEventMap>(
+    event: TEvent,
+    handler: (e: WindowEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  off<TEvent extends keyof DocumentEventMap>(
+    event: TEvent,
+    handler: (e: DocumentEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+  off<TEvent extends keyof HTMLElementEventMap>(
+    event: TEvent,
+    handler: (e: HTMLElementEventMap[TEvent]) => void,
+    options?: IQueryEventOptions,
+  ): this;
+}
+
 export interface IQuerySelection<T extends Element> extends MyQueryBase<T> {
   query<T extends Element>(query: string): IMyQuery<T>;
   find<T extends Element>(query: string): IMyQuery<T> | null;
@@ -32,4 +116,5 @@ export interface IQueryAttribute<T extends Element> extends MyQueryBase<T> {
 
 export type IMyQuery<T extends Element> = {
   attribute: IQueryAttribute<T>;
-} & IQuerySelection<T>;
+} & IQuerySelection<T> &
+  IQueryEventHandler<T>;

@@ -6,7 +6,9 @@
   - [x] attributes
   - [] data
   - [] DOM insertion, removal, replacement
-- [] Events
-  - [] Delegation
+- [x] Events
+  - [x] Delegation
+  - [] Modifiers (Optional)
+  - [] Custom: Hover, ClickOutside, FocusOutside, InteractOutside
   - [] Utils: debounce, throttle
 - [] Element creation
