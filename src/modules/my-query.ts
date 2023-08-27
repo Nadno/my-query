@@ -4,6 +4,7 @@ import { IMyQuery } from '../types';
 import { QuerySelection } from './query-selection';
 import { QueryAttribute } from './query-attribute';
 import { QueryEventHandler } from './query-event-handler';
+import { QueryClassList } from './query-class-list';
 
 export default class MyQuery<T extends Element>
   extends Mixin(QuerySelection, QueryEventHandler)
@@ -15,5 +16,9 @@ export default class MyQuery<T extends Element>
 
   public get attribute() {
     return new QueryAttribute(this.element);
+  }
+
+  public get classlist() {
+    return new QueryClassList(this.element);
   }
 }

@@ -114,7 +114,18 @@ export interface IQueryAttribute<T extends Element> extends MyQueryBase<T> {
   assign(attributes: Record<string, IQueryAttributeValue>): this;
 }
 
-export type IMyQuery<T extends Element> = {
-  attribute: IQueryAttribute<T>;
-} & IQuerySelection<T> &
-  IQueryEventHandler<T>;
+export interface IQueryClassList<T extends Element> extends MyQueryBase<T> {
+  add(...tokens: string[]): this;
+  has(token: string): boolean;
+  remove(...tokens: string[]): this;
+  replace(token: string, newToken: string): boolean;
+  supports(token: string): boolean;
+  toggle(tokens: Record<string, boolean | undefined>): this;
+  toggle(token: string, force?: boolean): boolean;
+}
+
+export type IMyQuery<T extends Element> = IQuerySelection<T> &
+  IQueryEventHandler<T> & {
+    attribute: IQueryAttribute<T>;
+    classlist: IQueryClassList<T>;
+  };

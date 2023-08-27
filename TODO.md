@@ -2,7 +2,7 @@
 
 - [x] Query selection
 - [] Element manipulation
-  - [] classes
+  - [x] classes
   - [x] attributes
   - [] data
   - [] DOM insertion, removal, replacement
