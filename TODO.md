@@ -4,7 +4,7 @@
 - [] Element manipulation
   - [x] classes
   - [x] attributes
-  - [] data
+  - [x] data
   - [] DOM insertion, removal, replacement
 - [x] Events
   - [x] Delegation

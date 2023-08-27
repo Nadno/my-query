@@ -124,8 +124,40 @@ export interface IQueryClassList<T extends Element> extends MyQueryBase<T> {
   toggle(token: string, force?: boolean): boolean;
 }
 
+export interface IQueryDataSet<T extends Element> extends MyQueryBase<T> {
+  has(name: string): boolean;
+  has(name: string, value: IQueryAttributeValue): boolean;
+
+  get(name: string): IQueryAttributeValue | undefined;
+  get<TValue>(name: string): TValue | undefined;
+  get<TValue extends object = Record<string, any>>(
+    keys: Array<keyof TValue>,
+  ): TValue;
+  get<TValue>(name: string, defaultValue: TValue): TValue;
+  get<TValue extends object = Record<string, any>>(
+    prefix: string,
+    keys: Array<keyof TValue>,
+  ): TValue;
+
+  set(name: string, value: IQueryAttributeValue): this;
+
+  remove(name: string): IQueryAttributeValue | undefined;
+  remove<TValue>(name: string): TValue | undefined;
+  remove<TValue extends object = Record<string, any>>(
+    keys: Array<keyof TValue>,
+  ): TValue;
+  remove<TValue extends object = Record<string, any>>(
+    prefix: string,
+    keys: Array<keyof TValue>,
+  ): TValue;
+
+  assign(data: Record<string, IQueryAttributeValue>): this;
+  assign(prefix: string, data: Record<string, IQueryAttributeValue>): this;
+}
+
 export type IMyQuery<T extends Element> = IQuerySelection<T> &
   IQueryEventHandler<T> & {
+    data: T extends HTMLElement ? IQueryDataSet<T> : undefined;
     attribute: IQueryAttribute<T>;
     classlist: IQueryClassList<T>;
   };

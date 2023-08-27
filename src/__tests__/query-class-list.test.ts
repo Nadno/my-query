@@ -3,7 +3,7 @@ import $ from '../main';
 
 import { setDOMEnvironment } from './test-utils';
 
-describe('MyQuery attribute mutation', () => {
+describe('MyQuery classlist mutation', () => {
   beforeEach(() => {
     setDOMEnvironment('index.test');
   });
