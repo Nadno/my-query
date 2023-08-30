@@ -100,12 +100,12 @@ export interface IQuerySelection<T extends Element> extends MyQueryBase<T> {
   prevAll<S extends Element = T>(query?: string): S[];
 }
 
-export interface IQueryValidation<T extends Element> extends MyQueryBase<T> {
+export interface IQueryUtils<T extends Element> extends MyQueryBase<T> {
   is(selector: string): boolean;
-  is(selector: string[]): boolean;
+  is(selectors: string[]): boolean;
 
   matches(selector: string): boolean;
-  matches(selector: string[]): boolean;
+  matches(selectors: string[]): boolean;
 
   hasFocus(): boolean;
   contains(node: null | Node): boolean;
@@ -204,6 +204,7 @@ export interface IQueryDataSet<T extends Element> extends MyQueryBase<T> {
 
 export type IMyQuery<T extends Element> = IQuerySelection<T> &
   IQueryManipulation<T> &
+  IQueryUtils<T> &
   IQueryEventHandler<T> & {
     data: T extends HTMLElement ? IQueryDataSet<T> : undefined;
     attribute: IQueryAttribute<T>;
