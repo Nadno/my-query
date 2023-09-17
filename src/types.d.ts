@@ -101,8 +101,9 @@ export interface IQuerySelection<T extends Element> extends MyQueryBase<T> {
 }
 
 export interface IQueryUtils<T extends Element> extends MyQueryBase<T> {
+  is(selectors: Array<string | Element | null>): boolean;
+  is(element: Element | null): boolean;
   is(selector: string): boolean;
-  is(selectors: string[]): boolean;
 
   matches(selector: string): boolean;
   matches(selectors: string[]): boolean;
