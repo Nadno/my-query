@@ -4,64 +4,177 @@ import {
   IQueryEventOptions,
 } from '../types';
 
-export type DelegatedEventHandlerOptions = IQueryEventOptions;
+export type CustomEventHandlerOptions = IQueryEventOptions;
 
-export type DelegatedEventHandler = AnyFunction;
+export type CustomEventHandler = AnyFunction;
 
-export type DelegatedEventHandlerTargets = Map<
+export type CustomEventHandlerTargets = Map<
   string,
-  DelegatedEventHandlerOptions | undefined
+  CustomEventHandlerOptions | undefined
 >;
 
-export type StoredDelegatedEventHandler = Map<string, DelegatedEventHandler>;
+export type StoredCustomEventHandler = Map<string, CustomEventHandler>;
 
-export class QueryDelegatedEventHandler<T extends Window | Document | Element> {
-  private static readonly DelegatedEventHandlers: Map<
-    DelegatedEventHandler,
-    StoredDelegatedEventHandler
+export type CustomEventHandlerData = {
+  identifier: string;
+  arg?: any;
+};
+
+export type CustomEventHandlerFactory = (config: {
+  handler: EventListener;
+  target: EventTarget;
+  arg: any;
+}) => {
+  identifier: string;
+  handler: EventListener;
+  adder?: (
+    event: string,
+    handler: EventListener,
+    options?: IQueryEventOptions,
+  ) => void;
+  remover?: (
+    event: string,
+    handler: EventListener,
+    options?: IQueryEventOptions,
+  ) => void;
+};
+
+export const KEYBOARD_MODIFIERS_KEYS = new Set([
+  'Enter',
+  'Tab',
+  'Alt',
+  'AltGraph',
+  'Shift',
+  'Backspace',
+  'Delete',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+]);
+
+export class QueryCustomEventHandler<T extends Window | Document | Element> {
+  private static readonly _CustomEventHandlers: Map<
+    CustomEventHandler,
+    StoredCustomEventHandler
   > = new Map();
+
+  private static _CustomHandlersFactories: Record<
+    string,
+    CustomEventHandlerFactory
+  > = {
+    delegated: ({ handler, arg: [target] }) => ({
+      identifier: target,
+      handler: (e) => {
+        const $target = e.target as Element | null;
+        if (!$target || !$target.matches(target)) return;
+        handler(e);
+      },
+    }),
+    ':click-outside': ({ handler, target }) => ({
+      identifier: 'click-outside',
+      handler: (e) => {
+        const $clickTarget = e.target as Element | null,
+          $target = target as HTMLElement;
+        if ($target.contains($clickTarget)) return;
+        handler(e);
+      },
+      adder(_, handler, options) {
+        window.addEventListener('pointerdown', handler, options);
+      },
+      remover(_, handler, options) {
+        window.removeEventListener('pointerdown', handler, options);
+      },
+    }),
+    ':focus-outside': ({ handler, target }) => ({
+      identifier: 'focus-outside',
+      handler: (e) => {
+        const $target = e.target as HTMLElement | null,
+          $relatedTarget = (e as FocusEvent).relatedTarget as Element;
+        if (!$target || $target.contains($relatedTarget)) return;
+        handler(e);
+      },
+      adder(_, handler, options) {
+        target.addEventListener('focusout', handler, options);
+      },
+      remover(_, handler, options) {
+        target.removeEventListener('focusout', handler, options);
+      },
+    }),
+    ':interact-outside': ({ handler, target }) => ({
+      identifier: 'interact-outside',
+      handler: (e) => {
+        if (e.type === 'focusout') {
+          const $target = e.target as HTMLElement,
+            $relatedTarget = (e as FocusEvent).relatedTarget as Element | null;
+          if ($target.contains($relatedTarget)) return;
+          return handler(e);
+        } else {
+          const $clickTarget = e.target as Element,
+            $target = target as HTMLElement;
+          if ($target.contains($clickTarget)) return;
+          return handler(e);
+        }
+      },
+      adder(_, handler, options) {
+        window.addEventListener('pointerdown', handler, options);
+        target.addEventListener('focusout', handler, options);
+      },
+      remover(_, handler, options) {
+        window.removeEventListener('pointerdown', handler, options);
+        target.removeEventListener('focusout', handler, options);
+      },
+    }),
+  };
+
+  public static register(
+    identifier: string,
+    factory: CustomEventHandlerFactory,
+  ) {
+    QueryCustomEventHandler._CustomHandlersFactories[identifier] = factory;
+  }
 
   constructor(public target: T) {}
 
-  private _removeDelegated(
+  private _removeCustomHandler(
     target: string,
     key: AnyFunction,
-    options?: DelegatedEventHandlerOptions,
-  ): DelegatedEventHandler | undefined {
-    const targetKey = this._createTargetKey(target, options);
+    options?: CustomEventHandlerOptions,
+  ): CustomEventHandler | undefined {
+    const targetKey = this._createKey(target, options);
 
-    const delegated =
-      QueryDelegatedEventHandler.DelegatedEventHandlers.get(key);
+    const delegated = QueryCustomEventHandler._CustomEventHandlers.get(key);
     if (!delegated || !delegated.has(targetKey)) return;
 
     const result = delegated.get(targetKey);
     delegated.delete(targetKey);
 
     if (delegated.size === 0)
-      QueryDelegatedEventHandler.DelegatedEventHandlers.delete(key);
+      QueryCustomEventHandler._CustomEventHandlers.delete(key);
 
     return result;
   }
 
-  private _addDelegated(
-    target: string,
+  private _addCustomHandler(
+    identifier: string,
     key: AnyFunction,
-    handler: DelegatedEventHandler,
-    options?: DelegatedEventHandlerOptions,
-  ): DelegatedEventHandler {
-    const targetKey = this._createTargetKey(target, options);
+    handler: CustomEventHandler,
+    options?: CustomEventHandlerOptions,
+  ): CustomEventHandler {
+    const targetKey = this._createKey(identifier, options);
 
-    if (this._isDelegated(key)) {
-      const delegated = QueryDelegatedEventHandler.DelegatedEventHandlers.get(
+    if (this._hasCustomHandler(key)) {
+      const delegated = QueryCustomEventHandler._CustomEventHandlers.get(
         key,
-      ) as StoredDelegatedEventHandler;
+      ) as StoredCustomEventHandler;
 
       delegated.set(targetKey, handler);
 
       return handler;
     }
 
-    QueryDelegatedEventHandler.DelegatedEventHandlers.set(
+    QueryCustomEventHandler._CustomEventHandlers.set(
       key,
       new Map([[targetKey, handler]]),
     );
@@ -69,114 +182,156 @@ export class QueryDelegatedEventHandler<T extends Window | Document | Element> {
     return handler;
   }
 
-  private _createTargetKey(target: string, options?: object) {
-    return `${target}::${options ? JSON.stringify(options) : '{}'}`;
+  private _createKey(identifier: string, options?: object) {
+    return `${identifier}::${options ? JSON.stringify(options) : '{}'}`;
   }
 
-  private _isDelegated(key: AnyFunction): boolean {
-    return QueryDelegatedEventHandler.DelegatedEventHandlers.has(key);
+  private _hasCustomHandler(key: AnyFunction): boolean {
+    return QueryCustomEventHandler._CustomEventHandlers.has(key);
   }
 
   public add<TEvent extends keyof WindowEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: WindowEventMap[TEvent]) => void,
     options?: IQueryEventOptions | undefined,
   ): this;
   public add<TEvent extends keyof DocumentEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: DocumentEventMap[TEvent]) => void,
     options?: IQueryEventOptions | undefined,
   ): this;
   public add<TEvent extends keyof HTMLElementEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: HTMLElementEventMap[TEvent]) => void,
     options?: IQueryEventOptions | undefined,
   ): this;
   public add<TEvent extends IQueryEventKeyMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: EventListener,
     options?: IQueryEventOptions,
   ): this {
-    const delegatedOptions = options && { ...options };
+    if (
+      !Object.hasOwn(
+        QueryCustomEventHandler._CustomHandlersFactories,
+        custom.identifier,
+      )
+    )
+      return this;
+
+    const {
+      handler: customHandler,
+      identifier,
+      adder,
+      remover,
+    } = QueryCustomEventHandler._CustomHandlersFactories[custom.identifier]({
+      target: this.target,
+      handler,
+      arg: custom.arg,
+    });
+
+    const customHandlerOptions = options && { ...options };
     const isOnce = !!options?.once;
     if (isOnce) delete options.once;
 
     if (options && options.signal)
       options.signal.addEventListener('abort', () =>
-        this._removeDelegated(target, handler, delegatedOptions),
+        this._removeCustomHandler(identifier, handler, customHandlerOptions),
       );
 
-    const delegateHandler = (e: Event) => {
-      const $target = e.target as Element | null;
-      if (!$target || !$target.matches(target)) return;
+    const withOptionalOnceCustomHandler = (e: Event) => {
       if (isOnce) {
-        const delegatedHandler = this._removeDelegated(
-          target,
+        const customEventHandler = this._removeCustomHandler(
+          identifier,
           handler,
-          delegatedOptions,
+          customHandlerOptions,
         );
 
-        if (delegatedHandler)
-          this.target.removeEventListener(event, delegatedHandler, options);
+        if (customEventHandler)
+          remover
+            ? remover(event, customEventHandler, options)
+            : this.target.removeEventListener(
+                event,
+                customEventHandler,
+                options,
+              );
       }
 
-      return handler(e);
+      return customHandler(e);
     };
 
-    const delegatedHandler = this._addDelegated(
-      target,
+    const customEventHandler = this._addCustomHandler(
+      identifier,
       handler,
-      delegateHandler,
-      delegatedOptions,
+      withOptionalOnceCustomHandler,
+      customHandlerOptions,
     );
 
-    this.target.addEventListener(event, delegatedHandler, options);
+    adder
+      ? adder(event, customEventHandler, options)
+      : this.target.addEventListener(event, customEventHandler, options);
 
     return this;
   }
 
   public remove<TEvent extends keyof WindowEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: WindowEventMap[TEvent]) => void,
     options?: IQueryEventOptions,
   ): this;
   public remove<TEvent extends keyof DocumentEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: DocumentEventMap[TEvent]) => void,
     options?: IQueryEventOptions,
   ): this;
   public remove<TEvent extends keyof HTMLElementEventMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: (event: HTMLElementEventMap[TEvent]) => void,
     options?: IQueryEventOptions,
   ): this;
   public remove<TEvent extends IQueryEventKeyMap>(
+    custom: CustomEventHandlerData,
     event: TEvent,
-    target: string,
     handler: EventListener,
     options?: IQueryEventOptions,
   ): this {
-    if (!this._isDelegated(handler)) return this;
+    if (!this._hasCustomHandler(handler)) return this;
 
-    const delegatedOptions = options && { ...options };
+    if (
+      !Object.hasOwn(
+        QueryCustomEventHandler._CustomHandlersFactories,
+        custom.identifier,
+      )
+    )
+      return this;
+
+    const { identifier, remover } =
+      QueryCustomEventHandler._CustomHandlersFactories[custom.identifier]({
+        target: this.target,
+        handler,
+        arg: custom.arg,
+      });
+
+    const customHandlerOptions = options && { ...options };
     if (options && options.once) delete options.once;
 
-    const delegatedHandler = this._removeDelegated(
-      target,
+    const customEventHandler = this._removeCustomHandler(
+      identifier,
       handler,
-      delegatedOptions,
+      customHandlerOptions,
     );
 
-    if (!delegatedHandler) return this;
+    if (!customEventHandler) return this;
 
-    this.target.removeEventListener(event, delegatedHandler, options);
+    remover
+      ? remover(event, customEventHandler, options)
+      : this.target.removeEventListener(event, customEventHandler, options);
 
     return this;
   }
@@ -185,10 +340,10 @@ export class QueryDelegatedEventHandler<T extends Window | Document | Element> {
 export class QueryEventHandler<T extends Window | Document | Element>
   implements IQueryEventHandler<T>
 {
-  private _delegator: QueryDelegatedEventHandler<T>;
+  private _customizedEvent: QueryCustomEventHandler<T>;
 
   constructor(public target: T) {
-    this._delegator = new QueryDelegatedEventHandler<T>(target);
+    this._customizedEvent = new QueryCustomEventHandler<T>(target);
   }
 
   public on<TEvent extends keyof WindowEventMap>(
@@ -229,7 +384,15 @@ export class QueryEventHandler<T extends Window | Document | Element>
   ): this {
     if (this._isDelegation<TEvent>(args)) {
       const [event, target, handler, options] = args;
-      this._delegator.add(event, target, handler, options);
+      this._customizedEvent.add(
+        {
+          identifier: 'delegated',
+          arg: [target],
+        },
+        event,
+        handler,
+        options,
+      );
       return this;
     }
 
@@ -238,6 +401,19 @@ export class QueryEventHandler<T extends Window | Document | Element>
       EventListener,
       IQueryEventOptions,
     ];
+
+    if (this._isCustomEvent(event)) {
+      this._customizedEvent.add(
+        {
+          identifier: event,
+        },
+        event,
+        handler,
+        options,
+      );
+
+      return this;
+    }
 
     return this._addEventListener(event, handler, options);
   }
@@ -280,7 +456,15 @@ export class QueryEventHandler<T extends Window | Document | Element>
   ): this {
     if (this._isDelegation<TEvent>(args)) {
       const [event, target, handler, options] = args;
-      this._delegator.remove(event, target, handler, options);
+      this._customizedEvent.remove(
+        {
+          identifier: 'delegated',
+          arg: [target],
+        },
+        event,
+        handler,
+        options,
+      );
       return this;
     }
 
@@ -289,6 +473,19 @@ export class QueryEventHandler<T extends Window | Document | Element>
       EventListener,
       IQueryEventOptions,
     ];
+
+    if (this._isCustomEvent(event)) {
+      this._customizedEvent.remove(
+        {
+          identifier: event,
+        },
+        event,
+        handler,
+        options,
+      );
+
+      return this;
+    }
 
     return this._removeEventListener(event, handler, options);
   }
@@ -302,6 +499,10 @@ export class QueryEventHandler<T extends Window | Document | Element>
       typeof args[1] === 'string' &&
       typeof args[2] === 'function'
     );
+  }
+
+  private _isCustomEvent(event: string): boolean {
+    return event.startsWith(':');
   }
 
   private _removeEventListener<TEvent extends IQueryEventKeyMap>(
