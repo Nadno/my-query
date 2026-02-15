@@ -8,6 +8,14 @@ import { QueryClassList } from './query-class-list';
 import { QueryDataSet } from './query-data-set';
 import { QueryManipulation } from './query-manipulation';
 import { QueryUtils } from './query-utils';
+import { QueryDirective } from './my-query/query-directive';
+
+// Import built-in directives to register them
+import './my-query/directives/show';
+import './my-query/directives/trap-focus';
+import './my-query/directives/overlay';
+import './my-query/directives/roving-index';
+import './my-query/directives/inert';
 
 export default class MyQuery<T extends Element>
   extends Mixin(
@@ -15,6 +23,7 @@ export default class MyQuery<T extends Element>
     QueryEventHandler,
     QueryManipulation,
     QueryUtils,
+    QueryDirective,
   )
   implements IMyQuery<T>
 {

@@ -208,8 +208,11 @@ export interface IQueryDataSet<T extends Element> extends MyQueryBase<T> {
 export type IMyQuery<T extends Element> = IQuerySelection<T> &
   IQueryManipulation<T> &
   IQueryUtils<T> &
-  IQueryEventHandler<T> & {
+  IQueryEventHandler<T> &
+  IQueryDirective<T> & {
     data: T extends HTMLElement ? IQueryDataSet<T> : undefined;
     attribute: IQueryAttribute<T>;
     classlist: IQueryClassList<T>;
   };
+
+import { IQueryDirective } from './types/directive';
