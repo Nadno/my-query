@@ -3,7 +3,9 @@ export interface MyQueryBase<T extends Element = Element> {
   element: T;
 }
 
-export type IQueryEventOptions = AddEventListenerOptions;
+export type IQueryEventOptions = AddEventListenerOptions & {
+  delegatedTarget?: string;
+};
 
 export type IQueryEventMap =
   | WindowEventMap

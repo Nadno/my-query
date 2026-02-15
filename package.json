@@ -19,12 +19,13 @@
     "test:query-selection": "vitest run ./src/__tests__/query-selection.test.ts --reporter verbose"
   },
   "devDependencies": {
-    "jsdom": "^20.0.3",
     "@types/jsdom": "^20.0.1",
     "@typescript-eslint/eslint-plugin": "^5.46.0",
     "@typescript-eslint/parser": "^5.46.0",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
+    "happy-dom": "^20.6.1",
+    "jsdom": "^20.0.3",
     "prettier": "^2.8.1",
     "typescript": "^4.6.4",
     "vite": "^3.2.3",

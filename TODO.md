@@ -8,7 +8,10 @@
   - [x] DOM insertion, removal, replacement
 - [x] Events
   - [x] Delegation
-  - [] Modifiers (Optional)
-  - [] Custom: Hover, ClickOutside, FocusOutside, InteractOutside
-  - [] Utils: debounce, throttle
+  - [x] Modifiers: .once, .capture, .self, .prevent, .delegate
+  - [x] Custom: Hover, ClickOutside, FocusOutside, InteractOutside
+  - [x] Utils: debounce, throttle (via primitives Task)
 - [] Element creation
+- [] Directives (em planejamento)
+  - [] Acessibilidade: trap-focus, overlay
+  - [] Futuros: roving-index, etc.
