@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notify - Notification Queue Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 100%;
+        height: auto;
+        min-height: 100vh;
+        background-color: #f1f1f1;
+      }
+
+      /* Animation classes toggled by createTransitionList */
+      .card.add {
+        transform: translateX(-125%);
+        transition: transform 500ms ease-out;
+      }
+
+      .card.remove {
+        transform: translateX(-125%);
+        transition: transform 500ms ease-out;
+      }
+
+      .card.removed {
+        position: absolute;
+        opacity: 0;
+      }
+
+      .card-list.adding-card .card,
+      .card-list.removing-card .card {
+        transform: translate(0px, 0px);
+        transition: transform 500ms ease-out;
+      }
+
+      .close-button:hover {
+        opacity: 0.5;
+      }
+
+      .add-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+      }
+
+      .add-button:active {
+        transform: scale(0.95);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import { signal, effect } from 'https://esm.sh/@preact/signals-core';
+      import $ from './src/main.ts';
+
+      // --- STYLES ---
+
+      const styles = {
+        cardListContainer: $.style({
+          position: 'absolute',
+          height: '100vh',
+          width: '350px',
+          listStyle: 'none',
+          padding: '12px 0',
+          backgroundColor: 'transparent',
+        }),
+        cardList: $.style({
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          padding: '0 12px',
+          overflowX: 'hidden',
+          display: 'flex',
+          flexDirection: 'column-reverse',
+          alignItems: 'center',
+          justifyContent: 'end',
+        }),
+        card: $.style({
+          width: '100%',
+          maxWidth: '100%',
+          minWidth: 0,
+          display: 'block',
+          margin: '1rem 0',
+          backgroundColor: '#f1f1f1',
+          border: '1px solid #ccc',
+          boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.1)',
+        }),
+        cardContent: $.style({
+          height: '100%',
+          width: '100%',
+          padding: '8px 16px',
+          fontSize: '13px',
+          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+          lineHeight: 'calc(13px * 1.2)',
+        }),
+        cardHeader: $.style({
+          display: 'flex',
+          justifyContent: 'space-between',
+        }),
+        closeButton: $.style({
+          cursor: 'pointer',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          opacity: 0.7,
+          border: 'none',
+          padding: '0.4em 0.6em',
+          backgroundColor: 'transparent',
+          transition: 'opacity 200ms ease-in-out',
+        }),
+        cardTitle: $.style({
+          fontSize: '16px',
+          fontWeight: 'bold',
+          lineHeight: 'calc(16px * 1.5)',
+        }),
+        cardBody: $.style({
+          marginTop: '8px',
+        }),
+        addButton: $.style({
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          border: 'none',
+          backgroundColor: '#667eea',
+          color: 'white',
+          fontSize: '24px',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
+          transition: 'all 0.2s ease',
+        }),
+      };
+
+      // --- createTransitionList ---
+
+      function createTransitionList(reactiveItems, { render, key: getKey }) {
+        const container = $.ul({ class: [styles.cardList, 'card-list'] });
+        const elementMap = new Map();
+        let pending = Promise.resolve();
+
+        const DURATION = 500;
+
+        function onTransitionEnd(el) {
+          return new Promise((resolve) => {
+            const timer = setTimeout(resolve, DURATION + 100);
+            el.addEventListener(
+              'transitionend',
+              () => {
+                clearTimeout(timer);
+                resolve();
+              },
+              { once: true },
+            );
+          });
+        }
+
+        function nextFrame() {
+          return new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          );
+        }
+
+        function needsTransform(siblings, startRects) {
+          let hasDelta = false;
+          siblings.forEach((s, i) => {
+            const end = s.getBoundingClientRect();
+            const dx = startRects[i].left - end.left;
+            const dy = startRects[i].top - end.top;
+            if (dx !== 0 || dy !== 0) hasDelta = true;
+            s.style.transform = `translate(${dx}px, ${dy}px)`;
+          });
+          return hasDelta;
+        }
+
+        async function animateRemove(el) {
+          if (!el.parentElement) return;
+
+          const siblings = [...container.querySelectorAll('.card')].filter(
+            (e) => e !== el,
+          );
+
+          // 1. Slide out
+          el.classList.add('remove');
+          await onTransitionEnd(el);
+
+          // 2. FLIP: snapshot positions before layout shift
+          const startRects = siblings.map((s) => s.getBoundingClientRect());
+          el.classList.add('removed');
+
+          // Apply inverse transforms (snap siblings to old positions)
+          const hasDelta = needsTransform(siblings, startRects);
+
+          if (hasDelta) {
+            await nextFrame();
+
+            // 3. Animate siblings to final positions
+            container.classList.add('removing-card');
+            siblings.forEach((s) => (s.style.transform = ''));
+
+            await onTransitionEnd(siblings[0]);
+            container.classList.remove('removing-card');
+          }
+
+          el.remove();
+        }
+
+        async function animateAdd(el) {
+          el.classList.add('add');
+          container.appendChild(el);
+
+          await nextFrame();
+
+          container.classList.add('adding-card');
+          el.classList.remove('add');
+
+          await onTransitionEnd(el);
+          container.classList.remove('adding-card');
+        }
+
+        // Initial render (no animation)
+        reactiveItems.value.forEach((item) => {
+          const k = getKey(item);
+          const el = render(item);
+          elementMap.set(k, el);
+          container.appendChild(el);
+        });
+
+        // Watch for changes and animate diffs
+        effect(() => {
+          const items = reactiveItems.value;
+          const newKeys = new Set(items.map(getKey));
+          const oldKeys = new Set(elementMap.keys());
+
+          // Detect removed items
+          for (const k of oldKeys) {
+            if (!newKeys.has(k)) {
+              const el = elementMap.get(k);
+              elementMap.delete(k);
+              pending = pending
+                .then(() => animateRemove(el))
+                .catch(() => {});
+            }
+          }
+
+          // Detect added items
+          for (const item of items) {
+            const k = getKey(item);
+            if (!oldKeys.has(k)) {
+              const el = render(item);
+              elementMap.set(k, el);
+              pending = pending
+                .then(() => animateAdd(el))
+                .catch(() => {});
+            }
+          }
+        });
+
+        return container;
+      }
+
+      // --- STATE ---
+
+      const notifications = signal([
+        {
+          id: 1,
+          title: 'Lorem, ipsum.',
+          body: 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Maxime tempore nulla quas molestias esse error magnam, maiores saepe modi natus.',
+        },
+        {
+          id: 2,
+          title: 'Lorem, ipsum.',
+          body: 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Maxime tempore nulla quas molestias esse error magnam, maiores saepe modi natus.',
+        },
+        {
+          id: 3,
+          title: 'Lorem, ipsum.',
+          body: 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Maxime tempore nulla quas molestias esse error magnam, maiores saepe modi natus.',
+        },
+      ]);
+
+      let nextId = 4;
+
+      // --- ACTIONS ---
+
+      const removeNotification = (id) => {
+        notifications.value = notifications.value.filter((n) => n.id !== id);
+      };
+
+      const addNotification = () => {
+        notifications.value = [
+          ...notifications.value,
+          {
+            id: nextId++,
+            title: 'New Notification',
+            body: 'This is a new notification message that was added to the queue.',
+          },
+        ];
+      };
+
+      // --- COMPONENTS ---
+
+      const createCard = (notification) =>
+        $.li(
+          { class: [styles.card, 'card'], 'data-notification-id': notification.id },
+          $.div(
+            { class: styles.cardContent },
+            $.div(
+              { class: styles.cardHeader },
+              $.h2({ class: styles.cardTitle }, notification.title),
+              $.button(
+                {
+                  class: [styles.closeButton, 'close-button'],
+                  onclick: () => removeNotification(notification.id),
+                },
+                '\u00d7',
+              ),
+            ),
+            $.div({ class: styles.cardBody }, notification.body),
+          ),
+        );
+
+      // --- APP ---
+
+      const cardList = createTransitionList(notifications, {
+        render: createCard,
+        key: (n) => n.id,
+      });
+
+      $('#app').append(
+        $.div(
+          { class: styles.cardListContainer },
+          cardList,
+          $.button(
+            {
+              class: [styles.addButton, 'add-button'],
+              onclick: addNotification,
+            },
+            '+',
+          ),
+        ),
+      );
+
+      console.log(
+        'Notifications initialized:',
+        notifications.value.length,
+        'items',
+      );
+    </script>
+  </body>
+</html>

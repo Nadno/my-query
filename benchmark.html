@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My-Query Benchmark - vs jQuery, React, Vue, Vanilla JS</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a2e;
+        color: #eee;
+        margin: 0;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      h1, h2, h3 { margin: 0 0 10px 0; }
+      h1 { color: #667eea; text-align: center; margin-bottom: 30px; }
+      .container { max-width: 1200px; margin: 0 auto; }
+      
+      .test-section {
+        background: #16213e;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #0f3460;
+      }
+      
+      .test-section h2 {
+        color: #e94560;
+        border-bottom: 1px solid #0f3460;
+        padding-bottom: 10px;
+      }
+      
+      .test-controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 15px;
+      }
+      
+      button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      
+      .btn-primary { background: #667eea; color: white; }
+      .btn-primary:hover { background: #5a6fd6; transform: translateY(-2px); }
+      
+      .btn-run { background: #10b981; color: white; }
+      .btn-run:hover { background: #059669; }
+      
+      .btn-danger { background: #ef4444; color: white; }
+      .btn-danger:hover { background: #dc2626; }
+      
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 14px;
+      }
+      
+      .results-table th, .results-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #0f3460;
+      }
+      
+      .results-table th { background: #0f3460; color: #667eea; }
+      .results-table tr:hover { background: rgba(102, 126, 234, 0.1); }
+      
+      .winner { color: #10b981; font-weight: bold; }
+      .time { color: #fbbf24; font-family: monospace; }
+      
+      .benchmark-target {
+        min-height: 100px;
+        border: 2px dashed #0f3460;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      
+      .target-vanilla { background: #1e3a5f; }
+      .target-jquery { background: #1e3a5f; }
+      .target-react { background: #1e3a5f; }
+      .target-vue { background: #1e3a5f; }
+      .target-myquery { background: #1e3a5f; }
+      
+      .progress-bar {
+        height: 4px;
+        background: #0f3460;
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+      
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #e94560);
+        transition: width 0.3s ease;
+      }
+      
+      .status {
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+        display: none;
+      }
+      
+      .status.running { 
+        display: block; 
+        background: rgba(102, 126, 234, 0.2); 
+        color: #667eea;
+      }
+      
+      .status.complete { 
+        display: block; 
+        background: rgba(16, 185, 129, 0.2); 
+        color: #10b981;
+      }
+      
+      .lib-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 5px;
+      }
+      
+      .badge-vanilla { background: #333; color: #fff; }
+      .badge-jquery { background: #0769ad; color: #fff; }
+      .badge-react { background: #61dafb; color: #000; }
+      .badge-vue { background: #42b883; color: #fff; }
+      .badge-myquery { background: #e94560; color: #fff; }
+      
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+      
+      .summary-card {
+        background: #0f3460;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+      }
+      
+      .summary-card h4 { margin: 0 0 10px 0; color: #667eea; }
+      .summary-card .score { font-size: 24px; font-weight: bold; }
+      .summary-card .label { font-size: 12px; opacity: 0.7; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>⚡ My-Query Benchmark</h1>
+      <p style="text-align: center; opacity: 0.7;">Comparing: My-Query vs jQuery vs React vs Vue vs Vanilla JS</p>
+      
+      <!-- Test 1: Element Creation -->
+      <div class="test-section">
+        <h2>1️⃣ Element Creation (DOM Node Generation)</h2>
+        <p>Create N elements and append to DOM. Measures raw DOM creation speed.</p>
+        
+        <div class="test-controls">
+          <button class="btn-run" onclick="runElementCreationBenchmark(100)">100 elements</button>
+          <button class="btn-run" onclick="runElementCreationBenchmark(1000)">1,000 elements</button>
+          <button class="btn-run" onclick="runElementCreationBenchmark(5000)">5,000 elements</button>
+          <button class="btn-run" onclick="runElementCreationBenchmark(10000)">10,000 elements</button>
+        </div>
+        
+        <div id="element-creation-status" class="status"></div>
+        
+        <table class="results-table" id="element-creation-results">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Time (ms)</th>
+              <th>Ops/sec</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Test 2: Element Updates -->
+      <div class="test-section">
+        <h2>2️⃣ Element Updates (Text/Content Modification)</h2>
+        <p>Update text content of existing elements. Measures DOM mutation speed.</p>
+        
+        <div class="test-controls">
+          <button class="btn-run" onclick="runElementUpdateBenchmark(100)">100 updates</button>
+          <button class="btn-run" onclick="runElementUpdateBenchmark(1000)">1,000 updates</button>
+          <button class="btn-run" onclick="runElementUpdateBenchmark(5000)">5,000 updates</button>
+        </div>
+        
+        <div id="element-update-status" class="status"></div>
+        
+        <table class="results-table" id="element-update-results">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Time (ms)</th>
+              <th>Ops/sec</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Test 3: Style Application -->
+      <div class="test-section">
+        <h2>3️⃣ Style Application (CSS-in-JS / Variants)</h2>
+        <p>Apply styles with variants to elements. Measures style computation.</p>
+        
+        <div class="test-controls">
+          <button class="btn-run" onclick="runStyleBenchmark(100)">100 elements</button>
+          <button class="btn-run" onclick="runStyleBenchmark(1000)">1,000 elements</button>
+          <button class="btn-run" onclick="runStyleBenchmark(5000)">5,000 elements</button>
+        </div>
+        
+        <div id="style-status" class="status"></div>
+        
+        <table class="results-table" id="style-results">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Time (ms)</th>
+              <th>Ops/sec</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Test 4: List Rendering -->
+      <div class="test-section">
+        <h2>4️⃣ List Rendering (Virtual DOM-style List)</h2>
+        <p>Render a list of items with dynamic content. Real-world scenario.</p>
+        
+        <div class="test-controls">
+          <button class="btn-run" onclick="runListBenchmark(50)">50 items</button>
+          <button class="btn-run" onclick="runListBenchmark(200)">200 items</button>
+          <button class="btn-run" onclick="runListBenchmark(500)">500 items</button>
+        </div>
+        
+        <div id="list-status" class="status"></div>
+        
+        <table class="results-table" id="list-results">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Time (ms)</th>
+              <th>Ops/sec</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Test 5: Reactive Updates -->
+      <div class="test-section">
+        <h2>5️⃣ Reactive Updates (Signal-based Reactivity)</h2>
+        <p>Update reactive state and measure DOM propagation. Uses signals/reactivity.</p>
+        
+        <div class="test-controls">
+          <button class="btn-run" onclick="runReactivityBenchmark(100)">100 updates</button>
+          <button class="btn-run" onclick="runReactivityBenchmark(1000)">1,000 updates</button>
+          <button class="btn-run" onclick="runReactivityBenchmark(5000)">5,000 updates</button>
+        </div>
+        
+        <div id="reactivity-status" class="status"></div>
+        
+        <table class="results-table" id="reactivity-results">
+          <thead>
+            <tr>
+              <th>Library</th>
+              <th>Time (ms)</th>
+              <th>Ops/sec</th>
+              <th>Relative</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      <!-- Summary -->
+      <div class="test-section">
+        <h2>📊 Summary</h2>
+        <div class="summary-grid" id="summary">
+          <div class="summary-card">
+            <h4>🏆 Fastest Overall</h4>
+            <div class="score" id="fastest-overall">-</div>
+          </div>
+          <div class="summary-card">
+            <h4>Element Creation</h4>
+            <div class="score" id="fastest-creation">-</div>
+          </div>
+          <div class="summary-card">
+            <h4>Updates</h4>
+            <div class="score" id="fastest-updates">-</div>
+          </div>
+          <div class="summary-card">
+            <h4>Reactivity</h4>
+            <div class="score" id="fastest-reactivity">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Libraries -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Import My-Query -->
+    <script type="module">
+      // Import signals
+      import { signal, computed, effect } from 'https://esm.sh/@preact/signals-core';
+      
+      // Import My-Query
+      import MyQuery from './src/main.ts';
+      
+      // Make available globally
+      window.MyQuery = MyQuery;
+      window.signals = { signal, computed, effect };
+      
+      console.log('My-Query loaded:', MyQuery);
+      
+      // ============ BENCHMARK UTILITIES ============
+      
+      function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
+      
+      function formatTime(ms) {
+        if (ms < 1) return '< 1ms';
+        if (ms < 1000) return ms.toFixed(2) + 'ms';
+        return (ms / 1000).toFixed(2) + 's';
+      }
+      
+      function calculateOpsPerSec(time, count) {
+        return Math.round((count / time) * 1000);
+      }
+      
+      function getRelativeTime(time, fastestTime) {
+        return (time / fastestTime).toFixed(2) + 'x';
+      }
+      
+      function findWinner(results) {
+        return results.reduce((min, r) => r.time < min.time ? r : min, results[0]);
+      }
+      
+      function updateResultsTable(tableId, results, testName) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        const winner = findWinner(results);
+        
+        tbody.innerHTML = results.map(r => `
+          <tr>
+            <td><span class="lib-badge badge-${r.lib.toLowerCase().replace(' ', '-')}">${r.lib}</span></td>
+            <td class="time">${formatTime(r.time)}</td>
+            <td>${formatNumber(r.ops)}</td>
+            <td class="${r.lib === winner.lib ? 'winner' : ''}">${getRelativeTime(r.time, winner.time)}</td>
+          </tr>
+        `).join('');
+        
+        return winner.lib;
+      }
+      
+      function clearTarget(id) {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+      }
+      
+      // ============ TEST 1: ELEMENT CREATION ============
+      
+      window.runElementCreationBenchmark = async function(count) {
+        const status = document.getElementById('element-creation-status');
+        status.className = 'status running';
+        status.textContent = `Running element creation benchmark with ${formatNumber(count)} elements...`;
+        
+        await new Promise(r => setTimeout(r, 100)); // UI update
+        
+        const results = [];
+        
+        // Vanilla JS
+        let start = performance.now();
+        const vanillaContainer = document.createElement('div');
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement('div');
+          el.textContent = `Item ${i}`;
+          el.className = 'item';
+          vanillaContainer.appendChild(el);
+        }
+        let vanillaTime = performance.now() - start;
+        results.push({ lib: 'Vanilla JS', time: vanillaTime, ops: calculateOpsPerSec(vanillaTime, count) });
+        
+        // jQuery - use actual jQuery from CDN
+        start = performance.now();
+        const $jqueryContainer = window.jQuery('<div>');
+        for (let i = 0; i < count; i++) {
+          $jqueryContainer.append(window.jQuery('<div>').text(`Item ${i}`).addClass('item'));
+        }
+        let jqueryTime = performance.now() - start;
+        results.push({ lib: 'jQuery', time: jqueryTime, ops: calculateOpsPerSec(jqueryTime, count) });
+        
+        // My-Query (using builder - $.div() syntax)
+        start = performance.now();
+        const myQueryElements = [];
+        for (let i = 0; i < count; i++) {
+          myQueryElements.push(MyQuery.div({ class: 'item' }, `Item ${i}`));
+        }
+        const myQueryContainer = MyQuery.div({}, ...myQueryElements);
+        let myQueryTime = performance.now() - start;
+        results.push({ lib: 'My-Query', time: myQueryTime, ops: calculateOpsPerSec(myQueryTime, count) });
+        
+        // React (using createElement)
+        if (window.React) {
+          start = performance.now();
+          const reactElements = [];
+          for (let i = 0; i < count; i++) {
+            reactElements.push(React.createElement('div', { className: 'item' }, `Item ${i}`));
+          }
+          // Don't actually render to DOM (too slow)
+          let reactTime = performance.now() - start;
+          results.push({ lib: 'React (build)', time: reactTime, ops: calculateOpsPerSec(reactTime, count) });
+        }
+        
+        // Sort by time
+        results.sort((a, b) => a.time - b.time);
+        
+        const winner = updateResultsTable('element-creation-results', results, 'Element Creation');
+        
+        status.className = 'status complete';
+        status.textContent = `✓ Complete! Winner: ${winner}`;
+        
+        return results;
+      };
+      
+      // ============ TEST 2: ELEMENT UPDATES ============
+      
+      window.runElementUpdateBenchmark = async function(count) {
+        const status = document.getElementById('element-update-status');
+        status.className = 'status running';
+        status.textContent = `Running element update benchmark with ${formatNumber(count)} updates...`;
+        
+        await new Promise(r => setTimeout(r, 100));
+        
+        const results = [];
+        
+        // Create containers
+        const vanillaContainer = document.createElement('div');
+        const vanillaElements = [];
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement('div');
+          el.textContent = `Item ${i}`;
+          vanillaContainer.appendChild(el);
+          vanillaElements.push(el);
+        }
+        
+        // Vanilla JS
+        let start = performance.now();
+        for (let i = 0; i < count; i++) {
+          vanillaElements[i].textContent = `Updated ${i}`;
+        }
+        let vanillaTime = performance.now() - start;
+        results.push({ lib: 'Vanilla JS', time: vanillaTime, ops: calculateOpsPerSec(vanillaTime, count) });
+        
+        // jQuery - use actual jQuery from CDN
+        const $jqueryContainer = window.jQuery('<div>');
+        const jqueryElements = [];
+        for (let i = 0; i < count; i++) {
+          const $el = window.jQuery('<div>').text(`Item ${i}`);
+          $jqueryContainer.append($el);
+          jqueryElements.push($el);
+        }
+        
+        start = performance.now();
+        for (let i = 0; i < count; i++) {
+          jqueryElements[i].text(`Updated ${i}`);
+        }
+        let jqueryTime = performance.now() - start;
+        results.push({ lib: 'jQuery', time: jqueryTime, ops: calculateOpsPerSec(jqueryTime, count) });
+        
+        // My-Query - use builder syntax $.div()
+        const myQueryElements = [];
+        for (let i = 0; i < count; i++) {
+          myQueryElements.push(MyQuery.div({ class: 'item' }, `Item ${i}`));
+        }
+        
+        start = performance.now();
+        for (let i = 0; i < count; i++) {
+          myQueryElements[i].textContent = `Updated ${i}`;
+        }
+        let myQueryTime = performance.now() - start;
+        results.push({ lib: 'My-Query', time: myQueryTime, ops: calculateOpsPerSec(myQueryTime, count) });
+        
+        results.sort((a, b) => a.time - b.time);
+        
+        updateResultsTable('element-update-results', results, 'Element Updates');
+        
+        status.className = 'status complete';
+        status.textContent = '✓ Complete!';
+        
+        return results;
+      };
+      
+      // ============ TEST 3: STYLE APPLICATION ============
+      
+      window.runStyleBenchmark = async function(count) {
+        const status = document.getElementById('style-status');
+        status.className = 'status running';
+        status.textContent = `Running style benchmark with ${formatNumber(count)} elements...`;
+        
+        await new Promise(r => setTimeout(r, 100));
+        
+        const results = [];
+        
+        // My-Query styles
+        const buttonStyle = MyQuery.style({
+          base: {
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 500,
+            transition: 'all 0.2s ease',
+          },
+          variants: {
+            intent: {
+              primary: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' },
+              danger: { background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' },
+              ghost: { background: 'none', color: 'white' },
+            },
+            size: {
+              sm: { padding: '0.5rem 1rem', fontSize: '0.85rem' },
+              md: { padding: '1rem', fontSize: '1rem' },
+              lg: { padding: '1.5rem', fontSize: '1.25rem' },
+            },
+          },
+          defaultVariants: { intent: 'primary', size: 'md' },
+        });
+        
+        // My-Query
+        let start = performance.now();
+        for (let i = 0; i < count; i++) {
+          const el = MyQuery.button({ class: buttonStyle({ 
+            intent: i % 3 === 0 ? 'primary' : i % 3 === 1 ? 'danger' : 'ghost',
+            size: i % 3 === 0 ? 'sm' : i % 3 === 1 ? 'md' : 'lg'
+          })}, 'Button');
+        }
+        let myQueryTime = performance.now() - start;
+        results.push({ lib: 'My-Query', time: myQueryTime, ops: calculateOpsPerSec(myQueryTime, count) });
+        
+        // Vanilla JS (inline styles)
+        start = performance.now();
+        const styleConfigs = [
+          { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '0.5rem 1rem', fontSize: '0.85rem' },
+          { background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '1rem', fontSize: '1rem' },
+          { background: 'none', color: 'white', padding: '1.5rem', fontSize: '1.25rem' },
+        ];
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement('button');
+          const config = styleConfigs[i % 3];
+          Object.assign(el.style, config);
+          el.textContent = 'Button';
+        }
+        let vanillaTime = performance.now() - start;
+        results.push({ lib: 'Vanilla JS', time: vanillaTime, ops: calculateOpsPerSec(vanillaTime, count) });
+        
+        // jQuery (css method)
+        start = performance.now();
+        for (let i = 0; i < count; i++) {
+          const $el = window.jQuery('<button>').text('Button');
+          const config = styleConfigs[i % 3];
+          $el.css(config);
+        }
+        let jqueryTime = performance.now() - start;
+        results.push({ lib: 'jQuery', time: jqueryTime, ops: calculateOpsPerSec(jqueryTime, count) });
+        
+        results.sort((a, b) => a.time - b.time);
+        
+        updateResultsTable('style-results', results, 'Style Application');
+        
+        status.className = 'status complete';
+        status.textContent = '✓ Complete!';
+        
+        return results;
+      };
+      
+      // ============ TEST 4: LIST RENDERING ============
+      
+      window.runListBenchmark = async function(count) {
+        const status = document.getElementById('list-status');
+        status.className = 'status running';
+        status.textContent = `Running list benchmark with ${formatNumber(count)} items...`;
+        
+        await new Promise(r => setTimeout(r, 100));
+        
+        const results = [];
+        const items = Array.from({ length: count }, (_, i) => ({ id: i, title: `Item ${i}`, amount: (i * 10.5).toFixed(2) }));
+        
+        // Vanilla JS (build all then append)
+        const vanillaContainer = document.createElement('div');
+        let start = performance.now();
+        const html = items.map(item => `
+          <div class="transaction">
+            <span class="title">${item.title}</span>
+            <span class="amount">$${item.amount}</span>
+          </div>
+        `).join('');
+        vanillaContainer.innerHTML = html;
+        let vanillaTime = performance.now() - start;
+        results.push({ lib: 'Vanilla JS', time: vanillaTime, ops: calculateOpsPerSec(vanillaTime, count) });
+        
+        // jQuery
+        start = performance.now();
+        const $jqueryList = window.jQuery('<div>');
+        items.forEach(item => {
+          $jqueryList.append(
+            window.jQuery('<div>').addClass('transaction').append(
+              window.jQuery('<span>').addClass('title').text(item.title),
+              window.jQuery('<span>').addClass('amount').text(`${item.amount}`)
+            )
+          );
+        });
+        let jqueryTime = performance.now() - start;
+        results.push({ lib: 'jQuery', time: jqueryTime, ops: calculateOpsPerSec(jqueryTime, count) });
+        
+        // My-Query
+        start = performance.now();
+        const listItems = items.map(item => 
+          MyQuery.div({ class: 'transaction' },
+            MyQuery.span({ class: 'title' }, item.title),
+            MyQuery.span({ class: 'amount' }, `$${item.amount}`)
+          )
+        );
+        const myQueryList = MyQuery.div({}, listItems);
+        let myQueryTime = performance.now() - start;
+        results.push({ lib: 'My-Query', time: myQueryTime, ops: calculateOpsPerSec(myQueryTime, count) });
+        
+        // React (virtual, no DOM)
+        if (window.React) {
+          start = performance.now();
+          const reactElements = items.map(item => 
+            React.createElement('div', { className: 'transaction' },
+              React.createElement('span', { className: 'title' }, item.title),
+              React.createElement('span', { className: 'amount' }, `$${item.amount}`)
+            )
+          );
+          let reactTime = performance.now() - start;
+          results.push({ lib: 'React (build)', time: reactTime, ops: calculateOpsPerSec(reactTime, count) });
+        }
+        
+        results.sort((a, b) => a.time - b.time);
+        
+        updateResultsTable('list-results', results, 'List Rendering');
+        
+        status.className = 'status complete';
+        status.textContent = '✓ Complete!';
+        
+        return results;
+      };
+      
+      // ============ TEST 5: REACTIVE UPDATES ============
+      
+      window.runReactivityBenchmark = async function(count) {
+        const status = document.getElementById('reactivity-status');
+        status.className = 'status running';
+        status.textContent = `Running reactivity benchmark with ${formatNumber(count)} updates...`;
+        
+        await new Promise(r => setTimeout(r, 100));
+        
+        const results = [];
+        
+        // Create signals
+        const items = Array.from({ length: count }, (_, i) => window.signals.signal({ id: i, value: i }));
+        
+        // My-Query with signals - build elements and use textContent for updates
+        const elementContainer = MyQuery.div({}, ...items.map(item => 
+          MyQuery.div({ class: 'item' }, window.signals.computed(() => `Value: ${item.value}`))
+        ));
+        
+        // Note: For fair comparison, we measure the signal update time
+        // My-Query reactivity
+        let start = performance.now();
+        for (let i = 0; i < count; i++) {
+          items[i].value = { id: i, value: i + 1 };
+        }
+        let myQueryTime = performance.now() - start;
+        results.push({ lib: 'My-Query+Signals', time: myQueryTime, ops: calculateOpsPerSec(myQueryTime, count) });
+        
+        // Vanilla JS (manual DOM updates)
+        const vanillaElements = [];
+        const vanillaContainer = document.createElement('div');
+        for (let i = 0; i < count; i++) {
+          const el = document.createElement('div');
+          el.textContent = `Value: ${i}`;
+          vanillaContainer.appendChild(el);
+          vanillaElements.push(el);
+        }
+        
+        start = performance.now();
+        for (let i = 0; i < count; i++) {
+          vanillaElements[i].textContent = `Value: ${i + 1}`;
+        }
+        let vanillaTime = performance.now() - start;
+        results.push({ lib: 'Vanilla JS', time: vanillaTime, ops: calculateOpsPerSec(vanillaTime, count) });
+        
+        // jQuery
+        const jqueryElements = [];
+        const $jqueryContainer = window.jQuery('<div>');
+        for (let i = 0; i < count; i++) {
+          const $el = window.jQuery('<div>').text(`Value: ${i}`);
+          $jqueryContainer.append($el);
+          jqueryElements.push($el);
+        }
+        
+        start = performance.now();
+        for (let i = 0; i < count; i++) {
+          jqueryElements[i].text(`Value: ${i + 1}`);
+        }
+        let jqueryTime = performance.now() - start;
+        results.push({ lib: 'jQuery', time: jqueryTime, ops: calculateOpsPerSec(jqueryTime, count) });
+        
+        results.sort((a, b) => a.time - b.time);
+        
+        updateResultsTable('reactivity-results', results, 'Reactivity');
+        
+        status.className = 'status complete';
+        status.textContent = '✓ Complete!';
+        
+        return results;
+      };
+      
+      console.log('Benchmark utilities loaded!');
+    </script>
+  </body>
+</html>

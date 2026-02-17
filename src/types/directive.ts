@@ -4,7 +4,7 @@
  * Type definitions for the class-based directive system.
  */
 
-import { Directive, DirectiveClass, isDirectiveClass, isReactiveSource } from '@/modules/my-query/directive';
+import { Directive, DirectiveClass, isDirectiveClass, isReactiveSource } from '@/mini-stack/query/directives/directive';
 
 // Re-export from module
 export type { Directive, DirectiveClass };
@@ -19,6 +19,7 @@ export { isDirectiveClass, isReactiveSource };
 export interface ReactiveSource<T = any> {
   subscribe: (callback: (value: T) => void) => () => void;
   getValue?: () => T;
+  value?: T;
 }
 
 // ========== DIRECTIVE INSTANCE ==========

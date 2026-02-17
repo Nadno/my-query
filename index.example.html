@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PocketFin - Mini-Stack Demo</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: #1a1a1a;
+        color: white;
+        line-height: 1.6;
+      }
+      * {
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      // 1. Import Signals
+      import { signal, computed, effect } from 'https://esm.sh/@preact/signals-core';
+
+      // 2. Import Mini-Stack
+      import $ from './src/main.ts';
+
+      // --- APP CODE STARTS HERE ---
+
+      // 3. Style Definitions
+
+      // Shared button variant style
+      const button = $.style({
+        base: {
+          border: 'none',
+          cursor: 'pointer',
+          fontWeight: 500,
+          transition: 'all 0.2s ease',
+          '&:active': { transform: 'scale(0.98)' },
+        },
+        variants: {
+          intent: {
+            primary: {
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 20px rgba(102, 126, 234, 0.4)',
+              },
+            },
+            danger: {
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              '&:hover': {
+                background: 'rgba(239, 68, 68, 0.3)',
+                borderColor: 'rgba(239, 68, 68, 0.5)',
+                transform: 'scale(1.05)',
+              },
+            },
+            ghost: {
+              background: 'none',
+              color: 'white',
+              opacity: 0.7,
+              '&:hover': { opacity: 1 },
+            },
+          },
+          size: {
+            sm: {
+              padding: '0.5rem 1rem',
+              fontSize: '0.85rem',
+              borderRadius: '8px',
+            },
+            md: { padding: '1rem', fontSize: '1rem', borderRadius: '10px' },
+            round: {
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              fontSize: '2rem',
+              padding: 0,
+            },
+          },
+        },
+        defaultVariants: { intent: 'primary', size: 'md' },
+      });
+
+      const input = $.style({
+        base: {
+          padding: '0.875rem 1rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '10px',
+          color: 'white',
+          fontSize: '1rem',
+          transition: 'all 0.2s ease',
+          '&:focus': {
+            outline: 'none',
+            borderColor: 'rgba(102, 126, 234, 0.5)',
+            background: 'rgba(255, 255, 255, 0.08)',
+            boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
+          },
+          '&::placeholder': {
+            color: 'rgba(255, 255, 255, 0.4)',
+          },
+        },
+        variants: {
+          variant: {
+            select: { cursor: 'pointer' },
+          },
+        },
+      });
+
+      const styles = {
+        container: $.style({
+          maxWidth: '800px',
+          margin: '0 auto',
+          padding: '2rem 1rem',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.5rem',
+        }),
+        header: $.style({
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1.5rem',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        }),
+        title: $.style({
+          fontSize: '2rem',
+          fontWeight: 800,
+          margin: 0,
+          background: 'linear-gradient(135deg, #fff 0%, #e0e7ff 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+        }),
+        subtitle: $.style({
+          fontSize: '0.95rem',
+          opacity: 0.9,
+          margin: '0.25rem 0 0 0',
+        }),
+        balanceCard: $.style({
+          padding: '2rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '16px',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+          transition: 'all 0.3s ease',
+        }),
+        balanceLabel: $.style({
+          fontSize: '0.9rem',
+          textTransform: 'uppercase',
+          letterSpacing: '1px',
+          opacity: 0.7,
+          margin: 0,
+          textAlign: 'center',
+        }),
+        balanceAmount: $.style({
+          fontSize: '3rem',
+          fontWeight: 700,
+          margin: '0.5rem 0 0 0',
+          textAlign: 'center',
+          transition: 'color 0.3s ease',
+        }),
+        transactionsSection: $.style({
+          flex: 1,
+          overflow: 'hidden',
+          background: 'rgba(255, 255, 255, 0.03)',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)',
+        }),
+        sectionHeader: $.style({
+          padding: '1.5rem',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+          margin: 0,
+          fontSize: '1.25rem',
+          fontWeight: 600,
+        }),
+        transactionsList: $.style({
+          listStyle: 'none',
+          margin: 0,
+          padding: '1rem',
+          height: '400px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+        }),
+        transactionItem: $.style({
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1.25rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.05)',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            background: 'rgba(255, 255, 255, 0.08)',
+            borderColor: 'rgba(255, 255, 255, 0.15)',
+            transform: 'translateX(4px)',
+          },
+        }),
+        transactionInfo: $.style({
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.25rem',
+        }),
+        transactionTitle: $.style({
+          fontSize: '1rem',
+          fontWeight: 500,
+          margin: 0,
+        }),
+        transactionType: $.style({
+          fontSize: '0.85rem',
+          opacity: 0.7,
+          margin: 0,
+        }),
+        transactionAmount: $.style({
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          margin: 0,
+        }),
+        income: $.style({ color: '#10b981' }),
+        expense: $.style({ color: '#ef4444' }),
+        modalOverlay: $.style({
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: 'rgba(0, 0, 0, 0.7)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000,
+          padding: '1rem',
+        }),
+        modalContent: $.style({
+          background: '#2a2a2a',
+          borderRadius: '20px',
+          padding: '2rem',
+          width: '100%',
+          maxWidth: '500px',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          animation: 'modalSlideIn 0.3s ease',
+        }),
+        modalHeader: $.style({
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+        }),
+        modalTitle: $.style({
+          fontSize: '1.5rem',
+          fontWeight: 700,
+          margin: 0,
+        }),
+        form: $.style({
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1.25rem',
+        }),
+        formGroup: $.style({
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+        }),
+        label: $.style({
+          fontSize: '0.9rem',
+          fontWeight: 500,
+          opacity: 0.8,
+          margin: 0,
+        }),
+        row: $.style({
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+        }),
+      };
+
+      // 4. State (Store)
+      const transactions = signal([
+        { id: 1, title: 'Salary', amount: 3500, type: 'income' },
+        { id: 2, title: 'Groceries', amount: -120, type: 'expense' },
+        { id: 3, title: 'Netflix', amount: -15.99, type: 'expense' },
+        { id: 4, title: 'Freelance Work', amount: 850, type: 'income' },
+        { id: 5, title: 'Gas', amount: -45, type: 'expense' },
+      ]);
+
+      const balance = computed(() => {
+        return transactions.value.reduce((sum, t) => sum + t.amount, 0);
+      });
+
+      const modalOpen = signal(false);
+      let nextId = 6;
+
+      // 5. Components
+      const BalanceCard = () => {
+        return $.div(
+          { class: styles.balanceCard },
+          $.p({ class: styles.balanceLabel }, 'Total Balance'),
+          $.p(
+            {
+              class: styles.balanceAmount,
+              style: computed(() => ({
+                color: balance.value >= 0 ? '#10b981' : '#ef4444',
+              })),
+            },
+            computed(() => `$${balance.value.toFixed(2)}`),
+          ),
+        );
+      };
+
+      const TransactionItem = (t) => {
+        const deleteTransaction = () => {
+          transactions.value = transactions.value.filter(
+            (tr) => tr.id !== t.id,
+          );
+        };
+
+        return $.li(
+          { class: styles.transactionItem },
+          $.div(
+            { class: styles.transactionInfo },
+            $.p({ class: styles.transactionTitle }, t.title),
+            $.p(
+              { class: styles.transactionType },
+              t.type.charAt(0).toUpperCase() + t.type.slice(1),
+            ),
+          ),
+          $.div(
+            { class: styles.row },
+            $.p(
+              {
+                class: [
+                  styles.transactionAmount,
+                  t.amount >= 0 ? styles.income : styles.expense,
+                ],
+              },
+              `${t.amount >= 0 ? '+' : ''}$${t.amount.toFixed(2)}`,
+            ),
+            $.button(
+              {
+                class: button({ intent: 'danger', size: 'sm' }),
+                onclick: deleteTransaction,
+              },
+              'Delete',
+            ),
+          ),
+        );
+      };
+
+      const Modal = () =>
+        $.div((self) => {
+          const titleInput = signal('');
+          const amountInput = signal('');
+          const typeInput = signal('income');
+
+          effect(() => {
+            console.log('Title:', titleInput.value);
+            console.log('Amount:', amountInput.value);
+            console.log('Type:', typeInput.value);
+            console.log('IsOpen:', modalOpen.value);
+          });
+
+          const isValid = computed(() => {
+            const title = titleInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            return title !== '' && !isNaN(amount) && amount !== 0;
+          });
+
+          const handleSubmit = (e) => {
+            e.preventDefault();
+            if (!isValid.value) return;
+
+            transactions.value = [
+              ...transactions.value,
+              {
+                id: nextId++,
+                title: titleInput.value.trim(),
+                amount:
+                  typeInput.value === 'income'
+                    ? parseFloat(amountInput.value)
+                    : -Math.abs(parseFloat(amountInput.value)),
+                type: typeInput.value,
+              },
+            ];
+
+            modalOpen.value = false;
+            titleInput.value = '';
+            amountInput.value = '';
+            typeInput.value = 'income';
+          };
+
+          return $.div(
+            {
+              class: styles.modalOverlay,
+              directives: { $if: modalOpen },
+            },
+            $.div(
+              {
+                class: styles.modalContent,
+                directives: { 'trap-focus': modalOpen },
+                'on:click-outside': () => (modalOpen.value = false),
+              },
+              $.div(
+                { class: styles.modalHeader },
+                $.h2({ class: styles.modalTitle }, 'Add Transaction'),
+                $.button(
+                  {
+                    class: button({ intent: 'ghost', size: 'sm' }),
+                    onclick: () => (modalOpen.value = false),
+                  },
+                  '\u00d7',
+                ),
+              ),
+              $.form(
+                {
+                  class: styles.form,
+                  onsubmit: handleSubmit,
+                },
+                $.div(
+                  { class: styles.formGroup },
+                  $.label({ class: styles.label, for: 'title' }, 'Title'),
+                  $.input({
+                    class: input(),
+                    id: 'title',
+                    type: 'text',
+                    placeholder: 'Enter transaction title',
+                    directives: { model: titleInput },
+                  }),
+                ),
+                $.div(
+                  { class: styles.formGroup },
+                  $.label({ class: styles.label, for: 'amount' }, 'Amount'),
+                  $.input({
+                    class: input(),
+                    id: 'amount',
+                    type: 'number',
+                    step: '0.01',
+                    placeholder: 'Enter amount',
+                    directives: { model: amountInput },
+                  }),
+                ),
+                $.div(
+                  { class: styles.formGroup },
+                  $.label({ class: styles.label, for: 'type' }, 'Type'),
+                  $.select(
+                    {
+                      class: input({ variant: 'select' }),
+                      id: 'type',
+                      directives: { model: typeInput },
+                    },
+                    $.option({ value: 'income' }, 'Income'),
+                    $.option({ value: 'expense' }, 'Expense'),
+                  ),
+                ),
+                $.button(
+                  {
+                    class: button(),
+                    type: 'submit',
+                    $disabled: computed(() => !isValid.value),
+                  },
+                  'Add Transaction',
+                ),
+              ),
+            ),
+          );
+        });
+
+      // 6. Mount
+      $('#app').append(
+        $.div(
+          { class: styles.container },
+          $.header(
+            { class: styles.header },
+            $.div(
+              {
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.25rem',
+                },
+              },
+              $.h1({ class: styles.title }, 'PocketFin'),
+              $.p({ class: styles.subtitle }, 'Modern Financial Tracker'),
+            ),
+          ),
+          BalanceCard(),
+          $.section(
+            { class: styles.transactionsSection },
+            $.h2({ class: styles.sectionHeader }, 'Transactions'),
+            $.ul(
+              { class: styles.transactionsList },
+              computed(() => transactions.value.map((t) => TransactionItem(t))),
+            ),
+          ),
+          $.button(
+            {
+              class: button({ size: 'round' }),
+              style: {
+                position: 'fixed',
+                bottom: '2rem',
+                right: '2rem',
+                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
+              },
+              onclick: () => (modalOpen.value = true),
+            },
+            '+',
+          ),
+          Modal(),
+        ),
+      );
+    </script>
+  </body>
+</html>
+
