@@ -37,7 +37,8 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
 Resolvido pelo redesenho: entidade com `base`/`modifiers`/`keyframes` + filhos por chave, nomes BEM-legíveis
 (`-card-title`), modificador como classe composta `.bloco.--nome`, keyframes escopados, retorno `self`/`mods`/
 `keyframes`, warn de duplicado, breakpoints (CSS + `$.media`). **Restam** (P3): SSR/hydration; GC de regras
-(`injected` só cresce); prefixo/namespace configurável p/ evitar colisão em monolito; extração em build-time.
+(`injected` só cresce); prefixo/namespace configurável p/ evitar colisão em monolito; extração em build-time;
+**combinador filho-direto opt-in por parte** (`'>parte': {}` → `.pai > .-parte`; default segue descendente).
 
 <details><summary>Diagnóstico original (histórico)</summary>
 
