@@ -1,0 +1,26 @@
+{
+  "name": "mini-q-example-auth",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c cyan,magenta \"npm run dev:server\" \"npm run dev:web\"",
+    "dev:server": "tsx watch server/index.ts",
+    "dev:web": "wait-on tcp:127.0.0.1:3001 && vite --config web/vite.config.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@preact/signals-core": "^1.8.0",
+    "fastify": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mini-q": "file:../.."
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.0",
+    "concurrently": "^9.1.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "wait-on": "^8.0.3"
+  }
+}
