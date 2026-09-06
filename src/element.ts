@@ -15,7 +15,7 @@ import {
   runInScope,
   type Scope,
 } from './lifecycle';
-import { bind, isReactive, isSignal, read, type Bindable } from './reactive';
+import { bind, isReactive, isSignal, read, untrack, type Bindable } from './reactive';
 import { isNode, resolveClass, toNodes } from './dom/nodes';
 import { applyEvents } from './events/apply';
 import { applyUse } from './behaviors';
@@ -187,14 +187,15 @@ function mountReactiveRegion(parent: Node, source: Bindable<unknown>): void {
         let entry = keyed.get(key);
         if (!entry) {
           const scope = createScope();
-          const nodes = runInScope(scope, () => toNodes(item[0](props)));
+          // construir o item NÃO deve virar dependência da região
+          const nodes = runInScope(scope, () => untrack(() => toNodes(item[0](props))));
           entry = { nodes, scope };
           keyed.set(key, entry);
         }
         ordered.push(entry);
       } else {
         const scope = createScope();
-        const nodes = runInScope(scope, () => toNodes(item));
+        const nodes = runInScope(scope, () => untrack(() => toNodes(item)));
         const entry: RegionEntry = { nodes, scope };
         volatile.push(entry);
         ordered.push(entry);
@@ -210,9 +211,26 @@ function mountReactiveRegion(parent: Node, source: Bindable<unknown>): void {
       }
     }
 
-    // (re)ordena inserindo antes da âncora
-    for (const entry of ordered) {
-      for (const n of entry.nodes) parent.insertBefore(n, anchor);
+    // reordena de trás pra frente, movendo APENAS nós fora de posição
+    // (insertBefore de um nó já correto o removeria/reinseriria, perdendo foco)
+    const active = document.activeElement as HTMLElement | null;
+    let ref: Node = anchor;
+    for (let i = ordered.length - 1; i >= 0; i--) {
+      const nodes = ordered[i]!.nodes;
+      for (let j = nodes.length - 1; j >= 0; j--) {
+        const n = nodes[j]!;
+        if (n.nextSibling !== ref) parent.insertBefore(n, ref);
+        ref = n;
+      }
+    }
+    // se um nó reusado que estava focado precisou ser movido, restaura o foco
+    if (
+      active &&
+      active !== document.activeElement &&
+      active.isConnected &&
+      typeof active.focus === 'function'
+    ) {
+      active.focus({ preventScroll: true });
     }
   };
 
@@ -229,13 +247,18 @@ function mountReactiveRegion(parent: Node, source: Bindable<unknown>): void {
   });
 }
 
-/** Condicional com preservação de estado por ramo desligada (MVP: rebuild no toggle). */
+/**
+ * Condicional. Só a `cond` é rastreada; a construção do ramo roda destrastreada,
+ * então signals lidos ao montar a subárvore NÃO viram dependência da região
+ * (evita remontar a árvore inteira quando esses signals mudam).
+ */
 export function when(
   cond: Bindable<unknown>,
   thenFn: () => unknown,
   elseFn?: () => unknown,
 ): () => unknown {
-  return () => (read(cond) ? thenFn() : elseFn ? elseFn() : null);
+  return () =>
+    read(cond) ? untrack(thenFn) : elseFn ? untrack(elseFn) : null;
 }
 
 /* ------------------------------------------------------------- createTag --- */

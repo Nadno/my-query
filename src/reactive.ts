@@ -16,6 +16,12 @@ export interface ReactiveAdapter {
   getValue<T>(signal: unknown): T;
   /** Roda `run` e re-roda quando dependências mudam; retorna a função de parada. */
   effect(run: () => void): () => void;
+  /**
+   * Roda `fn` sem criar dependências (leituras de signal não são rastreadas).
+   * Opcional; se ausente, `untrack` apenas executa `fn`. Necessário para que
+   * construir a subárvore de uma região/`when` não vire dependência da região.
+   */
+  untrack?<T>(fn: () => T): T;
 }
 
 /** Signal genérico (formato mínimo observável pela lib). */
@@ -48,6 +54,11 @@ export function isSignal(value: unknown): boolean {
 /** `true` se `value` deve ser rastreado reativamente (signal ou função). */
 export function isReactive(value: unknown): boolean {
   return typeof value === 'function' || isSignal(value);
+}
+
+/** Roda `fn` sem rastrear dependências (usa o adapter se ele suportar). */
+export function untrack<T>(fn: () => T): T {
+  return adapter && adapter.untrack ? adapter.untrack(fn) : fn();
 }
 
 /** Lê o valor atual de um `Bindable` (signal | função | cru). */
