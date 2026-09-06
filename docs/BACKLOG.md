@@ -6,18 +6,42 @@ Prioridade: **P1** (base/decisão), **P2** (relevante), **P3** (quando sobrar).
 
 ---
 
-## Status atual (pronto e testado)
+## Progresso (log)
 
-- Núcleo: `reactive` (adapter agnóstico), `lifecycle` (escopos + `mount → unmount`).
-- `element`: `createTag` dual (setup/elemento), props `$`-reativas, children, **lista keyed** com reuso, `$.when`.
-- `events`: `on:{}` + `handle` (modificadores) + custom events (`clickOutside`/`focusOutside`/`hover`).
-- `behaviors`: `use` + `model`/`show`.
-- `style`: engine runtime de CSS-in-JS (`style`/`parts`/`css`/`compile`/`inject`) — **ver §Estilo**.
-- `$` montado em `index`, adapter `preact`, demo PocketFin, suíte de testes verde, `vite build` ok.
+Registro corrido do que foi entregue (o histórico git tem o detalhe por commit).
+
+- **2026-09-06** — MVP inicial (DOM + eventos + componentes reativos); demo PocketFin; 19 testes.
+- **2026-09-06** — Fix de 2 bugs de runtime: região reativa não rastreia construção do ramo
+  (`untrack` no adapter, `$.when`/lista) + reconcile move só nós fora de posição e preserva foco.
+- **2026-09-06** — Doc de uso (`docs/USAGE.md`) e este backlog.
+- **2026-09-06** — **Redesenho do módulo de estilos** para o modelo de entidade (`base`/`modifiers`/
+  `keyframes` + filhos por chave, retorno `self`/`mods`/`keyframes`, warn de duplicado) + **breakpoints**
+  integrados (`$.config` + `@nome` no CSS + `$.media` reativo). 31 testes.
 
 ---
 
-## Estilo — o módulo atual NÃO reflete o que queremos (P1)
+## Status atual (pronto e testado)
+
+- Núcleo: `reactive` (adapter agnóstico: `isSignal`/`getValue`/`effect`/`untrack?`/`signal?`), `lifecycle` (escopos + `mount → unmount`).
+- `element`: `createTag` dual (setup/elemento), props `$`-reativas, children, **lista keyed** com reuso, `$.when`.
+- `events`: `on:{}` + `handle` (modificadores) + custom events (`clickOutside`/`focusOutside`/`hover`).
+- `behaviors`: `use` + `model`/`show`.
+- `style`: **modelo de entidade** (`style`/`parts`/`css`/`compile`/`inject`) — `base`/`modifiers`/`keyframes` + filhos.
+- `config`/`media`: breakpoints compartilhados (CSS `@nome` + `$.media` reativo).
+- `$` montado em `index`, adapter `preact`, demo PocketFin, **31 testes verdes**, `vite build` ok.
+
+---
+
+## Estilo — ✅ redesenhado (modelo de entidade) — 2026-09-06
+
+Resolvido pelo redesenho: entidade com `base`/`modifiers`/`keyframes` + filhos por chave, nomes BEM-legíveis
+(`-card-title`), modificador como classe composta `.bloco.--nome`, keyframes escopados, retorno `self`/`mods`/
+`keyframes`, warn de duplicado, breakpoints (CSS + `$.media`). **Restam** (P3): SSR/hydration; GC de regras
+(`injected` só cresce); prefixo/namespace configurável p/ evitar colisão em monolito; extração em build-time.
+
+<details><summary>Diagnóstico original (histórico)</summary>
+
+O módulo era CSS-in-JS runtime JS-first com nomes achatados e sem filhos/modificadores de 1ª classe.
 
 **Hoje:** `src/style.ts` é uma **engine de CSS-in-JS em runtime** — a autoria é feita em **objetos JS**
 (`StyleObject`), compilados e injetados num `<style id="mq-styles">`. Isso vai na direção oposta da
@@ -44,6 +68,8 @@ conclusão que tiramos: *espremer a folha de estilo inteira em JS é chato e nã
 engine opcional para dinâmico; plugin de build depois). **Decidir o modelo de autoria antes de codar mais.**
 
 ---
+
+</details>
 
 ## Eventos — migração ficou enxuta (P2)
 
@@ -107,10 +133,22 @@ Reescrever como **behaviors** (`use`) quando forem necessários (ex.: modal do e
 
 ---
 
+## Organização modular do `src/` (P3, doc)
+
+Sensação (do usuário) de que falta modularidade: `events/` já é pasta própria, mas várias features são
+arquivos soltos no topo (`reactive.ts`, `style.ts`, `config.ts`, `media.ts`, `behaviors.ts`, `element.ts`).
+Direção a considerar: **cada feature = uma pasta** com `index.ts` + partes (ex.: `reactivity/`, `css/`
+[style+config+media juntos], `behaviors/`, `element/`), no espírito do `events/`. E **quebrar utilitários**
+(`dom/nodes.ts` acumula node-helpers + `resolveClass`/`cx`) para não concentrar contexto num só lugar.
+Não muda a API pública (o `index.ts` reexporta) — é refactor de estrutura. Fazer quando as features
+estabilizarem (mover cedo demais só gera churn).
+
 ## Ordem sugerida quando retomarmos
 
-1. **Decidir o modelo de estilo** (integração-first) — bloqueia o resto do CSS. (P1)
-2. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)
-3. Portar runtime rico de eventos → **hover touch** + delegation. (P2)
-4. `setValue` no adapter + teste de agnosticidade. (P2)
-5. `useForm`/`useField` schema-agnóstico + `examples/auth`. (P2)
+1. ~~Decidir/entregar o modelo de estilo~~ ✅ feito (entidade + breakpoints).
+2. **Migrar `examples/auth`** para a nova API de estilo (call sites `theme/Field/ToastHost/Stepper/PartnersFields/Popover/Button`). (P2)
+3. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)
+4. Portar runtime rico de eventos → **hover touch** + delegation. (P2)
+5. `setValue` no adapter + teste de agnosticidade. (P2)
+6. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
+7. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)
