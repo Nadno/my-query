@@ -22,6 +22,11 @@ export interface ReactiveAdapter {
    * construir a subárvore de uma região/`when` não vire dependência da região.
    */
   untrack?<T>(fn: () => T): T;
+  /**
+   * Cria um signal gravável. Opcional; necessário para primitivas que precisam
+   * criar estado reativo (ex.: `$.media`). Sem ele, essas primitivas lançam erro.
+   */
+  signal?<T>(initial: T): Signalish<T> & { value: T };
 }
 
 /** Signal genérico (formato mínimo observável pela lib). */
@@ -59,6 +64,17 @@ export function isReactive(value: unknown): boolean {
 /** Roda `fn` sem rastrear dependências (usa o adapter se ele suportar). */
 export function untrack<T>(fn: () => T): T {
   return adapter && adapter.untrack ? adapter.untrack(fn) : fn();
+}
+
+/** Cria um signal gravável via adapter (lança se o adapter não suportar). */
+export function createSignal<T>(initial: T): Signalish<T> & { value: T } {
+  const a = getAdapter();
+  if (!a.signal) {
+    throw new Error(
+      '[mini-q] O adapter instalado não implementa `signal`; necessário para $.media/estado reativo.',
+    );
+  }
+  return a.signal(initial);
 }
 
 /** Lê o valor atual de um `Bindable` (signal | função | cru). */

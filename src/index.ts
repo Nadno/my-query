@@ -6,7 +6,9 @@ import { useSignal } from './reactive';
 import { handle } from './events/handle';
 import { registerCustomEvent } from './events/custom';
 import { cx, getElement } from './dom/nodes';
-import { style, parts } from './style';
+import { style, parts, css } from './style';
+import { config } from './config';
+import { media } from './media';
 import { model, show } from './behaviors';
 import type { MQ, Props, TagElement, TagName } from './types';
 
@@ -48,6 +50,9 @@ export interface MiniQuery extends Factories {
   cx: typeof cx;
   style: typeof style;
   parts: typeof parts;
+  css: typeof css;
+  config: typeof config;
+  media: typeof media;
   model: typeof model;
   show: typeof show;
   registerCustomEvent: typeof registerCustomEvent;
@@ -74,6 +79,9 @@ Object.assign($, {
   cx,
   style,
   parts,
+  css,
+  config,
+  media,
   model,
   show,
   registerCustomEvent,
@@ -88,7 +96,11 @@ export { handle, compose } from './events/handle';
 export { registerCustomEvent, getCustomEvent } from './events/custom';
 export { applyUse, model, show } from './behaviors';
 export { cx } from './dom/nodes';
-export { style, parts } from './style';
+export { style, parts, css, compile, inject } from './style';
+export type { StyleObject, VariantConfig, VariantFn, EntityTree, StyleReturn } from './style';
+export { config } from './config';
+export type { MiniQConfig } from './config';
+export { media } from './media';
 export type { ReactiveAdapter, Bindable } from './reactive';
 export type { Cleanup, Scope } from './lifecycle';
 export type {
