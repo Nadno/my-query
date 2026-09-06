@@ -1,0 +1,70 @@
+/* CSS plano (engine de $.style é pós-MVP). Nomes seguem o padrão BEM-legível. */
+:root {
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #1a1a1a;
+  color: #fff;
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 16px;
+}
+.header-title { font-size: 2rem; font-weight: 800; margin: 0; }
+.header-subtitle { margin: .25rem 0 0; opacity: .9; font-size: .95rem; }
+
+.balance { padding: 2rem; background: rgba(255,255,255,.05); border-radius: 16px; border: 1px solid rgba(255,255,255,.1); }
+.balance-label { text-align: center; text-transform: uppercase; letter-spacing: 1px; opacity: .7; margin: 0; font-size: .9rem; }
+.balance-amount { text-align: center; font-size: 3rem; font-weight: 700; margin: .5rem 0 0; }
+
+.transactions { background: rgba(255,255,255,.03); border-radius: 16px; border: 1px solid rgba(255,255,255,.1); }
+.transactions-title { padding: 1.5rem; margin: 0; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 1.25rem; }
+.transactions-list { list-style: none; margin: 0; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; max-height: 400px; overflow-y: auto; }
+
+.tx { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem; background: rgba(255,255,255,.05); border-radius: 12px; transition: transform .2s ease; }
+.tx:hover { transform: translateX(4px); background: rgba(255,255,255,.08); }
+.tx-title { margin: 0; font-weight: 500; }
+.tx-type { margin: 0; opacity: .7; font-size: .85rem; }
+.tx-amount { margin: 0; font-weight: 600; font-size: 1.25rem; }
+.tx-row { display: flex; align-items: center; gap: 1rem; }
+
+.income { color: #10b981; }
+.expense { color: #ef4444; }
+
+.btn { border: none; cursor: pointer; font-weight: 500; padding: 1rem; font-size: 1rem; border-radius: 10px; transition: all .2s ease; background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+.btn:hover { transform: translateY(-2px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn--sm { padding: .5rem 1rem; font-size: .85rem; border-radius: 8px; }
+.btn--danger { background: rgba(239,68,68,.2); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+.btn--ghost { background: none; opacity: .7; }
+.btn--round { width: 64px; height: 64px; border-radius: 50%; font-size: 2rem; padding: 0; position: fixed; bottom: 2rem; right: 2rem; }
+
+.field { display: flex; flex-direction: column; gap: .5rem; }
+.field-label { font-size: .9rem; opacity: .8; }
+.input { padding: .875rem 1rem; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; color: #fff; font-size: 1rem; }
+.input:focus { outline: none; border-color: rgba(102,126,234,.5); }
+
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; justify-content: center; align-items: center; padding: 1rem; z-index: 1000; }
+.modal { background: #2a2a2a; border-radius: 20px; padding: 2rem; width: 100%; max-width: 500px; border: 1px solid rgba(255,255,255,.1); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.modal-title { margin: 0; font-size: 1.5rem; font-weight: 700; }
+.form { display: flex; flex-direction: column; gap: 1.25rem; }

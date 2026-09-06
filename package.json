@@ -1,0 +1,30 @@
+{
+  "name": "mini-q",
+  "version": "0.0.0",
+  "description": "Lib modular e agnóstica para DOM, eventos e componentes com reatividade granular.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./reactive": "./src/reactive.ts",
+    "./events": "./src/events/index.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  },
+  "dependencies": {
+    "@preact/signals-core": "^1.8.0",
+    "csstype": "^3.1.3"
+  }
+}
