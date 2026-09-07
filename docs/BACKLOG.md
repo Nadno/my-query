@@ -21,6 +21,9 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   control/guards); `docs/FLOW.md` (fluxo fundamental) e `docs/TEST-ROADMAP.md` (E1..E5).
 - **2026-09-07** — **E1** do roadmap: contrato de lifecycle fixado (ordem inversa, isolamento de
   erro, no-op fora de escopo, cleanup aninhado ao remover item de região). 53 testes.
+- **2026-09-07** — **E2** do roadmap: contrato de bindings (`reactive.ts`) fixado — `bind` cru=1×
+  vs reativo=effect+cleanup (signal e função), `read`, comportamento sem adapter, `untrack`
+  (delegação vs fallback), `createSignal` lança. 62 testes.
 
 ---
 

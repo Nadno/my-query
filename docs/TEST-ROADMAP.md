@@ -30,7 +30,7 @@ O backbone (escopo + cleanup) é interno e hoje só é exercido de lado. Fixar o
   em `src/element/__tests__/` (região) ou `src/index.test.ts`.
 - **Depende de:** nada. É a base para E4.
 
-## E2 — Contrato de bindings ⬜  ·  `test(reactive):`
+## E2 — Contrato de bindings ✅  ·  `test(reactive):`
 
 A ponte agnóstica de reatividade só é testada via DOM. Pinar direto.
 
