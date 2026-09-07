@@ -12,7 +12,7 @@ Legenda de estado: ⬜ a fazer · 🟡 em andamento · ✅ feito.
 
 ---
 
-## E1 — Contrato de lifecycle ⬜  ·  `test(lifecycle):`
+## E1 — Contrato de lifecycle ✅  ·  `test(lifecycle):`
 
 O backbone (escopo + cleanup) é interno e hoje só é exercido de lado. Fixar o contrato.
 

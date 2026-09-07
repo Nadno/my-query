@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@preact/signals-core';
 import $ from '../../index';
 import { preact } from '../../adapters/preact';
@@ -96,5 +96,56 @@ describe('bug 2: reconcile só move nós fora de posição (preserva foco)', () 
       'inp-2',
     ]);
     expect(document.activeElement).toBe(n2); // nó reusado manteve o foco
+  });
+});
+
+describe('escopos aninhados: cleanup dispara ao remover item da região', () => {
+  it('effect de um binding dentro do item para quando o item é removido', () => {
+    const tick = signal(0);
+    const runs: Record<number, number> = {};
+    const items = signal([{ id: 1 }, { id: 2 }]);
+
+    const Row = (p: { id: number }) =>
+      $.div({
+        id: `d${p.id}`,
+        $class: () => {
+          runs[p.id] = (runs[p.id] ?? 0) + 1; // conta as execuções do effect deste item
+          return `c${tick.value}`;
+        },
+      });
+
+    const App = () =>
+      $.div({}, () => items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
+    $.mount(document.body, App);
+
+    expect(runs[1]).toBe(1);
+    expect(runs[2]).toBe(1);
+
+    tick.value = 1; // ambos os effects vivos re-rodam
+    expect(runs[1]).toBe(2);
+    expect(runs[2]).toBe(2);
+
+    items.value = [{ id: 1 }]; // remove o item 2 → disposeScope do sub-escopo dele
+    tick.value = 2;
+    expect(runs[1]).toBe(3); // item vivo segue reagindo
+    expect(runs[2]).toBe(2); // effect do item removido foi descartado (congelou)
+  });
+
+  it('cleanup de um behavior use dispara ao remover o item', () => {
+    const spies: Record<number, ReturnType<typeof vi.fn>> = { 1: vi.fn(), 2: vi.fn() };
+    const items = signal([{ id: 1 }, { id: 2 }]);
+
+    const Row = (p: { id: number }) => $.div({ id: `u${p.id}`, use: () => spies[p.id] });
+
+    const App = () =>
+      $.div({}, () => items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
+    $.mount(document.body, App);
+
+    expect(spies[1]).not.toHaveBeenCalled();
+    expect(spies[2]).not.toHaveBeenCalled();
+
+    items.value = [{ id: 1 }]; // remove item 2 → seu cleanup de use roda uma vez
+    expect(spies[2]).toHaveBeenCalledTimes(1);
+    expect(spies[1]).not.toHaveBeenCalled(); // item 1 continua montado
   });
 });

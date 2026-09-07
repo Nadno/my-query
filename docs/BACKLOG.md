@@ -17,6 +17,10 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
 - **2026-09-06** — **Redesenho do módulo de estilos** para o modelo de entidade (`base`/`modifiers`/
   `keyframes` + filhos por chave, retorno `self`/`mods`/`keyframes`, warn de duplicado) + **breakpoints**
   integrados (`$.config` + `@nome` no CSS + `$.media` reativo). 31 testes.
+- **2026-09-07** — Colocação de testes + fatia `element/` em slice (create/props/children/region/
+  control/guards); `docs/FLOW.md` (fluxo fundamental) e `docs/TEST-ROADMAP.md` (E1..E5).
+- **2026-09-07** — **E1** do roadmap: contrato de lifecycle fixado (ordem inversa, isolamento de
+  erro, no-op fora de escopo, cleanup aninhado ao remover item de região). 53 testes.
 
 ---
 
