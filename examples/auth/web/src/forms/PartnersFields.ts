@@ -9,8 +9,8 @@ import { fieldStyle } from '../ui/Field';
 import { createPartner, type PartnerFields } from './model';
 import type { CompanyType } from '../../../shared/types';
 
-const row = $.parts('partner-row', {
-  root: {
+const row = $.style('partner-row', {
+  base: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr auto auto',
     gap: '.75rem',
@@ -19,30 +19,27 @@ const row = $.parts('partner-row', {
     background: 'rgba(255,255,255,.03)',
     borderRadius: 12,
     border: '1px solid var(--line)',
+    '@media (max-width: 720px)': { gridTemplateColumns: '1fr' },
   },
-  admin: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '.4rem',
-    fontSize: '.85rem',
-    padding: '.5rem .75rem',
-    whiteSpace: 'nowrap',
-    background: 'transparent',
-    color: 'inherit',
-    border: '1px solid var(--line)',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-});
-
-$.style('partner-row-admin--on', {
-  borderColor: 'rgba(102,126,234,.6)',
-  background: 'rgba(102,126,234,.15)',
-});
-
-$.style('partner-row', {
-  '@media (max-width: 720px)': {
-    gridTemplateColumns: '1fr',
+  parts: {
+    admin: {
+      base: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '.4rem',
+        fontSize: '.85rem',
+        padding: '.5rem .75rem',
+        whiteSpace: 'nowrap',
+        background: 'transparent',
+        color: 'inherit',
+        border: '1px solid var(--line)',
+        borderRadius: 8,
+        cursor: 'pointer',
+      },
+      flags: {
+        on: { borderColor: 'rgba(102,126,234,.6)', background: 'rgba(102,126,234,.15)' },
+      },
+    },
   },
 });
 
@@ -74,7 +71,7 @@ export function PartnerRow(p: {
   };
 
   return $.div(
-    { class: row.root },
+    { class: row.self },
     Field({
       label: 'Nome',
       error: () => err('name'),
@@ -110,10 +107,8 @@ export function PartnerRow(p: {
     ),
     $.button(
       {
-        class: row.admin,
         type: 'button',
-        $class: () =>
-          $.cx(row.admin, p.partner.isAdmin.value && 'partner-row-admin--on'),
+        $class: () => row.parts.admin({ on: p.partner.isAdmin.value }),
         on: { click: setAdmin },
       },
       () => (p.partner.isAdmin.value ? 'Administrador' : 'Tornar admin'),
@@ -181,7 +176,7 @@ export function PartnersFields(p: {
       () => !!(p.errors.value.partners || p.errors.value.partnersShare || p.errors.value.partnersAdmin),
       () =>
         $.p(
-          { class: fieldStyle.error },
+          { class: fieldStyle.parts.error.self },
           () =>
             p.errors.value.partnersShare ??
             p.errors.value.partnersAdmin ??

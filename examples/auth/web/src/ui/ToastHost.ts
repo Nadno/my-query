@@ -1,8 +1,9 @@
 import $ from 'mini-q';
 import { toasts, type Toast } from '../composables/useToast';
+import { bem } from './theme';
 
-const host = $.parts('toast-host', {
-  root: {
+const host = bem('toast-host', {
+  base: {
     position: 'fixed',
     top: '1rem',
     right: '1rem',
@@ -18,25 +19,24 @@ const host = $.parts('toast-host', {
 });
 
 const item = $.style('toast', {
-  padding: '.85rem 1rem',
-  borderRadius: 12,
-  border: '1px solid var(--line)',
-  background: '#2a2a2a',
-  boxShadow: '0 8px 24px rgba(0,0,0,.35)',
-}) as string;
-
-$.style('toast--error', {
-  borderColor: 'rgba(239,68,68,.4)',
-  color: '#fecaca',
-});
-
-$.style('toast--success', {
-  borderColor: 'rgba(16,185,129,.4)',
-  color: '#a7f3d0',
+  base: {
+    padding: '.85rem 1rem',
+    borderRadius: 12,
+    border: '1px solid var(--line)',
+    background: '#2a2a2a',
+    boxShadow: '0 8px 24px rgba(0,0,0,.35)',
+  },
+  flags: {
+    error: { borderColor: 'rgba(239,68,68,.4)', color: '#fecaca' },
+    success: { borderColor: 'rgba(16,185,129,.4)', color: '#a7f3d0' },
+  },
 });
 
 function ToastItem(t: Toast & { key?: number }) {
-  return $.li({ class: $.cx(item, `toast--${t.type}`) }, t.message);
+  return $.li(
+    { class: item(t.type === 'error' ? { error: true } : { success: true }) },
+    t.message,
+  );
 }
 
 export function ToastHost() {

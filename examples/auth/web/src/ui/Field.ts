@@ -1,25 +1,31 @@
 import $ from 'mini-q';
 
-export const fieldStyle = $.parts('field', {
-  root: { display: 'flex', flexDirection: 'column', gap: '.5rem', flex: '1 1 180px' },
-  label: { fontSize: '.9rem', opacity: 0.8 },
-  error: { margin: 0, color: 'var(--danger)', fontSize: '.85rem' },
-  hint: { margin: 0, opacity: 0.65, fontSize: '.8rem' },
+export const fieldStyle = $.style('field', {
+  base: { display: 'flex', flexDirection: 'column', gap: '.5rem', flex: '1 1 180px' },
+  parts: {
+    label: { base: { fontSize: '.9rem', opacity: 0.8 } },
+    error: { base: { margin: 0, color: 'var(--danger)', fontSize: '.85rem' } },
+    hint: { base: { margin: 0, opacity: 0.65, fontSize: '.8rem' } },
+  },
+  flags: { invalid: {} },
 });
 
-$.css('.field--invalid .input', { borderColor: 'rgba(239,68,68,.55)' });
+// override cross-bloco: input inválido (o control é o bloco `input`, não uma parte de `field`)
+$.style.css('.field.--invalid .input', { borderColor: 'rgba(239,68,68,.55)' });
 
 export const inputClass = $.style('input', {
-  padding: '.875rem 1rem',
-  background: 'rgba(255,255,255,.05)',
-  border: '1px solid var(--line)',
-  borderRadius: 10,
-  color: 'var(--fg)',
-  fontSize: '1rem',
-  width: '100%',
-  '&:focus': { outline: 'none', borderColor: 'rgba(102,126,234,.5)' },
-  '&:disabled': { opacity: 0.6 },
-});
+  base: {
+    padding: '.875rem 1rem',
+    background: 'rgba(255,255,255,.05)',
+    border: '1px solid var(--line)',
+    borderRadius: 10,
+    color: 'var(--fg)',
+    fontSize: '1rem',
+    width: '100%',
+    '&:focus': { outline: 'none', borderColor: 'rgba(102,126,234,.5)' },
+    '&:disabled': { opacity: 0.6 },
+  },
+}).self;
 
 export function Field(p: {
   label: string;
@@ -29,18 +35,17 @@ export function Field(p: {
 }) {
   return $.div(
     {
-      $class: () =>
-        $.cx(fieldStyle.root, p.error?.() && 'field--invalid'),
+      $class: () => $.cx(fieldStyle.self, p.error?.() && fieldStyle.flags.invalid),
     },
-    $.label({ class: fieldStyle.label }, p.label),
+    $.label({ class: fieldStyle.parts.label.self }, p.label),
     p.control,
     $.when(
       () => !!(p.hint && p.hint() && !p.error?.()),
-      () => $.p({ class: fieldStyle.hint }, () => p.hint?.() ?? ''),
+      () => $.p({ class: fieldStyle.parts.hint.self }, () => p.hint?.() ?? ''),
     ),
     $.when(
       () => !!p.error?.(),
-      () => $.p({ class: fieldStyle.error }, () => p.error?.() ?? ''),
+      () => $.p({ class: fieldStyle.parts.error.self }, () => p.error?.() ?? ''),
     ),
   );
 }

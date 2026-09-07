@@ -28,8 +28,8 @@ export const btnClass = $.style('btn', {
       md: { padding: '1rem', fontSize: '1rem', borderRadius: 10 },
     },
   },
-  defaultVariants: { variant: 'primary', size: 'md' },
-}) as (p?: Record<string, string>) => string;
+  defaults: { variant: 'primary', size: 'md' },
+});
 
 export function Button(p: {
   type?: 'button' | 'submit';
