@@ -240,32 +240,62 @@ unmount(); // roda TODOS os cleanups (effects, listeners, custom events, behavio
 
 ---
 
-## 11. CSS — `$.style` / `$.parts` / `$.cx`
+## 11. CSS — `$.style` (namespace) / `$.cx`
 
-> A **engine de CSS é pós-MVP**: hoje estas funções só devolvem **nomes de classe legíveis** (você escreve
-> o CSS num `.css` à parte). A DX/assinatura já é a final.
+`$.style(name, config)` devolve um **`StyleHandle`** único e **injeta** as regras num
+`<style id="mq-styles">`. O handle é *callable* e carrega `self` / `parts` / `flags` /
+`variants` / `keyframes`. Objetos JS: camelCase, números viram `px` (exceto unitless como
+`opacity`/`zIndex`/`lineHeight`), aninhamento com `&` (`&:hover`, `& .filho`) e um nível de
+`@media`/`@supports`. **Partes e variantes coexistem** (chaves reservadas explícitas):
+
+| chave | o que faz | CSS emitido |
+|---|---|---|
+| `base` | declarações do bloco (escalares/`&`/`@` no topo também valem) | `.bloco { … }` |
+| `parts` | partes descendentes (recursivo) | `.bloco .-bloco-parte { … }` |
+| `flags` | flags booleanas independentes | `.bloco.--flag { … }` |
+| `variants` | grupos exclusivos | `.bloco.--grupo-valor { … }` |
+| `defaults` | valor default por grupo de variante | — |
+| `keyframes` | animação escopada por bloco | `@keyframes bloco-nome { … }` |
 
 ```ts
-$.style('card', { padding: 16 });          // → 'card'
-$.parts('card', { root: {}, title: {}, body: {} });
-// → { root: 'card', title: 'card-title', body: 'card-body' }  (padrão BEM legível)
-
-const btn = $.style('btn', {
-  base: {}, variants: { size: { sm: {}, md: {} } }, defaultVariants: { size: 'md' },
+const field = $.style('field', {
+  base: { display: 'flex', flexDirection: 'column' },
+  parts: {
+    input: { base: { padding: 8 } },
+    error: { base: { color: 'var(--danger)' } },
+  },
+  flags: { invalid: { parts: { input: { borderColor: 'red' } } } },
+  variants: { size: { sm: { gap: 4 }, md: { gap: 8 } } },
+  defaults: { size: 'md' },
 });
-btn({ size: 'sm' }); // → 'btn btn--sm'
 ```
-
-**Padrão de entidade** (convenção, não runtime): agrupe as peças de uma entidade num objeto que
-carrega o nome:
+```css
+.field { display: flex; flex-direction: column; }
+.field .-field-input { padding: 8px; }
+.field .-field-error { color: var(--danger); }
+.field.--invalid .-field-input { border-color: red; }
+.field.--size-sm { gap: 4px; }   .field.--size-md { gap: 8px; }
+```
 
 ```ts
-const Card = {
-  style: $.parts('card', { root: {}, title: {} }),
-  on: $.handlers({ open, close }),
-  view: (p) => $.article({ class: Card.style.root, on: { click: Card.on.open } }, p.title),
-};
+field.self                    // 'field'
+field.parts.input.self        // '-field-input'
+field.flags.invalid           // '--invalid'
+field.variants.size.sm        // '--size-sm'
+field({ size: 'sm' })         // 'field --size-sm'  (callable monta a string)
+$class: () => $.cx(field.self, err.value && field.flags.invalid)
 ```
+
+- Parte = nome **completo do bloco** + chave, em **toda profundidade** (`-field-input`); combinador
+  descendente automático; mover parte de nível não renomeia.
+- Flag/variante aceitam `parts: { … }` p/ **override de parte descendente** (`.bloco.--flag .-bloco-parte`).
+- Bloco simples também devolve StyleHandle: use `.self` (ou chame `bloco()`), não a referência crua.
+- `$.style(name)` sem config apenas **reserva** o nome (string).
+- **Globais / escape hatch**: `$.style.css('body', { margin: 0 })`.
+- Nome duplicado → `console.warn`; chave-objeto inesperada no topo (parte fora de `parts`) → `console.warn`.
+
+> **Deprecados** (alias por 1 versão): `$.parts(name, tree)` → `$.style(name, { parts: tree })`;
+> `$.css(sel, obj)` → `$.style.css(sel, obj)`.
 
 ---
 
@@ -316,7 +346,7 @@ $.mount('#app', App);
 5. **Custom events** (que disparam) vão em `on`; **behaviors** (que só se comportam) vão em `use`.
 6. **Listas**: `() => arr.map(x => [Component, { ...x, key: x.id }])` — sempre com `key`.
 7. **`$.mount` recebe um builder/componente**, não árvore pronta.
-8. **`$.style`/`$.parts` só nomeiam classes** (sem CSS injetado) — escreva o CSS à parte.
+8. **`$.style(name, config)` devolve um StyleHandle** (`self`/`parts`/`flags`/`variants`) e injeta o CSS; globais com `$.style.css`.
 
 ---
 
@@ -334,8 +364,10 @@ $.mount('#app', App);
 | `$.model(signal)` | behavior | two-way (input/select/textarea) |
 | `$.show(cond)` | behavior | alterna `hidden` |
 | `$.cx(...)` | → string | classes condicionais |
-| `$.style(name?, config)` | → string \| `(props)=>string` | nomes legíveis; engine pós-MVP |
-| `$.parts(name?, config)` | → `{ parte: classe }` | `root`→`name`, resto→`name-parte` |
+| `$.style(name, config)` | → `StyleHandle` | callable + `self`/`parts`/`flags`/`variants`/`keyframes`; injeta CSS |
+| `$.style(name)` | → string | só reserva o nome |
+| `$.style.css(selector, obj)` | → void | estilo global / escape hatch (seletor cru) |
+| `$.parts` / `$.css` | *deprecados* | alias p/ `$.style(…, {parts})` / `$.style.css` |
 | `$.registerCustomEvent(name, source)` | `(target, emit) => cleanup` | novo custom event |
 
 Props especiais: `class`/`$class`, `style`/`$style`, `data`/`$data`, `on`, `use`, `key`. Qualquer outra chave = atributo (com `$` = reativo).
@@ -344,7 +376,7 @@ Props especiais: `class`/`$class`, `style`/`$style`, `data`/`$data`, `on`, `use`
 
 ## Ainda não implementado
 
-- **Engine de CSS** (`$.style`/`$.parts` não injetam regras — só nomeiam).
+- **Engine de CSS avançada** (tokens, SSR, GC de regras, compound variants, prefixo/namespace configurável).
 - **Delegation de eventos** e **dedup de handlers** (o runtime de eventos é enxuto).
 - **Cache de ramo do `$.when`** (recria a subárvore ao alternar — não preserva estado interno).
 - **API de manipulação estilo jQuery** (`append/remove/text`…) — use `$.mount` + render reativo.

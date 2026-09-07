@@ -12,14 +12,13 @@ Legenda: **A** = afirma algo falso (corrigir já que induz a erro) · **F** = fa
 
 Defasou com o **redesenho de estilos** e os **fixes de runtime** (2026-09-06).
 
-- [ ] **A** §11 CSS: descreve `$.style`/`$.parts` como **nomes-only, engine pós-MVP**. Hoje é **modelo de
-  entidade com injeção real**: `base`/`modifiers`/`keyframes` + filhos por chave; retorno `self`/`mods`/
-  `keyframes` (folha=string); modificador = classe composta `.bloco.--nome`. Reescrever a seção.
-- [ ] **A** §11: exemplos `$.parts('card', { root, title })` → `.root`/`name-part`. Agora `$.style('card', { title:{} })`
-  → `card.self` / `-card-title`. `$.parts` é **alias deprecated**.
-- [ ] **A** Regras de ouro (item 8): "`$.style`/`$.parts` só nomeiam classes (sem CSS injetado)". Falso agora — injeta.
-- [ ] **A** §"Ainda não implementado": remove "Engine de CSS" (feito). Manter: `$.when` sem cache de ramo,
-  delegation/dedup de eventos, jQuery-like ausente.
+- [x] **A** §11 CSS: reescrita p/ o **namespace** (2026-09-06): `$.style(name, config)` → `StyleHandle`
+  (callable + `self`/`parts`/`flags`/`variants`/`keyframes`); `base`/`parts`/`flags`/`variants`/`defaults`/`keyframes`;
+  parte = nome completo do bloco; `$.style.css` global. Partes e variantes coexistem.
+- [x] **A** §11: exemplos migrados de `$.parts('card', { root, title })` p/ `$.style('field', { parts:{…} })`
+  → `field.self` / `field.parts.input.self`. `$.parts`/`$.css` = **alias deprecated** (documentado).
+- [x] **A** Regras de ouro (item 8): reescrito — `$.style` devolve StyleHandle e injeta; globais em `$.style.css`.
+- [x] **A** §"Ainda não implementado": "Engine de CSS" removido; keyframes já feito. Mantidos os demais débitos.
 - [ ] **F** Breakpoints: documentar `$.config({ breakpoints })`, `@nome`/`@número` no CSS, e `$.media(nome|query)` → signal.
 - [ ] **F** §1 Setup / adapter: contrato ganhou `untrack?` e `signal?` (necessário p/ `$.media`); mencionar.
 - [ ] **F** Referência rápida: adicionar `$.config`, `$.media`; ajustar linha de `$.style`/`$.parts`.

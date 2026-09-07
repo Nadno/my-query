@@ -72,6 +72,19 @@ engine opcional para dinâmico; plugin de build depois). **Decidir o modelo de a
 
 </details>
 
+## ✅ `$.style` como namespace (P1) — IMPLEMENTADO (2026-09-06) — `docs/proposals/style-namespace.md`
+
+Redesenho do estilo p/ namespace callable: `$.style(name, { base, parts, flags, variants, defaults, keyframes })`,
+retorno `StyleHandle` único (callable + `.self`/`.parts`/`.flags`/`.variants`/`.keyframes`), `$.style.css`.
+Partes e variantes **coexistem**; chave-objeto inesperada no topo → `warn` (não vira parte silenciosa).
+Decisões do usuário travadas: **nome completo do bloco sempre** (`-category-card-title`, depth-independent),
+**combinador descendente automático** (mantido), **keyframes na árvore** (não içado). `$.parts`/`$.css` = alias
+deprecado por 1 versão. Migrados os 8 call-sites de `examples/auth` (Field/Stepper/Button/theme/etc.) + docs
+(USAGE §11, GLOSSARY, referência). Testes reescritos (33 verdes), typecheck + build ok.
+
+Pendências que **ficaram** (não faziam parte do núcleo): `$.handlers` (raiz) ainda não migrado p/ `$.handle.handlers`;
+prefixo/namespace configurável; GC de regras; SSR; compound variants.
+
 ## Eventos — migração ficou enxuta (P2)
 
 Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` antigo. Faltam:

@@ -42,24 +42,26 @@ Cada termo: **nome** — definição curta · `token de código`.
 
 - **Behavior (`use`)** — comportamento pós-criação que **não dispara**; recebe `ctx`, retorna cleanup. · `use: $.model(sig)`, `$.show(cond)`
 
-## Estilo / CSS (modelo de entidade)
+## Estilo / CSS (namespace de entidade)
 
 Filosofia: **caixas maiores compostas por caixas menores.** Hierarquia semântica (convenção, não imposta):
 **Layout** ⊃ **Componente** ⊃ **Elemento visual**; e Componente pode conter Componente.
 
-- **Entidade** — a unidade de `$.style(nome, árvore)`: uma "caixa" com identidade e partes. · `$.style('category-card', {...})`
-- **Bloco** — a entidade raiz; nome de 2 palavras `escopo-elemento`. · `category-card`
+- **`style` (namespace)** — subsistema de CSS na raiz: `$.style(nome, config)` define entidade e injeta; `$.style.css(sel, obj)` = escape hatch global. · `$.style('category-card', {...})`
+- **StyleHandle** — o retorno de `$.style(nome, config)`: **callable** (`field({ size })` → string de classes) que carrega `self`/`parts`/`flags`/`variants`/`keyframes`.
+- **Bloco** — a entidade raiz; nome `escopo-elemento`. · `category-card`
 - **Tipos de bloco (semântica, convenção):**
   - **Layout** — estrutura/posição/espaçamento (`header`, `grid`, `sidebar`); contém outros blocos.
   - **Componente** — pedaço reutilizável e com comportamento (`category-card`); cuida do conteúdo interno.
-  - **Elemento visual** — parte interna nomeada de um bloco (os filhos/netos).
-- **Elemento visual (do nome)** — última palavra do bloco (`card`); base do nome dos filhos (`-card-title`).
-- **self** — a classe da própria caixa. · `card.self` → `'category-card'`
-- **Parte** — filho/neto da entidade (classe prefixada `-`). Filho de 1 palavra ganha o elemento (`-card-title`); neto = 1 palavra (`-description`). · `card.title`, `card.content.description`
-- **Modificador** — estado/variação como **classe composta** `.bloco.--nome` (token em `.mods`). · `card.mods.featured` → `'--featured'`
-- **Keyframe escopado** — animação nomeada `bloco-nome`. · `card.keyframes.pulse` → `'category-card-pulse'`
-- **Combinador** — relação parte↔pai no CSS: **descendente** (default, espaço) ou **filho-direto** (opt-in por parte, ver backlog `'>parte'`).
-- **`base` / `modifiers` / `keyframes`** — chaves reservadas da árvore de entidade (o resto = partes-filhas).
+  - **Elemento visual** — parte interna nomeada de um bloco (as partes).
+- **self** — a classe da própria caixa. · `card.self` → `'category-card'`; parte: `card.parts.title.self` → `'-category-card-title'`
+- **Parte** — descendente da entidade (sob `parts`, recursivo): classe = **nome completo do bloco** + chave em toda profundidade (`-category-card-title`), combinador descendente automático. · `card.parts.content.parts.description`
+- **Flag** — estado booleano **independente** como classe composta `.bloco.--nome` (token em `.flags`). · `card.flags.featured` → `'--featured'`
+- **Variante** — grupo **exclusivo** como classe composta `.bloco.--grupo-valor` (token em `.variants`). · `btn.variants.size.sm` → `'--size-sm'`; `defaults` = valor default por grupo
+- **Override de parte em flag/variante** — `flags.x.parts.p` / `variants.g.v.parts.p` emite `.bloco.--x .-bloco-p`.
+- **Keyframe escopado** — animação (na árvore, chave `keyframes`) nomeada `bloco-nome`. · `card.keyframes.pulse` → `'category-card-pulse'`
+- **Chaves reservadas** — `base` / `parts` / `flags` / `variants` / `defaults` / `keyframes`; escalares/`&`/`@` no topo = declarações do bloco. Chave-objeto inesperada no topo → `console.warn` (não vira parte silenciosa).
+- **Deprecados** — `$.parts(nome, tree)` → `$.style(nome, { parts: tree })`; `$.css` → `$.style.css` (alias por 1 versão).
 
 ## Breakpoints
 
