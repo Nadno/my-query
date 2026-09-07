@@ -88,9 +88,38 @@ Cenários que cruzam slices — pegam regressões que o unit não pega.
   fluxos do app.
 - **Depende de:** idealmente após E1–E4 (usa os contratos já fixados).
 
+## E6 — Eventos & `handle` (tratamento da lib dom-events) ⬜  ·  `test(events):` + `feat(events):`
+
+A slice `events/` é o tratamento de eventos via **`handle`** (modificadores composáveis + custom
+events). Hoje só é tocada de lado ([index.test.ts](../src/index.test.ts): "handler simples" e um
+array de mods) e carrega pendências de design herdadas do `old-my-query/dom-events`. Etapa dupla:
+**fixar o contrato atual** e **decidir os pendentes**.
+
+- **Casos de teste** (colocados em `src/events/__tests__/`):
+  - `handle`/`compose`: **ordem** de composição (o 1º modificador é o mais externo → roda primeiro);
+    forma callable `handle(fn, ...mods)` (hoje só a forma array em `on:` é testada).
+  - Modificadores: `prevent`/`stop`/`self`/`keys`/`alt`/`ctrl`/`shift`/`meta`; `debounce`/`throttle`
+    com `vi.useFakeTimers()`.
+  - `handle.handlers({...})`: specs função **e** `[handler, ...mods]`; reuso/nomeação.
+  - `applyEvents`: roteamento nativo vs custom; `options` (`once`/`capture`/`passive`); **cleanup
+    remove o listener no unmount** (liga com E1); custom event → `getCustomEvent` + cleanup da fonte.
+  - Custom events built-in: `clickOutside`/`focusOutside`/`hover` (montam/limpam listener global;
+    disparam para fora/dentro); `registerCustomEvent`/`getCustomEvent`.
+- **Decisões pendentes** (design, a resolver no planejamento da etapa — origem no `old-my-query`
+  e nas notas do projeto):
+  - `$.handlers` (raiz) → migrar para `$.handle.handlers` (canônico) e **deprecar** a raiz.
+  - **Delegation** + **dedup via `DOMHandlerStore`** (hoje "lean in-house": 1 listener por
+    elemento×evento) — avaliar trazer de `old-my-query/dom-events`.
+  - `hover` touch (hold-to-hover) — falta o caminho touch.
+- **Onde:** testes em `src/events/__tests__/` (`handle`/`apply`/`custom`); refactor/feature em
+  `feat(events):` separado dos testes.
+- **Depende de:** E1 (cleanup) para os testes de remoção de listener.
+
 ---
 
 ## Ordem sugerida
 
-`E1 → E2 → E3 → E4 → E5`. E1–E3 são independentes e podem trocar de ordem; E4 usa E1; E5 fecha.
-Cada uma vira seu próprio commit e uma linha no §Progresso do [BACKLOG.md](BACKLOG.md) ao concluir.
+`E1 → E2 → E3 → E4 → E5 → E6`. E1–E3 são independentes e podem trocar de ordem; E4 usa E1; E5 fecha
+os fluxos cruzados; E6 (eventos/`handle`) também usa E1 e pode entrar antes de E5 se preferir atacar
+a slice de eventos mais cedo. Cada uma vira seu próprio commit e uma linha no §Progresso do
+[BACKLOG.md](BACKLOG.md) ao concluir.
