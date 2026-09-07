@@ -1,5 +1,7 @@
 # mini-q — Padrão estrutural (colocation + feature-sliced)
 
+> Onde o código **mora**. Para como ele **flui** (de `$.mount` a `unmount`), veja [FLOW.md](FLOW.md).
+
 Como o código de `src/` é organizado. Duas ideias governam tudo:
 
 1. **Colocation** — o que muda junto, mora junto. **Tipos, utils, testes e afins vivem na
@@ -60,12 +62,12 @@ Não promova só por estética: um arquivo coeso de 80 linhas não precisa de pa
 
 | Slice / módulo | Forma | Papel |
 |---|---|---|
+| `element/` | slice (create/props/children/region/control/guards + barril) | construção de nós: `createTag` + props + children + região keyed + `when` |
 | `style/` | slice (emit/build/types + barril) | CSS: `$.style` namespace |
 | `events/` | slice (handle/apply/custom/types + barril) | eventos + custom events + `handle` |
 | `dom/` | pasta (só `nodes.ts`) | primitivas de nó/`cx` |
 | `adapters/` | pasta (só `preact.ts`) | adapters de signal |
 | `reactive.ts` | arquivo | contrato de reatividade (adapter) |
-| `element.ts` | arquivo | `createTag` + children + região keyed + `when` |
 | `mount.ts` / `lifecycle.ts` | arquivos | escopo de montagem/cleanup |
 | `behaviors.ts` | arquivo | `model`/`show` (`use`) |
 | `config.ts` / `media.ts` | arquivos | breakpoints (`$.config` + `@nome` + `$.media`) |
@@ -78,12 +80,14 @@ Não promova só por estética: um arquivo coeso de 80 linhas não precisa de pa
 
 Onde a prática ainda não bateu com o princípio — corrigir aos poucos:
 
-- **`src/__tests__/` é uma árvore paralela.** O ideal é teste colocado (`style/style.test.ts`
-  ou `style/__tests__/`). Migrar por slice quando mexer nela.
+- **~~`src/__tests__/` é uma árvore paralela.~~ Resolvido.** Os testes foram colocados: estilo em
+  `style/__tests__/`, região em `element/__tests__/`, aceite em `demo/pocketfin.test.ts`, e a suíte
+  de integração cross-slice do `$` composto em `src/index.test.ts` (colocada com `index.ts`).
+  `src/__tests__/` não existe mais.
 - **`src/types.ts` é global.** Parte é genuinamente compartilhada (View/`Props`); se algum tipo
   ali pertence a uma slice só, ele deveria descer para a slice.
 - **`config.ts` + `media.ts`** são uma mesma preocupação (breakpoints) espalhada em dois arquivos
   soltos — candidatos a uma slice `breakpoints/` (ou entrar em `style/`, dado o acoplamento via
-  `resolveMedia`).
+  `resolveMedia`). `src/media.test.ts` já está colocado no root e entraria na slice.
 - **`dom/` e `adapters/` são pastas-de-um sem barril.** Ok enquanto tiverem um arquivo; se
   crescerem, ganham `index.ts` como as demais.

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { signal } from '@preact/signals-core';
-import $ from '../index';
-import { preact } from '../adapters/preact';
+import $ from '../../index';
+import { preact } from '../../adapters/preact';
 
 $.useSignal(preact);
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import $ from '../index';
 import { preact } from '../adapters/preact';
-import { App, transactions, balance, modalOpen } from '../demo/pocketfin';
+import { App, transactions, balance, modalOpen } from './pocketfin';
 
 $.useSignal(preact);
 
