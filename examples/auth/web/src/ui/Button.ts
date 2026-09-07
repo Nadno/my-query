@@ -2,15 +2,13 @@ import $ from 'mini-q';
 import type { Bindable } from 'mini-q';
 
 export const btnClass = $.style('btn', {
-  base: {
-    border: 'none',
-    cursor: 'pointer',
-    fontWeight: 500,
-    color: '#fff',
-    transition: 'all .2s ease',
-    '&:hover': { transform: 'translateY(-2px)' },
-    '&:disabled': { opacity: 0.5, cursor: 'not-allowed', transform: 'none' },
-  },
+  border: 'none',
+  cursor: 'pointer',
+  fontWeight: 500,
+  color: '#fff',
+  transition: 'all .2s ease',
+  '&:hover': { transform: 'translateY(-2px)' },
+  '&:disabled': { opacity: 0.5, cursor: 'not-allowed', transform: 'none' },
   variants: {
     variant: {
       primary: {

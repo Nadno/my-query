@@ -8,7 +8,7 @@ import { Dashboard } from './screens/Dashboard';
 
 export function App() {
   return $.div(
-    { class: app.root },
+    { class: app },
     ToastHost(),
     $.when(
       isAuthenticated,

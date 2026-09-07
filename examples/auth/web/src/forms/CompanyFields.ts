@@ -25,7 +25,7 @@ export function CompanyFields<T extends CompanyFormValues>(p: {
   };
 
   return $.div(
-    { class: form.root, use: p.emailAsync.use },
+    { class: form, use: p.emailAsync.use },
     Field({
       label: 'Razão social',
       error: () => (p.form.touched.value.companyName ? companyName.error() : ''),

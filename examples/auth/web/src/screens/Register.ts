@@ -74,7 +74,7 @@ export function Register() {
   });
 
   return $.div(
-    { class: card.root },
+    { class: card },
     $.h1({ class: card.title }, 'Cadastrar empresa'),
     $.p({ class: card.muted }, 'PJ multi-step — os mesmos campos são reusados na área interna.'),
     Stepper({
@@ -82,7 +82,7 @@ export function Register() {
       labels: ['Empresa', 'Sócios', 'Acesso'],
     }),
     $.form(
-      { class: form.root, on: { submit: [submit, $.handle.prevent] } },
+      { class: form, on: { submit: [submit, $.handle.prevent] } },
       $.when(
         () => step.value === 0,
         () => CompanyFields({ form: formApi, emailAsync }),
@@ -133,7 +133,7 @@ export function Register() {
       ),
     ),
     $.p(
-      { class: authGate.switch },
+      { class: authGate.self },
       'Já tem conta? ',
       $.button(
         {

@@ -28,11 +28,11 @@ export function Login() {
   };
 
   return $.div(
-    { class: card.root },
+    { class: card },
     $.h1({ class: card.title }, 'Entrar'),
     $.p({ class: card.muted }, 'Sessão JWT com refresh em cookie.'),
     $.form(
-      { class: form.root, on: { submit: [submit, $.handle.prevent] } },
+      { class: form, on: { submit: [submit, $.handle.prevent] } },
       Field({
         label: 'E-mail',
         control: TextInput({
@@ -57,7 +57,7 @@ export function Login() {
       }),
     ),
     $.p(
-      { class: authGate.switch },
+      { class: authGate.self },
       'Não tem conta? ',
       $.button(
         {

@@ -59,9 +59,9 @@ export function Dashboard() {
   });
 
   return $.div(
-    { class: form.root },
+    { class: form },
     $.header(
-      { class: header.root },
+      { class: header },
       $.div(
         {},
         $.h1({ class: header.title }, () => auth.user.value?.companyName ?? ''),
@@ -87,7 +87,7 @@ export function Dashboard() {
       }),
     ),
     $.section(
-      { class: card.root },
+      { class: card },
       $.h2({ class: card.title }, 'Empresa'),
       $.p(
         { class: card.muted },
@@ -104,11 +104,11 @@ export function Dashboard() {
       ),
     ),
     $.section(
-      { class: card.root },
+      { class: card },
       $.h2({ class: card.title }, 'Editar perfil'),
       $.p({ class: card.muted }, 'Reusa os mesmos campos do cadastro.'),
       $.form(
-        { class: form.root, on: { submit: [save, $.handle.prevent] } },
+        { class: form, on: { submit: [save, $.handle.prevent] } },
         CompanyFields({ form: formApi, emailAsync }),
         PartnersFields({
           partners: formApi.fields.partners,

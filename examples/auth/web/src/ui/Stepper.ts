@@ -1,25 +1,21 @@
 import $ from 'mini-q';
 
 export const stepperStyle = $.style('stepper', {
-  base: {
-    listStyle: 'none',
-    margin: 0,
-    padding: 0,
-    display: 'flex',
-    gap: '.5rem',
-  },
+  listStyle: 'none',
+  margin: 0,
+  padding: 0,
+  display: 'flex',
+  gap: '.5rem',
   parts: {
     item: {
-      base: {
-        flex: 1,
-        padding: '.6rem .75rem',
-        borderRadius: 10,
-        background: 'rgba(255,255,255,.04)',
-        border: '1px solid var(--line)',
-        fontSize: '.85rem',
-        textAlign: 'center',
-        opacity: 0.6,
-      },
+      flex: 1,
+      padding: '.6rem .75rem',
+      borderRadius: 10,
+      background: 'rgba(255,255,255,.04)',
+      border: '1px solid var(--line)',
+      fontSize: '.85rem',
+      textAlign: 'center',
+      opacity: 0.6,
       flags: {
         active: {
           opacity: 1,
@@ -34,13 +30,10 @@ export const stepperStyle = $.style('stepper', {
 
 export function Stepper(p: { step: () => number; labels: string[] }) {
   return $.ol(
-    { class: stepperStyle.self },
+    { class: stepperStyle },
     ...p.labels.map((label, i) =>
       $.li(
-        {
-          $class: () =>
-            stepperStyle.parts.item({ active: p.step() === i, done: p.step() > i }),
-        },
+        { $class: () => stepperStyle.item({ active: p.step() === i, done: p.step() > i }) },
         `${i + 1}. ${label}`,
       ),
     ),

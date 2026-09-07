@@ -10,32 +10,28 @@ import { createPartner, type PartnerFields } from './model';
 import type { CompanyType } from '../../../shared/types';
 
 const row = $.style('partner-row', {
-  base: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr auto auto',
-    gap: '.75rem',
-    alignItems: 'end',
-    padding: '1rem',
-    background: 'rgba(255,255,255,.03)',
-    borderRadius: 12,
-    border: '1px solid var(--line)',
-    '@media (max-width: 720px)': { gridTemplateColumns: '1fr' },
-  },
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr auto auto',
+  gap: '.75rem',
+  alignItems: 'end',
+  padding: '1rem',
+  background: 'rgba(255,255,255,.03)',
+  borderRadius: 12,
+  border: '1px solid var(--line)',
+  '@media (max-width: 720px)': { gridTemplateColumns: '1fr' },
   parts: {
     admin: {
-      base: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '.4rem',
-        fontSize: '.85rem',
-        padding: '.5rem .75rem',
-        whiteSpace: 'nowrap',
-        background: 'transparent',
-        color: 'inherit',
-        border: '1px solid var(--line)',
-        borderRadius: 8,
-        cursor: 'pointer',
-      },
+      display: 'flex',
+      alignItems: 'center',
+      gap: '.4rem',
+      fontSize: '.85rem',
+      padding: '.5rem .75rem',
+      whiteSpace: 'nowrap',
+      background: 'transparent',
+      color: 'inherit',
+      border: '1px solid var(--line)',
+      borderRadius: 8,
+      cursor: 'pointer',
       flags: {
         on: { borderColor: 'rgba(102,126,234,.6)', background: 'rgba(102,126,234,.15)' },
       },
@@ -71,7 +67,7 @@ export function PartnerRow(p: {
   };
 
   return $.div(
-    { class: row.self },
+    { class: row },
     Field({
       label: 'Nome',
       error: () => err('name'),
@@ -108,7 +104,7 @@ export function PartnerRow(p: {
     $.button(
       {
         type: 'button',
-        $class: () => row.parts.admin({ on: p.partner.isAdmin.value }),
+        $class: () => row.admin({ on: p.partner.isAdmin.value }),
         on: { click: setAdmin },
       },
       () => (p.partner.isAdmin.value ? 'Administrador' : 'Tornar admin'),
@@ -139,8 +135,8 @@ export function PartnersFields(p: {
   };
 
   return $.div(
-    { class: form.root },
-    $.ul({ class: form.root, style: { listStyle: 'none', margin: 0, padding: 0 } }, () =>
+    { class: form },
+    $.ul({ class: form, style: { listStyle: 'none', margin: 0, padding: 0 } }, () =>
       p.partners.value.map(
         (partner) =>
           [
@@ -176,7 +172,7 @@ export function PartnersFields(p: {
       () => !!(p.errors.value.partners || p.errors.value.partnersShare || p.errors.value.partnersAdmin),
       () =>
         $.p(
-          { class: fieldStyle.parts.error.self },
+          { class: fieldStyle.error },
           () =>
             p.errors.value.partnersShare ??
             p.errors.value.partnersAdmin ??

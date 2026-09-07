@@ -9,7 +9,7 @@ export function AccessFields(p: { form: FormApi<RegisterFormValues> }) {
   const password = useField(p.form, 'password');
   const confirm = useField(p.form, 'confirmPassword');
   return $.div(
-    { class: form.root },
+    { class: form },
     Field({
       label: 'Senha',
       hint: () => 'Mínimo 8 caracteres, com letra e número',
