@@ -49,7 +49,9 @@ export interface MiniQuery extends Factories {
   append: typeof appendChild;
   cx: typeof cx;
   style: typeof style;
+  /** @deprecated Use `$.style(name, { parts: { … } })`. */
   parts: typeof parts;
+  /** @deprecated Use `$.style.css(selector, obj)`. */
   css: typeof css;
   config: typeof config;
   media: typeof media;
@@ -97,7 +99,7 @@ export { registerCustomEvent, getCustomEvent } from './events/custom';
 export { applyUse, model, show } from './behaviors';
 export { cx } from './dom/nodes';
 export { style, parts, css, compile, inject } from './style';
-export type { StyleObject, VariantConfig, VariantFn, EntityTree, StyleReturn } from './style';
+export type { CSSObject, StyleObject, StyleConfig, FlagBody, StyleHandle, StyleApi } from './style';
 export { config } from './config';
 export type { MiniQConfig } from './config';
 export { media } from './media';

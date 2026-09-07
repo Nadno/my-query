@@ -6,81 +6,110 @@ $.useSignal(preact);
 
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';
 
-describe('$.style — entidade: nomes e retorno', () => {
-  it('filho 2 palavras (elemento), filho já-2-palavras preservado, neto 1 palavra', () => {
+describe('$.style — namespace: nomes e retorno', () => {
+  it('self do bloco, partes com nome completo do bloco em toda profundidade, keyframes escopado', () => {
     const card = $.style('category-card', {
       base: { padding: 16 },
-      modifiers: { featured: { borderColor: 'gold' } },
+      flags: { featured: { borderColor: 'gold' } },
       keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
-      title: { base: { fontWeight: 700 } },
-      cardContent: { base: {} },
-      content: {
-        base: { color: '#333' },
-        description: { base: { opacity: 0.8 } },
+      parts: {
+        title: { base: { fontWeight: 700 } },
+        content: {
+          base: { color: '#333' },
+          parts: { description: { base: { opacity: 0.8 } } },
+        },
       },
     });
 
     expect(card.self).toBe('category-card');
-    expect(card.title).toBe('-card-title'); // 1 palavra → prefixa elemento
-    expect(card.cardContent).toBe('-card-content'); // já 2 palavras → só prefixo
-    expect(card.content.self).toBe('-card-content');
-    expect(card.content.description).toBe('-description'); // neto → 1 palavra
-    expect(card.mods.featured).toBe('--featured');
+    expect(card.parts.title.self).toBe('-category-card-title'); // nome completo do bloco
+    expect(card.parts.content.self).toBe('-category-card-content');
+    expect(card.parts.content.parts.description.self).toBe('-category-card-description'); // neto: mesmo prefixo
+    expect(card.flags.featured).toBe('--featured');
     expect(card.keyframes.pulse).toBe('category-card-pulse');
   });
 
-  it('folha sem filhos/mods/keyframes = string', () => {
+  it('bloco simples devolve StyleHandle callable (self + call)', () => {
     const input = $.style('text-input', { base: { padding: 8 } });
-    expect(input).toBe('text-input');
+    expect(input.self).toBe('text-input');
+    expect(input()).toBe('text-input');
+  });
+
+  it('só o nome (sem config) apenas reserva a string', () => {
+    expect($.style('bare-name')).toBe('bare-name');
   });
 });
 
 describe('$.style — CSS gerado', () => {
-  it('caminho descendente, pseudo via &, modificador composto, override de filho, keyframes', () => {
+  it('caminho descendente, pseudo via &, flag composta, override de parte em flag, keyframes', () => {
     $.style('category-card', {
       base: { padding: 16, '&:hover': { boxShadow: '0 0 0' } },
-      modifiers: { featured: { borderColor: 'gold' } },
+      flags: { featured: { borderColor: 'gold' } },
       keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
-      title: { base: { fontWeight: 700 } },
-      content: { base: {}, description: { base: { opacity: 0.8 } } },
+      parts: {
+        title: { base: { fontWeight: 700 } },
+        content: { parts: { description: { base: { opacity: 0.8 } } } },
+      },
     });
     $.style('field', {
-      base: {},
-      input: { base: {} },
-      modifiers: { invalid: { input: { borderColor: 'red' } } },
+      parts: { input: { base: {} } },
+      flags: { invalid: { parts: { input: { borderColor: 'red' } } } },
     });
 
     const css = sheet();
     expect(css).toContain('.category-card { padding: 16px; }');
     expect(css).toContain('.category-card:hover { box-shadow: 0 0 0; }');
     expect(css).toContain('.category-card.--featured { border-color: gold; }');
-    expect(css).toContain('.category-card .-card-title { font-weight: 700; }');
-    expect(css).toContain('.category-card .-card-content .-description { opacity: 0.8; }');
+    expect(css).toContain('.category-card .-category-card-title { font-weight: 700; }');
+    expect(css).toContain(
+      '.category-card .-category-card-content .-category-card-description { opacity: 0.8; }',
+    );
     expect(css).toMatch(/@keyframes category-card-pulse \{ from \{ opacity: 0\.6; \} to \{ opacity: 1; \} \}/);
-    // override de filho dentro de modificador
+    // override de parte dentro de flag
     expect(css).toContain('.field.--invalid .-field-input { border-color: red; }');
   });
 });
 
-describe('$.style — variants (cva) preservado', () => {
-  it('config com `variants` retorna função de classes', () => {
+describe('$.style — flags e variants coexistem', () => {
+  it('bloco com partes E variantes E flags no mesmo config', () => {
     const btn = $.style('btn', {
       base: { border: 'none' },
+      parts: { icon: { base: { width: 16 } } },
       variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
-      defaultVariants: { size: 'md' },
+      flags: { block: { display: 'block' } },
+      defaults: { size: 'md' },
     });
-    expect(typeof btn).toBe('function');
-    expect(btn()).toBe('btn btn--md');
-    expect(btn({ size: 'sm' })).toBe('btn btn--sm');
+
+    // partes NÃO são descartadas quando há variants (defeito antigo)
+    expect(btn.parts.icon.self).toBe('-btn-icon');
+    expect(btn.variants.size.sm).toBe('--size-sm');
+    expect(btn.flags.block).toBe('--block');
+
+    expect(btn()).toBe('btn --size-md'); // default aplicado
+    expect(btn({ size: 'sm' })).toBe('btn --size-sm');
+    expect(btn({ size: 'sm', block: true })).toBe('btn --size-sm --block');
+
+    const css = sheet();
+    expect(css).toContain('.btn.--size-sm { padding: 4px; }');
+    expect(css).toContain('.btn.--block { display: block; }');
+    expect(css).toContain('.btn .-btn-icon { width: 16px; }');
   });
 });
 
-describe('$.style — warn de nome duplicado', () => {
+describe('$.style — warn de nome duplicado e chave inesperada', () => {
   it('avisa quando o mesmo bloco é registrado 2×', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     $.style('dup-block', { base: {} });
     $.style('dup-block', { base: {} });
     expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+  });
+
+  it('avisa (não descarta em silêncio) chave-objeto inesperada no topo', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // `title` deveria estar sob `parts` — antes virava parte silenciosa
+    $.style('warn-block', { title: { fontWeight: 700 } });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"title"'));
     warn.mockRestore();
   });
 });

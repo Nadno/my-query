@@ -190,17 +190,18 @@ describe('behaviors', () => {
 
 describe('style / cx (DX)', () => {
   it('classes legíveis nomeadas', () => {
-    const card = $.style('card', { title: {}, body: {} });
+    const card = $.style('card', { parts: { title: {}, body: {} } });
     expect(card.self).toBe('card');
-    expect(card.title).toBe('-card-title');
-    expect(card.body).toBe('-card-body');
+    expect(card.parts.title.self).toBe('-card-title');
+    expect(card.parts.body.self).toBe('-card-body');
     const btn = $.style('btn', {
       base: {},
       variants: { size: { sm: {}, md: {} } },
-      defaultVariants: { size: 'md' },
+      defaults: { size: 'md' },
     });
     expect(typeof btn).toBe('function');
-    expect((btn as (p?: any) => string)({ size: 'sm' })).toBe('btn btn--sm');
+    expect(btn({ size: 'sm' })).toBe('btn --size-sm');
+    expect(btn()).toBe('btn --size-md');
   });
 
   it('cx compõe condicionais', () => {
@@ -208,26 +209,28 @@ describe('style / cx (DX)', () => {
     void computed;
   });
 
-  it('injeta regras a partir de $.style / $.parts / $.css', () => {
+  it('injeta regras a partir de $.style / $.style.css', () => {
     const cls = $.style('mq-auth-card', {
       padding: 16,
       '&:hover': { color: 'red' },
     });
-    expect(cls).toBe('mq-auth-card');
+    expect(cls.self).toBe('mq-auth-card');
     const sheet = document.getElementById('mq-styles');
     expect(sheet?.textContent).toContain('.mq-auth-card { padding: 16px; }');
     expect(sheet?.textContent).toContain('.mq-auth-card:hover { color: red; }');
 
     const field = $.style('mq-auth-field', {
       display: 'flex',
-      label: { fontSize: 14 },
+      parts: { label: { base: { fontSize: 14 } } },
     });
     expect(field.self).toBe('mq-auth-field');
-    expect(field.label).toBe('-field-label');
+    expect(field.parts.label.self).toBe('-mq-auth-field-label');
     expect(sheet?.textContent).toContain('.mq-auth-field { display: flex; }');
-    expect(sheet?.textContent).toContain('.mq-auth-field .-field-label { font-size: 14px; }');
+    expect(sheet?.textContent).toContain(
+      '.mq-auth-field .-mq-auth-field-label { font-size: 14px; }',
+    );
 
-    $.css('.mq-auth-global', { margin: 0 });
+    $.style.css('.mq-auth-global', { margin: 0 });
     expect(sheet?.textContent).toContain('.mq-auth-global { margin: 0px; }');
   });
 });
