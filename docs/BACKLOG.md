@@ -85,6 +85,26 @@ deprecado por 1 versão. Migrados os 8 call-sites de `examples/auth` (Field/Step
 Pendências que **ficaram** (não faziam parte do núcleo): `$.handlers` (raiz) ainda não migrado p/ `$.handle.handlers`;
 prefixo/namespace configurável; GC de regras; SSR; compound variants.
 
+## ✅ Polida da API de estilo — IMPLEMENTADO (2026-09-07) — `~/.claude/plans/…-foamy-flurry.md`
+
+Ergonomia + composição, guiado pelo atrito real do `examples/auth` (que contornava a API):
+- **Handle único e leve**: partes **promovidas** (`field.input`), `class`/`$class`/`cx` **aceitam o handle**
+  (via brand `STYLE_HANDLE`) → o flatten `bem()` do exemplo **morreu**. `.self`/callable p/ quem precisa.
+- **Slots**: `slots: { control: bloco }` + override em flags/variants → **acabou o hatch cross-bloco** no Field.
+- **Uma regra de decls**: CSS no topo, **`base` removido** (config/parts/flags/variants).
+- **Nomes**: flags viram `.bloco.--is-{nome}` (distinguem-se de variante); parte/variante mantidas.
+- **Autoria JS-first**: overload `$.style(name)` (só-nome) **removido**.
+- Furos fechados: `FlagBody` unificado (`parts`+`slots`); toast migrou flags→`variants` (exclusivo);
+  parte com nome reservado → `warn`. 37 testes verdes, typecheck + build + typecheck do exemplo ok.
+
+## Estilo Fase 2 — variáveis de design — DEFERIDA (native-first, 2026-09-07) — `docs/proposals/style-tokens.md`
+
+Decisão: **não crescer o engine** pra tema/scope/valores dinâmicos — o CSS moderno resolve (custom properties,
+`@scope`, container queries). Tokens globais seguem via `$.style.css(':root', …)` + `var(--x)` (status quo).
+Design registrado p/ o futuro: bloco `vars` por componente (estado **reescreve a var**) + tokens globais +
+**valor via função self** (`gap: (self) => self.vars.gap`), sem açúcar de string `'$nome'`. Scope por `data-*`
+**recusado** (contradiz legibilidade; fura com elementos destacados).
+
 ## Eventos — migração ficou enxuta (P2)
 
 Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` antigo. Faltam:

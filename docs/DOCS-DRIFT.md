@@ -19,6 +19,9 @@ Defasou com o **redesenho de estilos** e os **fixes de runtime** (2026-09-06).
   → `field.self` / `field.parts.input.self`. `$.parts`/`$.css` = **alias deprecated** (documentado).
 - [x] **A** Regras de ouro (item 8): reescrito — `$.style` devolve StyleHandle e injeta; globais em `$.style.css`.
 - [x] **A** §"Ainda não implementado": "Engine de CSS" removido; keyframes já feito. Mantidos os demais débitos.
+- [x] **A** §11/GLOSSARY reescritos de novo p/ a **polida** (2026-09-07): partes **promovidas** (`field.input`),
+  `class`/`cx` aceitam o handle, **sem `base`** (decls no topo), flags `--is-*`, **slots**, overload só-nome
+  removido. Os pontos acima que citam `.parts.x.self`/`--flag`/`base` são do estágio namespace anterior.
 - [ ] **F** Breakpoints: documentar `$.config({ breakpoints })`, `@nome`/`@número` no CSS, e `$.media(nome|query)` → signal.
 - [ ] **F** §1 Setup / adapter: contrato ganhou `untrack?` e `signal?` (necessário p/ `$.media`); mencionar.
 - [ ] **F** Referência rápida: adicionar `$.config`, `$.media`; ajustar linha de `$.style`/`$.parts`.

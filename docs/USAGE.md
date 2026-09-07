@@ -243,56 +243,66 @@ unmount(); // roda TODOS os cleanups (effects, listeners, custom events, behavio
 ## 11. CSS — `$.style` (namespace) / `$.cx`
 
 `$.style(name, config)` devolve um **`StyleHandle`** único e **injeta** as regras num
-`<style id="mq-styles">`. O handle é *callable* e carrega `self` / `parts` / `flags` /
-`variants` / `keyframes`. Objetos JS: camelCase, números viram `px` (exceto unitless como
-`opacity`/`zIndex`/`lineHeight`), aninhamento com `&` (`&:hover`, `& .filho`) e um nível de
-`@media`/`@supports`. **Partes e variantes coexistem** (chaves reservadas explícitas):
+`<style id="mq-styles">`. O handle é *callable* e as **partes ficam nele** (`field.input`); traz
+ainda `self` / `flags` / `variants` / `keyframes` / `slots`. **`class`/`$class`/`cx` aceitam o handle
+direto** (ele é chamado) — sem `.self` no caso comum. Decls ficam **no topo** do config (não há `base`).
+Objetos JS: camelCase, números viram `px` (exceto unitless como `opacity`/`zIndex`/`lineHeight`),
+aninhamento com `&` (`&:hover`, `& .filho`) e um nível de `@media`/`@supports`. **Partes e variantes
+coexistem** (chaves reservadas explícitas):
 
 | chave | o que faz | CSS emitido |
 |---|---|---|
-| `base` | declarações do bloco (escalares/`&`/`@` no topo também valem) | `.bloco { … }` |
+| *(topo)* | declarações do bloco (escalares/`&`/`@`) | `.bloco { … }` |
 | `parts` | partes descendentes (recursivo) | `.bloco .-bloco-parte { … }` |
-| `flags` | flags booleanas independentes | `.bloco.--flag { … }` |
+| `flags` | flags booleanas independentes | `.bloco.--is-flag { … }` |
 | `variants` | grupos exclusivos | `.bloco.--grupo-valor { … }` |
 | `defaults` | valor default por grupo de variante | — |
+| `slots` | bloco estrangeiro hospedado | mirado por flags/variants |
 | `keyframes` | animação escopada por bloco | `@keyframes bloco-nome { … }` |
 
 ```ts
 const field = $.style('field', {
-  base: { display: 'flex', flexDirection: 'column' },
+  display: 'flex', flexDirection: 'column',
   parts: {
-    input: { base: { padding: 8 } },
-    error: { base: { color: 'var(--danger)' } },
+    label: { fontSize: '.9rem' },
+    error: { color: 'var(--danger)' },
   },
-  flags: { invalid: { parts: { input: { borderColor: 'red' } } } },
+  slots: { control: inputClass },              // hospeda o bloco `input`
+  flags: { invalid: { slots: { control: { borderColor: 'red' } } } },
   variants: { size: { sm: { gap: 4 }, md: { gap: 8 } } },
   defaults: { size: 'md' },
 });
 ```
 ```css
 .field { display: flex; flex-direction: column; }
-.field .-field-input { padding: 8px; }
+.field .-field-label { font-size: .9rem; }
 .field .-field-error { color: var(--danger); }
-.field.--invalid .-field-input { border-color: red; }
+.field.--is-invalid .input { border-color: red; }   /* slot → bloco hospedado */
 .field.--size-sm { gap: 4px; }   .field.--size-md { gap: 8px; }
 ```
 
 ```ts
 field.self                    // 'field'
-field.parts.input.self        // '-field-input'
-field.flags.invalid           // '--invalid'
+field.label.self              // '-field-label'  (parte promovida)
+field.flags.invalid           // '--is-invalid'
 field.variants.size.sm        // '--size-sm'
-field({ size: 'sm' })         // 'field --size-sm'  (callable monta a string)
-$class: () => $.cx(field.self, err.value && field.flags.invalid)
+field.slots.control           // 'input'
+field({ size: 'sm', invalid: true })   // 'field --size-sm --is-invalid'
+
+$class: () => field({ invalid: err.value })   // estado no callable
+class: field.label                            // parte: handle aceito direto
 ```
 
-- Parte = nome **completo do bloco** + chave, em **toda profundidade** (`-field-input`); combinador
-  descendente automático; mover parte de nível não renomeia.
-- Flag/variante aceitam `parts: { … }` p/ **override de parte descendente** (`.bloco.--flag .-bloco-parte`).
-- Bloco simples também devolve StyleHandle: use `.self` (ou chame `bloco()`), não a referência crua.
-- `$.style(name)` sem config apenas **reserva** o nome (string).
+- **Parte** = nome **completo do bloco** + chave, em **toda profundidade** (`-field-label`); combinador
+  descendente automático; mover parte de nível não renomeia. Acessa-se como `field.label` (promovida).
+- **Flag** = classe composta `.bloco.--is-{nome}` (o `is-` distingue de variante). **Variante** = `.bloco.--{grupo}-{valor}`.
+- **Slot** = bloco estrangeiro que você hospeda (`slots: { control: bloco }`); flags/variants o miram por
+  `slots: { control: { … } }` → `.bloco.--is-flag .hospedado`. É a composição de 1ª classe (em vez do CSS cru).
+- Flag/variante também aceitam `parts: { … }` p/ override de **parte** descendente.
+- Bloco simples também é StyleHandle callable: `class: card` (chama → `'card'`) ou `card.self`.
+- Nomes reservados p/ parte: `self`/`flags`/`variants`/`keyframes`/`slots` (→ `warn`).
 - **Globais / escape hatch**: `$.style.css('body', { margin: 0 })`.
-- Nome duplicado → `console.warn`; chave-objeto inesperada no topo (parte fora de `parts`) → `console.warn`.
+- Nome duplicado → `warn`; chave-objeto inesperada no topo (parte fora de `parts`) → `warn`.
 
 > **Deprecados** (alias por 1 versão): `$.parts(name, tree)` → `$.style(name, { parts: tree })`;
 > `$.css(sel, obj)` → `$.style.css(sel, obj)`.
@@ -346,7 +356,7 @@ $.mount('#app', App);
 5. **Custom events** (que disparam) vão em `on`; **behaviors** (que só se comportam) vão em `use`.
 6. **Listas**: `() => arr.map(x => [Component, { ...x, key: x.id }])` — sempre com `key`.
 7. **`$.mount` recebe um builder/componente**, não árvore pronta.
-8. **`$.style(name, config)` devolve um StyleHandle** (`self`/`parts`/`flags`/`variants`) e injeta o CSS; globais com `$.style.css`.
+8. **`$.style(name, config)` devolve um StyleHandle** callable (partes promovidas: `field.input`) e injeta o CSS; `class`/`cx` aceitam o handle; globais com `$.style.css`.
 
 ---
 
@@ -363,9 +373,8 @@ $.mount('#app', App);
 | `$.handlers(map)` | `{ nome: [fn, ...mods] }` → `{ nome: Handler }` | reuso |
 | `$.model(signal)` | behavior | two-way (input/select/textarea) |
 | `$.show(cond)` | behavior | alterna `hidden` |
-| `$.cx(...)` | → string | classes condicionais |
-| `$.style(name, config)` | → `StyleHandle` | callable + `self`/`parts`/`flags`/`variants`/`keyframes`; injeta CSS |
-| `$.style(name)` | → string | só reserva o nome |
+| `$.cx(...)` | → string | classes condicionais; aceita StyleHandle |
+| `$.style(name, config)` | → `StyleHandle` | callable + partes promovidas + `self`/`flags`/`variants`/`keyframes`/`slots`; injeta CSS |
 | `$.style.css(selector, obj)` | → void | estilo global / escape hatch (seletor cru) |
 | `$.parts` / `$.css` | *deprecados* | alias p/ `$.style(…, {parts})` / `$.style.css` |
 | `$.registerCustomEvent(name, source)` | `(target, emit) => cleanup` | novo custom event |

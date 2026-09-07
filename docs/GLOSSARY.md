@@ -48,19 +48,20 @@ Filosofia: **caixas maiores compostas por caixas menores.** Hierarquia semântic
 **Layout** ⊃ **Componente** ⊃ **Elemento visual**; e Componente pode conter Componente.
 
 - **`style` (namespace)** — subsistema de CSS na raiz: `$.style(nome, config)` define entidade e injeta; `$.style.css(sel, obj)` = escape hatch global. · `$.style('category-card', {...})`
-- **StyleHandle** — o retorno de `$.style(nome, config)`: **callable** (`field({ size })` → string de classes) que carrega `self`/`parts`/`flags`/`variants`/`keyframes`.
+- **StyleHandle** — o retorno de `$.style(nome, config)`: **callable** (`field({ size, invalid })` → string de classes) com as **partes promovidas** ao próprio objeto (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`slots`. `class`/`$class`/`cx` **aceitam o handle** (chamam-no).
 - **Bloco** — a entidade raiz; nome `escopo-elemento`. · `category-card`
 - **Tipos de bloco (semântica, convenção):**
   - **Layout** — estrutura/posição/espaçamento (`header`, `grid`, `sidebar`); contém outros blocos.
   - **Componente** — pedaço reutilizável e com comportamento (`category-card`); cuida do conteúdo interno.
   - **Elemento visual** — parte interna nomeada de um bloco (as partes).
-- **self** — a classe da própria caixa. · `card.self` → `'category-card'`; parte: `card.parts.title.self` → `'-category-card-title'`
-- **Parte** — descendente da entidade (sob `parts`, recursivo): classe = **nome completo do bloco** + chave em toda profundidade (`-category-card-title`), combinador descendente automático. · `card.parts.content.parts.description`
-- **Flag** — estado booleano **independente** como classe composta `.bloco.--nome` (token em `.flags`). · `card.flags.featured` → `'--featured'`
-- **Variante** — grupo **exclusivo** como classe composta `.bloco.--grupo-valor` (token em `.variants`). · `btn.variants.size.sm` → `'--size-sm'`; `defaults` = valor default por grupo
-- **Override de parte em flag/variante** — `flags.x.parts.p` / `variants.g.v.parts.p` emite `.bloco.--x .-bloco-p`.
+- **self** — a classe da própria caixa. · `card.self` → `'category-card'`; parte: `card.title.self` → `'-category-card-title'`
+- **Parte** — descendente da entidade (sob `parts`, recursivo), **promovida ao handle**: classe = **nome completo do bloco** + chave em toda profundidade (`-category-card-title`), combinador descendente automático. · `card.title`, `card.content.description`
+- **Flag** — estado booleano **independente** como classe composta `.bloco.--is-{nome}` (token em `.flags`). O `is-` distingue de variante no DevTools. · `card.flags.featured` → `'--is-featured'`
+- **Variante** — grupo **exclusivo** como classe composta `.bloco.--{grupo}-{valor}` (token em `.variants`). · `btn.variants.size.sm` → `'--size-sm'`; `defaults` = valor default por grupo
+- **Slot** — bloco **estrangeiro** hospedado (`slots: { control: bloco }`, token em `.slots`); flags/variants o miram por `slots: { control: {…} }` → `.bloco.--is-flag .hospedado`. É a composição de 1ª classe (vs. CSS cru). Distingue-se de **parte** (descendente que a entidade **possui**).
+- **Override em flag/variante** — corpo unificado: decls + `parts: { p: {…} }` e/ou `slots: { s: {…} }`. `flags.x.parts.p` → `.bloco.--is-x .-bloco-p`.
 - **Keyframe escopado** — animação (na árvore, chave `keyframes`) nomeada `bloco-nome`. · `card.keyframes.pulse` → `'category-card-pulse'`
-- **Chaves reservadas** — `base` / `parts` / `flags` / `variants` / `defaults` / `keyframes`; escalares/`&`/`@` no topo = declarações do bloco. Chave-objeto inesperada no topo → `console.warn` (não vira parte silenciosa).
+- **Decls no topo** — escalares/`&`/`@` no topo do config = declarações do bloco (**não há `base`**). Chaves reservadas: `parts`/`flags`/`variants`/`defaults`/`slots`/`keyframes`. Chave-objeto inesperada no topo → `warn` (não vira parte silenciosa); parte com nome reservado (`self`/`flags`/…) → `warn`.
 - **Deprecados** — `$.parts(nome, tree)` → `$.style(nome, { parts: tree })`; `$.css` → `$.style.css` (alias por 1 versão).
 
 ## Breakpoints
