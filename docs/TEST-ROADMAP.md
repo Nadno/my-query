@@ -45,7 +45,7 @@ A ponte agnóstica de reatividade só é testada via DOM. Pinar direto.
   isolar com `beforeEach`/`afterEach`.
 - **Depende de:** nada.
 
-## E3 — Regressões de branch em `element/` ⬜  ·  `test(element):`
+## E3 — Regressões de branch em `element/` ✅  ·  `test(element):`
 
 Branches sem teste que a fatia por papel deixou à vista.
 

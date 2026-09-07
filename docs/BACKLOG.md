@@ -24,6 +24,9 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
 - **2026-09-07** — **E2** do roadmap: contrato de bindings (`reactive.ts`) fixado — `bind` cru=1×
   vs reativo=effect+cleanup (signal e função), `read`, comportamento sem adapter, `untrack`
   (delegação vs fallback), `createSignal` lança. 62 testes.
+- **2026-09-07** — **E3** do roadmap: branches de `element/` cobertos — `style`/`$style`, `data`
+  estático, `setAttr` (fallback `setAttribute` + remoção), `$class` vazio, ramo `else` do `when`,
+  signal cru/tupla/nullish como filho, `createTag` sem props. 75 testes.
 
 ---
 
