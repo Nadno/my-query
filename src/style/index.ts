@@ -9,10 +9,12 @@
 export { compile, inject, css } from './emit';
 export { style, parts } from './build';
 export type {
+  CSSValue,
   CSSObject,
   StyleObject,
   StyleConfig,
   FlagBody,
+  SlotRef,
   StyleHandle,
   StyleApi,
 } from './types';

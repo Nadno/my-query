@@ -1,15 +1,19 @@
 /**
- * Build: `$.style(nome, config)` → `StyleHandle` (namespace de entidade).
+ * Build: `$.style(nome, config)` → `StyleHandle` (namespace de entidade, JS-first).
  *
- * Nomes: parte = `-{bloco}-{chave}` em toda profundidade, combinador descendente automático;
- * flag = `.sel.--flag`, variante = `.sel.--grupo-valor`, keyframes escopado (`{bloco}-{nome}`).
- * Chaves reservadas explícitas — partes e variantes coexistem.
+ * Um handle único e callable, com as partes **promovidas** ao próprio objeto (`field.input`),
+ * mais `self`/`flags`/`variants`/`keyframes`/`slots`. Declarações ficam no topo do config
+ * (sem `base`). Nomes: parte = `-{bloco}-{chave}` em toda profundidade, combinador descendente;
+ * flag = `.sel.--is-{nome}`, variante = `.sel.--{grupo}-{valor}`; keyframes escopado `{bloco}-{nome}`;
+ * slot = bloco estrangeiro hospedado, mirado por flags/variants via descendente.
  */
 
+import { STYLE_HANDLE } from '../types';
 import { toKebab, compileKeyframes, inject, pushRule, css } from './emit';
 import type { CSSObject, FlagBody, StyleApi, StyleConfig, StyleHandle } from './types';
 
-const RESERVED = new Set(['base', 'parts', 'flags', 'variants', 'defaults', 'keyframes']);
+const RESERVED = new Set(['parts', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
+const RESERVED_PART_NAMES = new Set(['self', 'flags', 'variants', 'keyframes', 'slots']);
 
 /** Classe de uma parte: nome completo do bloco + chave, em toda profundidade. */
 function partClass(block: string, key: string): string {
@@ -27,20 +31,29 @@ function warnDup(name: string): void {
   registered.add(name);
 }
 
-/** Injeta o corpo de uma flag/variante: decls no seletor + `parts` de override. */
-function injectBody(sel: string, body: FlagBody, block: string): void {
+/** Injeta o corpo de uma flag/variante: decls no seletor + override de `parts` e `slots`. */
+function injectBody(sel: string, body: FlagBody, block: string, slots: Record<string, string>): void {
   const decls: CSSObject = {};
   let partsOverride: Record<string, CSSObject> | undefined;
+  let slotsOverride: Record<string, CSSObject> | undefined;
   for (const k in body) {
-    if (k === 'parts') {
-      partsOverride = body[k] as Record<string, CSSObject>;
-      continue;
-    }
-    decls[k] = body[k];
+    if (k === 'parts') partsOverride = body[k] as Record<string, CSSObject>;
+    else if (k === 'slots') slotsOverride = body[k] as Record<string, CSSObject>;
+    else decls[k] = body[k];
   }
   if (Object.keys(decls).length) inject(sel, decls);
   if (partsOverride) {
     for (const pk in partsOverride) inject(`${sel} .${partClass(block, pk)}`, partsOverride[pk]!);
+  }
+  if (slotsOverride) {
+    for (const sk in slotsOverride) {
+      const cls = slots[sk];
+      if (!cls) {
+        console.warn(`[mini-q] slot "${sk}" não declarado em "${block}" — declare em \`slots\`.`);
+        continue;
+      }
+      inject(`${sel} .${cls}`, slotsOverride[sk]!);
+    }
   }
 }
 
@@ -48,8 +61,17 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const selfClass = path[path.length - 1]!;
   const selfSel = path.map((c) => `.${c}`).join(' ');
 
-  // Declarações da própria parte: `base` + escalares/`&…`/`@…` no nível (base opcional).
-  const decls: CSSObject = { ...(config.base ?? {}) };
+  // Slots resolvidos primeiro (flags/variants podem mirá-los).
+  const slots: Record<string, string> = {};
+  if (config.slots) {
+    for (const name in config.slots) {
+      const ref = config.slots[name];
+      slots[name] = typeof ref === 'string' ? ref : ref!.self;
+    }
+  }
+
+  // Declarações da própria parte: tudo que não é chave reservada (sem `base`).
+  const decls: CSSObject = {};
   for (const key in config) {
     if (RESERVED.has(key)) continue;
     const value = config[key];
@@ -71,8 +93,8 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const flags: Record<string, string> = {};
   if (config.flags) {
     for (const name in config.flags) {
-      injectBody(`${selfSel}.--${name}`, config.flags[name]!, block);
-      flags[name] = `--${name}`;
+      injectBody(`${selfSel}.--is-${name}`, config.flags[name]!, block, slots);
+      flags[name] = `--is-${name}`;
     }
   }
 
@@ -82,7 +104,7 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
       variants[group] = {};
       const options = config.variants[group]!;
       for (const value in options) {
-        injectBody(`${selfSel}.--${group}-${value}`, options[value]!, block);
+        injectBody(`${selfSel}.--${group}-${value}`, options[value]!, block, slots);
         variants[group]![value] = `--${group}-${value}`;
       }
     }
@@ -100,6 +122,12 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const parts: Record<string, StyleHandle> = {};
   if (config.parts) {
     for (const key in config.parts) {
+      if (RESERVED_PART_NAMES.has(key)) {
+        console.warn(
+          `[mini-q] parte "${key}" em "${block}" usa um nome reservado do handle (self/flags/variants/keyframes/slots) — renomeie.`,
+        );
+        continue;
+      }
       parts[key] = buildNode(config.parts[key]!, block, [...path, partClass(block, key)]);
     }
   }
@@ -111,28 +139,29 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
     for (const k in merged) {
       const v = merged[k];
       if (v == null || v === false) continue;
-      if (variants[k] && typeof v === 'string' && variants[k]![v]) tokens.push(`--${k}-${v}`);
-      else if (flags[k] !== undefined && v === true) tokens.push(`--${k}`);
+      if (variants[k] && typeof v === 'string' && variants[k]![v]) tokens.push(variants[k]![v]!);
+      else if (flags[k] !== undefined && v === true) tokens.push(flags[k]!);
     }
     return tokens.join(' ');
   }) as StyleHandle;
 
-  return Object.assign(handle, { self: selfClass, parts, flags, variants, keyframes }) as StyleHandle;
+  Object.assign(handle, { self: selfClass, flags, variants, keyframes, slots }, parts);
+  Object.defineProperty(handle, STYLE_HANDLE, { value: true });
+  return handle;
 }
 
-function styleFn(name: string, config?: StyleConfig): StyleHandle | string {
+/* --------------------------------------------------------------- style --- */
+
+function styleFn<T extends StyleConfig>(name: string, config: T): StyleHandle<T> {
   warnDup(name);
-  if (config == null) return name;
-  return buildNode(config, name, [name]);
+  return buildNode(config, name, [name]) as StyleHandle<T>;
 }
 
 export const style: StyleApi = Object.assign(styleFn, { css }) as StyleApi;
 
 /**
- * @deprecated Use `$.style(name, { parts: { … } })` e acesse `handle.parts.x`. Alias por 1 versão.
+ * @deprecated Use `$.style(name, { parts: { … } })` e acesse `handle.x`. Alias por 1 versão.
  */
-export function parts<T extends StyleConfig>(name: string, tree: Record<string, T>): StyleHandle;
-export function parts(name: string): string;
-export function parts(name: string, tree?: Record<string, StyleConfig>): StyleHandle | string {
-  return tree == null ? (style(name) as string) : style(name, { parts: tree });
+export function parts<T extends StyleConfig>(name: string, tree: Record<string, T>): StyleHandle {
+  return style(name, { parts: tree });
 }

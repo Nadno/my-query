@@ -18,6 +18,16 @@ export interface MQ<E extends Element = Element> {
   readonly element: E;
 }
 
+/** Brand de um `StyleHandle` — `class`/`cx` só chamam a função se ela tiver esta marca. */
+export const STYLE_HANDLE: unique symbol = Symbol('mq.styleHandle');
+
+/** Callable que devolve uma string de classes (o `StyleHandle` de `$.style` satisfaz isto). */
+export interface ClassHandle {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (...args: any[]): string;
+  readonly self: string;
+}
+
 /** Valor aceito por `class` / `$class`. */
 export type ClassValue =
   | string
@@ -25,6 +35,7 @@ export type ClassValue =
   | false
   | null
   | undefined
+  | ClassHandle
   | ClassValue[]
   | Record<string, boolean | null | undefined>;
 

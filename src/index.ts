@@ -99,7 +99,16 @@ export { registerCustomEvent, getCustomEvent } from './events/custom';
 export { applyUse, model, show } from './behaviors';
 export { cx } from './dom/nodes';
 export { style, parts, css, compile, inject } from './style';
-export type { CSSObject, StyleObject, StyleConfig, FlagBody, StyleHandle, StyleApi } from './style';
+export type {
+  CSSValue,
+  CSSObject,
+  StyleObject,
+  StyleConfig,
+  FlagBody,
+  SlotRef,
+  StyleHandle,
+  StyleApi,
+} from './style';
 export { config } from './config';
 export type { MiniQConfig } from './config';
 export { media } from './media';

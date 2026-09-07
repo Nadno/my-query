@@ -1,5 +1,6 @@
 /** Helpers de nó DOM e resolução de classe. */
 
+import { STYLE_HANDLE } from '../types';
 import type { ClassValue } from '../types';
 
 export function isNode(value: unknown): value is Node {
@@ -15,6 +16,14 @@ export function resolveClass(value: ClassValue): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number') return String(value);
   if (!value) return '';
+
+  // StyleHandle: callable branded → usa a string de classe dele (com defaults).
+  // Função sem brand é ignorada (evita enumerar props de função como classes).
+  if (typeof value === 'function') {
+    return (value as { [STYLE_HANDLE]?: boolean })[STYLE_HANDLE]
+      ? resolveClass((value as () => ClassValue)())
+      : '';
+  }
 
   if (Array.isArray(value)) {
     let out = '';

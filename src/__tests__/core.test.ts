@@ -192,10 +192,9 @@ describe('style / cx (DX)', () => {
   it('classes legíveis nomeadas', () => {
     const card = $.style('card', { parts: { title: {}, body: {} } });
     expect(card.self).toBe('card');
-    expect(card.parts.title.self).toBe('-card-title');
-    expect(card.parts.body.self).toBe('-card-body');
+    expect(card.title.self).toBe('-card-title');
+    expect(card.body.self).toBe('-card-body');
     const btn = $.style('btn', {
-      base: {},
       variants: { size: { sm: {}, md: {} } },
       defaults: { size: 'md' },
     });
@@ -221,10 +220,10 @@ describe('style / cx (DX)', () => {
 
     const field = $.style('mq-auth-field', {
       display: 'flex',
-      parts: { label: { base: { fontSize: 14 } } },
+      parts: { label: { fontSize: 14 } },
     });
     expect(field.self).toBe('mq-auth-field');
-    expect(field.parts.label.self).toBe('-mq-auth-field-label');
+    expect(field.label.self).toBe('-mq-auth-field-label');
     expect(sheet?.textContent).toContain('.mq-auth-field { display: flex; }');
     expect(sheet?.textContent).toContain(
       '.mq-auth-field .-mq-auth-field-label { font-size: 14px; }',
