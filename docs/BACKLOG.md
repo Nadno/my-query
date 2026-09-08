@@ -38,6 +38,12 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   (`clickOutside`/`focusOutside`/`hover` montam/limpam listener; fora vs dentro). As **decisões de
   design** de E6 (deprecar `$.handlers` raiz, delegation + `DOMHandlerStore`, hover-touch) ficam
   como etapas `feat(events):` próprias. **121 testes.**
+- **2026-09-08** — **E5 (specs integradas)** do roadmap — **fecha o roadmap de testes E1–E6**:
+  `describe('specs integradas (E5)')` em `src/index.test.ts` com 3 fluxos cross-slice novos —
+  `model` em item de lista keyed (foco+valor preservados no reorder, listener limpo na remoção),
+  região `when` dentro de item keyed (reage e some em cascata ao remover), `onMounted` com teardown
+  por item. Os demais cenários da etapa já estavam cobertos por E1–E4 + demo (não re-testados).
+  **124 testes.**
 
 ---
 

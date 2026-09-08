@@ -82,7 +82,15 @@ timing de "montou"). Expostos os hooks globais + realinhado o modelo de behavior
   `model`). **101 testes.**
 - **Depende de:** E1 (base de escopo verificada).
 
-## E5 — Specs integradas ⬜  ·  `test(integration):`
+## E5 — Specs integradas ✅  ·  `test(integration):`
+
+> **Feito (2026-09-08)** — `describe('specs integradas (E5)')` em `src/index.test.ts` (3 casos
+> cross-slice novos): `model` em item de lista keyed (foco+valor no reorder, listener limpo na
+> remoção); região `when` dentro de item keyed (reage e some em cascata); `onMounted` com teardown
+> por item. Os demais cenários que a etapa listava já estavam cobertos por E1–E4 + demo (região
+> aninhada/cascata em `region.test.ts`, `onUnmounted`-em-item e `model`-na-raiz em `index.test.ts`,
+> foco no reorder com `$.input` cru, aceite end-to-end em `pocketfin.test.ts`) — não re-testados.
+
 
 Cenários que cruzam slices — pegam regressões que o unit não pega.
 
@@ -134,3 +142,6 @@ array de mods) e carrega pendências de design herdadas do `old-my-query/dom-eve
 specs integradas). E1–E3 são independentes e podem trocar de ordem; E4 usa E1; E6 (eventos/`handle`)
 também usa E1; E5 fecha os fluxos cruzados por último. Os rótulos (E5/E6) não mudam. Cada etapa vira
 seu próprio commit e uma linha no §Progresso do [BACKLOG.md](BACKLOG.md) ao concluir.
+
+**Roadmap de testes concluído (E1–E6, 2026-09-08).** As frentes de eventos em aberto viram etapas
+`feat(events):` próprias (delegation, `DOMHandlerStore`, hover-touch, deprecar `$.handlers`).

@@ -318,3 +318,115 @@ describe('$ expõe control-flow flat', () => {
     expect(document.getElementById('m')).toBeNull();
   });
 });
+
+describe('specs integradas (E5)', () => {
+  // Fluxos que cruzam slices (behaviors + reconcile + região + lifecycle). Cada
+  // peça já é testada isolada; aqui provamos que compõem sem regressão.
+
+  it('model em item de lista keyed: foco+valor no reorder, listener limpo na remoção', () => {
+    const models: Record<number, import('@preact/signals-core').Signal<string>> = {
+      1: signal(''),
+      2: signal(''),
+    };
+    const items = signal([{ id: 1 }, { id: 2 }]);
+    const Row = (p: { id: number }) =>
+      $.input({ id: `inp-${p.id}`, use: $.model(models[p.id]!) });
+    const App = () =>
+      $.ul({}, () =>
+        items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
+      );
+    $.mount(document.body, App);
+
+    // digita no id 2 → signal do id 2 recebe
+    const inp2 = document.getElementById('inp-2') as HTMLInputElement;
+    inp2.value = 'ola';
+    inp2.dispatchEvent(new Event('input'));
+    expect(models[2]!.value).toBe('ola');
+
+    // foca e reordena → mesmo nó reusado, foco + valor preservados, bind vivo
+    inp2.focus();
+    expect(document.activeElement).toBe(inp2);
+    items.value = [{ id: 2 }, { id: 1 }];
+    expect(document.getElementById('inp-2')).toBe(inp2);
+    expect(document.activeElement).toBe(inp2);
+    expect(inp2.value).toBe('ola');
+    inp2.value = 'ola2';
+    inp2.dispatchEvent(new Event('input'));
+    expect(models[2]!.value).toBe('ola2');
+
+    // remove o id 2 → seu teardown de model rodou: novo input não escreve mais
+    items.value = [{ id: 1 }];
+    expect(document.getElementById('inp-2')).toBeNull();
+    inp2.value = 'ignorado';
+    inp2.dispatchEvent(new Event('input'));
+    expect(models[2]!.value).toBe('ola2');
+
+    // id 1 segue funcional
+    const inp1 = document.getElementById('inp-1') as HTMLInputElement;
+    inp1.value = 'vivo';
+    inp1.dispatchEvent(new Event('input'));
+    expect(models[1]!.value).toBe('vivo');
+  });
+
+  it('região (when) dentro de item de lista keyed: reage e some em cascata ao remover', () => {
+    const opens: Record<number, import('@preact/signals-core').Signal<boolean>> = {
+      1: signal(false),
+      2: signal(false),
+    };
+    const items = signal([{ id: 1 }, { id: 2 }]);
+    const Row = $.li<{ id: number }>((p) =>
+      $.when(opens[p.id]!, () => $.p({ id: `panel-${p.id}` }, `#${p.id}`)),
+    );
+    const App = () =>
+      $.ul({}, () =>
+        items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
+      );
+    $.mount(document.body, App);
+
+    // abre só o painel do id 2
+    expect(document.getElementById('panel-2')).toBeNull();
+    opens[2]!.value = true;
+    expect(document.getElementById('panel-2')?.textContent).toBe('#2');
+    expect(document.getElementById('panel-1')).toBeNull();
+
+    // remove o id 2 → painel some e o effect da região interna foi descartado
+    items.value = [{ id: 1 }];
+    expect(document.getElementById('panel-2')).toBeNull();
+    opens[2]!.value = false;
+    opens[2]!.value = true; // região morta: não recria nada
+    expect(document.getElementById('panel-2')).toBeNull();
+
+    // linha vizinha intacta
+    opens[1]!.value = true;
+    expect(document.getElementById('panel-1')?.textContent).toBe('#1');
+  });
+
+  it('onMounted com teardown dentro de item de lista keyed: monta por item, limpa só o removido', () => {
+    const live: Record<number, boolean> = {};
+    const items = signal([{ id: 1 }, { id: 2 }]);
+    const Row = $.li<{ id: number }>((p) => {
+      $.onMounted(() => {
+        live[p.id] = true;
+        return () => {
+          live[p.id] = false;
+        };
+      });
+      return `#${p.id}`;
+    });
+    const App = () =>
+      $.ul({}, () =>
+        items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
+      );
+    $.mount(document.body, App);
+
+    expect(live).toEqual({ 1: true, 2: true });
+
+    // adiciona um 3º → monta sem re-rodar os existentes
+    items.value = [{ id: 1 }, { id: 2 }, { id: 3 }];
+    expect(live).toEqual({ 1: true, 2: true, 3: true });
+
+    // remove o id 2 → só o teardown dele roda
+    items.value = [{ id: 1 }, { id: 3 }];
+    expect(live).toEqual({ 1: true, 2: false, 3: true });
+  });
+});
