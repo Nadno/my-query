@@ -175,7 +175,8 @@ Reescrever como **behaviors** (`use`) quando forem necessários (ex.: modal do e
 ## Infra / entrega (P3)
 
 - Pacote aponta os `exports` para `.ts` (sem build em `dist/`). Sem artefato publicável ainda.
-- Sem SSR/hydration.
+- Sem SSR/hydration. **Proposta de SSG** (backend injetável + `StringBackend` + `emitStylesheet`; hydration
+  como fase opcional; SSR deferido) em [proposals/ssg.md](proposals/ssg.md). P3
 - `$(sel)` retorna só `{ element }` (sem traversal) — por design, mas registrado.
 - Exemplo `examples/auth` planejado (prompt pronto) e ainda não implementado.
 
