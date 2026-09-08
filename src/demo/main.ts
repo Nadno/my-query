@@ -1,7 +1,7 @@
 /** Entry do demo: instala o adapter e monta o App. */
-import $ from '../index';
+import { $mount, $useSignal } from '../index';
 import { preact } from '../adapters/preact';
 import { App } from './pocketfin';
 
-$.useSignal(preact);
-$.mount('#app', App);
+$useSignal(preact);
+$mount('#app', App);

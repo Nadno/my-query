@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import $ from '../index';
+import { $mount, $useSignal } from '../index';
 import { preact } from '../adapters/preact';
 import { App, transactions, balance, modalOpen } from './pocketfin';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 describe('PocketFin (aceite end-to-end)', () => {
   beforeEach(() => {
@@ -16,14 +16,14 @@ describe('PocketFin (aceite end-to-end)', () => {
   });
 
   it('renderiza saldo e lista', () => {
-    $.mount('#app', App);
+    $mount('#app', App);
     expect(balance.value).toBe(3380);
     expect(document.body.textContent).toContain('R$ 3380.00');
     expect(document.querySelectorAll('.tx').length).toBe(2);
   });
 
   it('excluir transação atualiza lista e saldo', () => {
-    $.mount('#app', App);
+    $mount('#app', App);
     const deleteBtns = document.querySelectorAll<HTMLButtonElement>('.tx .btn--danger');
     deleteBtns[1]!.click(); // remove "Mercado" (-120)
     expect(document.querySelectorAll('.tx').length).toBe(1);
@@ -32,7 +32,7 @@ describe('PocketFin (aceite end-to-end)', () => {
   });
 
   it('modal (when) monta/desmonta e adiciona transação', () => {
-    $.mount('#app', App);
+    $mount('#app', App);
     expect(document.querySelector('.modal')).toBeNull();
 
     // abre pelo FAB
@@ -59,7 +59,7 @@ describe('PocketFin (aceite end-to-end)', () => {
   });
 
   it('$disabled reativo no botão de submit', () => {
-    $.mount('#app', App);
+    $mount('#app', App);
     document.querySelector<HTMLButtonElement>('.btn--round')!.click();
     const submit = document.querySelector<HTMLButtonElement>('.modal .btn[type="submit"]')!;
     expect(submit.disabled).toBe(true); // vazio → inválido

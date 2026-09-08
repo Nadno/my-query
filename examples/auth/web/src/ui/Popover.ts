@@ -1,4 +1,5 @@
 import $ from 'mini-q';
+import { $when } from 'mini-q';
 import { style } from 'mini-q/style';
 
 export const popoverStyle = style('popover', {
@@ -36,7 +37,7 @@ export function Popover(p: {
       use: p.hostUse as never,
     },
     p.trigger,
-    $.when(
+    $when(
       () => p.open(),
       () => $.div({ class: popoverStyle.panel }, p.panel()),
     ),

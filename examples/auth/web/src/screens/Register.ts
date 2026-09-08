@@ -1,5 +1,6 @@
 import { signal } from '@preact/signals-core';
 import $ from 'mini-q';
+import { $when, $handle } from 'mini-q';
 import { ApiError } from '../api';
 import { screen, useAuth } from '../composables/useAuth';
 import { useAsyncValidator } from '../composables/useAsyncValidator';
@@ -82,12 +83,12 @@ export function Register() {
       labels: ['Empresa', 'Sócios', 'Acesso'],
     }),
     $.form(
-      { class: form, on: { submit: [submit, $.handle.prevent] } },
-      $.when(
+      { class: form, on: { submit: [submit, $handle.prevent] } },
+      $when(
         () => step.value === 0,
         () => CompanyFields({ form: formApi, emailAsync }),
       ),
-      $.when(
+      $when(
         () => step.value === 1,
         () =>
           PartnersFields({
@@ -98,13 +99,13 @@ export function Register() {
             touch: formApi.touch,
           }),
       ),
-      $.when(
+      $when(
         () => step.value === 2,
         () => AccessFields({ form: formApi }),
       ),
       $.div(
         { class: form.actions },
-        $.when(
+        $when(
           () => step.value > 0,
           () =>
             Button({
@@ -115,7 +116,7 @@ export function Register() {
               },
             }),
         ),
-        $.when(
+        $when(
           () => step.value < 2,
           () =>
             Button({

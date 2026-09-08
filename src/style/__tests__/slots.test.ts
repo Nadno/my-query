@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import $ from '../../index';
+import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { style } from '../index';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 // Nomes de bloco únicos por caso: ver nota em handle.test.ts (registries de módulo).
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';

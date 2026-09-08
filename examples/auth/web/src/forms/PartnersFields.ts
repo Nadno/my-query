@@ -1,4 +1,5 @@
 import $ from 'mini-q';
+import { $when } from 'mini-q';
 import { style } from 'mini-q/style';
 import type { Signal } from '@preact/signals-core';
 import { maskCpf, maskPercent } from '../composables/useMask';
@@ -88,7 +89,7 @@ export function PartnerRow(p: {
         onBlur: () => p.touch(`partners.${id}.cpf`),
       }),
     }),
-    $.when(
+    $when(
       () => !isMei(),
       () =>
         Field({
@@ -110,7 +111,7 @@ export function PartnerRow(p: {
       },
       () => (p.partner.isAdmin.value ? 'Administrador' : 'Tornar admin'),
     ),
-    $.when(
+    $when(
       () => !isMei() && p.partners.value.length > 1,
       () =>
         Button({
@@ -165,11 +166,11 @@ export function PartnersFields(p: {
           ],
       ),
     ),
-    $.when(
+    $when(
       () => p.companyType.value !== 'MEI',
       () => Button({ variant: 'ghost', size: 'sm', onClick: add, label: '+ Sócio' }),
     ),
-    $.when(
+    $when(
       () => !!(p.errors.value.partners || p.errors.value.partnersShare || p.errors.value.partnersAdmin),
       () =>
         $.p(

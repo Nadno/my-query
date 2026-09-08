@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import $ from '../../index';
+import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { style, config } from '../index';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 // Nomes de bloco únicos por caso: ver nota em handle.test.ts (registries de módulo).
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';
@@ -79,7 +79,7 @@ describe('style — CSS gerado', () => {
     expect(css).not.toContain('hidden');
   });
 
-  it('$.style.css injeta seletor cru (escape hatch global)', () => {
+  it('style.css injeta seletor cru (escape hatch global)', () => {
     style.css('.emit-global-hatch', { margin: 0, boxSizing: 'border-box' });
     expect(sheet()).toContain('.emit-global-hatch { margin: 0px; box-sizing: border-box; }');
   });

@@ -1,5 +1,6 @@
 import { effect, signal } from '@preact/signals-core';
 import $, { type Behavior } from 'mini-q';
+import { $handle } from 'mini-q';
 
 export function usePopover() {
   const open = signal(false);
@@ -21,7 +22,7 @@ export function usePopover() {
   const on = {
     clickOutside: close,
     focusOutside: close,
-    keydown: [close, $.handle.keys('Escape')] as const,
+    keydown: [close, $handle.keys('Escape')] as const,
   };
 
   return { open, close, toggle, on, use };

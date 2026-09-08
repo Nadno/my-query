@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { signal } from '@preact/signals-core';
 import $ from '../../index';
+import { $mount, $when, $match, $switch, $else, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -15,13 +16,13 @@ describe('when — ramo else', () => {
     const App = () =>
       $.div(
         {},
-        $.when(
+        $when(
           open,
           () => $.p({ id: 'yes' }, 'sim'),
           () => $.p({ id: 'no' }, 'não'),
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // condição false → else
     expect(document.getElementById('yes')).toBeNull();
@@ -42,8 +43,8 @@ describe('when — ramo else', () => {
 describe('when (açúcar de match)', () => {
   it('sem else → nada quando false, then quando true', () => {
     const open = signal(false);
-    const App = () => $.div({}, $.when(open, () => $.p({ id: 'y' }, 'sim')));
-    $.mount(document.body, App);
+    const App = () => $.div({}, $when(open, () => $.p({ id: 'y' }, 'sim')));
+    $mount(document.body, App);
 
     expect(document.getElementById('y')).toBeNull();
     open.value = true;
@@ -60,12 +61,12 @@ describe('match', () => {
     const App = () =>
       $.div(
         {},
-        $.match(
+        $match(
           [a, () => $.p({ id: 'a' }, 'A')],
           [b, () => $.p({ id: 'b' }, 'B')],
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // ambas truthy → a 1ª vence
     expect(document.getElementById('a')).not.toBeNull();
@@ -83,12 +84,12 @@ describe('match', () => {
     const App = () =>
       $.div(
         {},
-        $.match(
+        $match(
           [a, () => $.p({ id: 'a' }, 'A')],
           [b, () => $.p({ id: 'b' }, 'B')],
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('a')).toBeNull();
     expect(document.getElementById('b')).toBeNull();
@@ -99,9 +100,9 @@ describe('match', () => {
     const App = () =>
       $.div(
         {},
-        $.match([a, () => $.p({ id: 'a' }, 'A')], () => $.p({ id: 'fb' }, 'FB')),
+        $match([a, () => $.p({ id: 'a' }, 'A')], () => $.p({ id: 'fb' }, 'FB')),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('fb')?.textContent).toBe('FB');
     a.value = true;
@@ -109,17 +110,17 @@ describe('match', () => {
     expect(document.getElementById('a')).not.toBeNull();
   });
 
-  it('[$.else, view] é catch-all', () => {
+  it('[$else, view] é catch-all', () => {
     const a = signal(false);
     const App = () =>
       $.div(
         {},
-        $.match(
+        $match(
           [a, () => $.p({ id: 'a' }, 'A')],
-          [$.else, () => $.p({ id: 'else' }, 'ELSE')],
+          [$else, () => $.p({ id: 'else' }, 'ELSE')],
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('else')?.textContent).toBe('ELSE');
     a.value = true;
@@ -132,13 +133,13 @@ describe('match', () => {
     const App = () =>
       $.div(
         {},
-        $.match(
+        $match(
           [() => step.value === 0, () => $.p({ id: 's0' }, '0')],
           [() => step.value === 1, () => $.p({ id: 's1' }, '1')],
-          [$.else, () => $.p({ id: 's2' }, '2')],
+          [$else, () => $.p({ id: 's2' }, '2')],
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('s0')).not.toBeNull();
     step.value = 1;
@@ -159,7 +160,7 @@ describe('match', () => {
     const App = () =>
       $.div(
         {},
-        $.match(
+        $match(
           [a, () => $.p({ id: 'a' }, 'A')],
           [
             b,
@@ -170,7 +171,7 @@ describe('match', () => {
           ],
         ),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // a=true venceu; o ramo b nunca foi construído
     expect(builds).toBe(0);
@@ -187,12 +188,12 @@ describe('switch', () => {
     const App = () =>
       $.div(
         {},
-        $.switch(() => screen.value, {
+        $switch(() => screen.value, {
           login: () => $.p({ id: 'login' }, 'L'),
           register: () => $.p({ id: 'register' }, 'R'),
         }),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('login')).not.toBeNull();
     screen.value = 'register';
@@ -205,20 +206,20 @@ describe('switch', () => {
     const withFb = () =>
       $.div(
         {},
-        $.switch(
+        $switch(
           () => screen.value,
           { login: () => $.p({ id: 'login' }, 'L') },
           () => $.p({ id: 'fb' }, 'FB'),
         ),
       );
-    $.mount(document.body, withFb);
+    $mount(document.body, withFb);
     expect(document.getElementById('fb')?.textContent).toBe('FB');
 
     document.body.innerHTML = '';
     const screen2 = signal('x');
     const noFb = () =>
-      $.div({}, $.switch(() => screen2.value, { login: () => $.p({ id: 'login' }, 'L') }));
-    $.mount(document.body, noFb);
+      $.div({}, $switch(() => screen2.value, { login: () => $.p({ id: 'login' }, 'L') }));
+    $mount(document.body, noFb);
     expect(document.getElementById('login')).toBeNull();
     expect(document.getElementById('fb')).toBeNull();
   });
@@ -228,12 +229,12 @@ describe('switch', () => {
     const App = () =>
       $.div(
         {},
-        $.switch(n, {
+        $switch(n, {
           '0': () => $.p({ id: 'zero' }, 'Z'),
           '1': () => $.p({ id: 'one' }, 'O'),
         }),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('zero')).not.toBeNull();
     n.value = 1;
@@ -251,7 +252,7 @@ describe('garantia bug 1 (view de match/switch em untrack)', () => {
     const App = () =>
       $.div(
         {},
-        $.match([
+        $match([
           cond,
           () => {
             builds++;
@@ -260,7 +261,7 @@ describe('garantia bug 1 (view de match/switch em untrack)', () => {
           },
         ]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(builds).toBe(1);
     inner.value = 'b'; // não deve reconstruir

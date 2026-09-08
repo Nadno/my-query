@@ -1,15 +1,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@preact/signals-core';
 import $ from '../../index';
+import { $mount, $when, $match, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 beforeEach(() => {
   document.body.innerHTML = '';
 });
 
-describe('bug 1: $.when não rastreia a construção do ramo', () => {
+describe('bug 1: $when não rastreia a construção do ramo', () => {
   it('mudar signal lido DENTRO do ramo não remonta o ramo', () => {
     const open = signal(true);
     const user = signal({ name: 'a' });
@@ -21,8 +22,8 @@ describe('bug 1: $.when não rastreia a construção do ramo', () => {
       return $.div({ id: 'panel' }, () => `hi ${current.name}`);
     };
 
-    const App = () => $.div({}, $.when(open, () => Panel()));
-    $.mount(document.body, App);
+    const App = () => $.div({}, $when(open, () => Panel()));
+    $mount(document.body, App);
 
     expect(builds).toBe(1);
     // alterar user NÃO deve reconstruir o Panel (bug antigo: ia pra 2)
@@ -50,7 +51,7 @@ describe('bug 1b: região de lista não rastreia construção dos itens', () => 
 
     const App = () =>
       $.ul({}, () => items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(builds).toBe(2);
     extern.value = 'y'; // não deve reconstruir nada
@@ -67,7 +68,7 @@ describe('bug 2: reconcile só move nós fora de posição (preserva foco)', () 
 
     const App = () =>
       $.ul({}, () => rows.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     const first = document.getElementById('inp-1') as HTMLInputElement;
     first.focus();
@@ -84,7 +85,7 @@ describe('bug 2: reconcile só move nós fora de posição (preserva foco)', () 
     const Row = (p: { id: number }) => $.li({}, $.input({ id: `inp-${p.id}` }));
     const App = () =>
       $.ul({}, () => rows.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     const n2 = document.getElementById('inp-2') as HTMLInputElement;
     n2.focus();
@@ -106,17 +107,17 @@ describe('região: função/região retornada de um ramo monta de verdade', () =
     const App = () =>
       $.div(
         {},
-        $.match([
+        $match([
           outer,
           () =>
-            $.when(
+            $when(
               inner,
               () => $.p({ id: 'x' }, 'X'),
               () => $.p({ id: 'y' }, 'Y'),
             ),
         ]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // a região aninhada montou de verdade
     expect(document.getElementById('x')).not.toBeNull();
@@ -131,17 +132,17 @@ describe('região: função/região retornada de um ramo monta de verdade', () =
     const App = () =>
       $.div(
         {},
-        $.match([
+        $match([
           outer,
           () =>
-            $.when(
+            $when(
               inner,
               () => $.p({ id: 'x' }, 'X'),
               () => $.p({ id: 'y' }, 'Y'),
             ),
         ]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('x')).not.toBeNull();
     inner.value = false; // effect da região interna está vivo
@@ -155,17 +156,17 @@ describe('região: função/região retornada de um ramo monta de verdade', () =
     const App = () =>
       $.div(
         {},
-        $.match([
+        $match([
           outer,
           () =>
-            $.when(
+            $when(
               inner,
               () => $.p({ id: 'x' }, 'X'),
               () => $.p({ id: 'y' }, 'Y'),
             ),
         ]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(document.getElementById('x')).not.toBeNull();
     outer.value = false; // ramo externo sai → sub-escopo (região interna) descartado
@@ -195,7 +196,7 @@ describe('escopos aninhados: cleanup dispara ao remover item da região', () => 
 
     const App = () =>
       $.div({}, () => items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(runs[1]).toBe(1);
     expect(runs[2]).toBe(1);
@@ -218,7 +219,7 @@ describe('escopos aninhados: cleanup dispara ao remover item da região', () => 
 
     const App = () =>
       $.div({}, () => items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]));
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(spies[1]).not.toHaveBeenCalled();
     expect(spies[2]).not.toHaveBeenCalled();

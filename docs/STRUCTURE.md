@@ -1,6 +1,6 @@
 # mini-q — Padrão estrutural (colocation + feature-sliced)
 
-> Onde o código **mora**. Para como ele **flui** (de `$.mount` a `unmount`), veja [FLOW.md](FLOW.md).
+> Onde o código **mora**. Para como ele **flui** (de `$mount` a `unmount`), veja [FLOW.md](FLOW.md).
 
 Como o código de `src/` é organizado. Duas ideias governam tudo:
 
@@ -23,7 +23,7 @@ nomeados pelo **papel**, não por tipo genérico:
 src/style/
   index.ts     ← barril: a superfície pública (o que o resto do app importa)
   emit.ts      ← motor: objeto JS → CSS → injeção no DOM
-  build.ts     ← lógica de domínio: $.style(name, config) → StyleHandle
+  build.ts     ← lógica de domínio: style(name, config) → StyleHandle
   types.ts     ← contrato público da slice (colocado, não global)
   style.test.ts (ideal: teste colocado — ver "Débito" abaixo)
 ```
@@ -63,16 +63,15 @@ Não promova só por estética: um arquivo coeso de 80 linhas não precisa de pa
 | Slice / módulo | Forma | Papel |
 |---|---|---|
 | `element/` | slice (create/props/children/region/control/guards + barril) | construção de nós: `createTag` + props + children + região keyed + `when` |
-| `style/` | slice (emit/build/types + barril) | CSS: `$.style` namespace |
+| `style/` | slice + entry `mini-q/style` (emit/build/config/media/types + barril) | CSS `style` namespace + breakpoints (`config`/`media`) — **fora do core** |
 | `events/` | slice (handle/apply/custom/types + barril) | eventos + custom events + `handle` |
 | `dom/` | pasta (só `nodes.ts`) | primitivas de nó/`cx` |
 | `adapters/` | pasta (só `preact.ts`) | adapters de signal |
 | `reactive.ts` | arquivo | contrato de reatividade (adapter) |
 | `mount.ts` / `lifecycle.ts` | arquivos | escopo de montagem/cleanup |
 | `behaviors.ts` | arquivo | `model`/`show` (`use`) |
-| `config.ts` / `media.ts` | arquivos | breakpoints (`$.config` + `@nome` + `$.media`) |
 | `types.ts` | arquivo (global) | tipos de View compartilhados (`Props`, `Child`, …) |
-| `index.ts` | raiz | compõe o `$` a partir das slices |
+| `index.ts` | raiz | barril: `$` (tags) + os `$`-helpers nomeados |
 
 ---
 

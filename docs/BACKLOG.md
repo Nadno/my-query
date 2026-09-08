@@ -38,6 +38,14 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   (`clickOutside`/`focusOutside`/`hover` montam/limpam listener; fora vs dentro). As **decisões de
   design** de E6 (deprecar `$.handlers` raiz, delegation + `DOMHandlerStore`, hover-touch) ficam
   como etapas `feat(events):` próprias. **121 testes.**
+- **2026-09-08** — **Refactor de API**: `$` vira **namespace puro de tags** (removido o seletor
+  `$(sel)`, sem uso); os recursos viram **exports nomeados** com prefixo `$` (`$mount`/`$when`/
+  `$match`/`$switch`/`$else`/`$append`/`$handle`/`$handlers`/`$onMounted`/`$onUnmounted`/`$useSignal`/
+  `$model`/`$show`/`$cx`/`$registerCustomEvent`). O **engine de estilo + breakpoints saiu do core**
+  para o entry opcional **`mini-q/style`** (`style`/`css`/`compile`/`inject`/`config`/`media`);
+  `STYLE_HANDLE` fica no core, então `class`/`$class`/`$cx` seguem aceitando handles. Migrados testes,
+  demo e `examples/auth` (typecheck do exemplo ok). Docs GLOSSARY/FLOW atualizados; USAGE em DOCS-DRIFT.
+  2 commits (`refactor(style):`, `refactor(api):`). 124 testes verdes, typecheck+build ok.
 - **2026-09-08** — **E5 (specs integradas)** do roadmap — **fecha o roadmap de testes E1–E6**:
   `describe('specs integradas (E5)')` em `src/index.test.ts` com 3 fluxos cross-slice novos —
   `model` em item de lista keyed (foco+valor preservados no reorder, listener limpo na remoção),
@@ -190,17 +198,16 @@ Reescrever como **behaviors** (`use`) quando forem necessários (ex.: modal do e
 - Pacote aponta os `exports` para `.ts` (sem build em `dist/`). Sem artefato publicável ainda.
 - Sem SSR/hydration. **Proposta de SSG** (backend injetável + `StringBackend` + `emitStylesheet`; hydration
   como fase opcional; SSR deferido) em [proposals/ssg.md](proposals/ssg.md). P3
-- `$(sel)` retorna só `{ element }` (sem traversal) — por design, mas registrado.
 - Exemplo `examples/auth` planejado (prompt pronto) e ainda não implementado.
 
 ---
 
 ## Organização modular do `src/` (P3, doc)
 
-Sensação (do usuário) de que falta modularidade: `events/` já é pasta própria, mas várias features são
-arquivos soltos no topo (`reactive.ts`, `style.ts`, `config.ts`, `media.ts`, `behaviors.ts`, `element.ts`).
-Direção a considerar: **cada feature = uma pasta** com `index.ts` + partes (ex.: `reactivity/`, `css/`
-[style+config+media juntos], `behaviors/`, `element/`), no espírito do `events/`. E **quebrar utilitários**
+Sensação (do usuário) de que falta modularidade: `events/`/`element/`/`style/` já são pastas próprias
+(estilo+config+media agora juntos em `style/`, entry `mini-q/style`), mas ainda há arquivos soltos no
+topo (`reactive.ts`, `behaviors.ts`, `mount.ts`). Direção a considerar: **cada feature = uma pasta** com
+`index.ts` + partes (ex.: `reactivity/`, `behaviors/`), no espírito do `events/`. E **quebrar utilitários**
 (`dom/nodes.ts` acumula node-helpers + `resolveClass`/`cx`) para não concentrar contexto num só lugar.
 Não muda a API pública (o `index.ts` reexporta) — é refactor de estrutura. Fazer quando as features
 estabilizarem (mover cedo demais só gera churn).

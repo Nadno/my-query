@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import $ from '../../index';
+import { $mount, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { config, media } from '../index';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 describe('media — sinal de breakpoint', () => {
   beforeEach(() => {
@@ -31,7 +32,7 @@ describe('media — sinal de breakpoint', () => {
       md = media('md');
       return $.div({ $class: () => (md.value ? 'wide' : 'narrow') });
     };
-    const unmount = $.mount(document.body, App);
+    const unmount = $mount(document.body, App);
 
     const el = document.body.querySelector('div')!;
     expect(el.className).toBe('narrow');

@@ -1,10 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { signal, computed } from '@preact/signals-core';
 import $ from './index';
+import { $mount, $when, $match, $switch, $else, $onMounted, $onUnmounted, $useSignal, $handle, $model, $show, $cx } from './index';
 import { preact } from './adapters/preact';
 import { style } from './style';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -61,7 +62,7 @@ describe('eventos', () => {
   });
 
   it('modificadores via array [handler, ...mods]', () => {
-    const { keys, prevent } = $.handle;
+    const { keys, prevent } = $handle;
     let entered = 0;
     const input = $.input({
       on: { keydown: [() => entered++, keys('Enter'), prevent] },
@@ -111,7 +112,7 @@ describe('lista keyed', () => {
     const ul = $.ul({}, () =>
       items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
     );
-    $.mount(document.body, ul);
+    $mount(document.body, ul);
 
     const rowsInitial = [...document.querySelectorAll('li')];
     expect(rowsInitial.map((r) => r.id)).toEqual(['row-1', 'row-2', 'row-3']);
@@ -134,8 +135,8 @@ describe('lista keyed', () => {
 describe('when', () => {
   it('monta/desmonta conforme condição', () => {
     const open = signal(false);
-    const el = $.div({}, $.when(open, () => $.p({ id: 'panel' }, 'oi')));
-    $.mount(document.body, el);
+    const el = $.div({}, $when(open, () => $.p({ id: 'panel' }, 'oi')));
+    $mount(document.body, el);
     expect(document.getElementById('panel')).toBeNull();
     open.value = true;
     expect(document.getElementById('panel')?.textContent).toBe('oi');
@@ -154,7 +155,7 @@ describe('lifecycle / mount → unmount', () => {
         effectRuns++;
         return `n=${n.value}`;
       });
-    const unmount = $.mount(document.body, App);
+    const unmount = $mount(document.body, App);
     expect(effectRuns).toBe(1);
     n.value = 1;
     expect(effectRuns).toBe(2);
@@ -172,13 +173,13 @@ describe('onMounted / onUnmounted', () => {
   it('setup: onMounted roda no build; onUnmounted roda no unmount da raiz', () => {
     const order: string[] = [];
     const App = $.div(() => {
-      $.onMounted(() => {
+      $onMounted(() => {
         order.push('mounted');
       });
-      $.onUnmounted(() => order.push('unmounted'));
+      $onUnmounted(() => order.push('unmounted'));
       return 'x';
     });
-    const unmount = $.mount(document.body, App);
+    const unmount = $mount(document.body, App);
     expect(order).toEqual(['mounted']);
     unmount();
     expect(order).toEqual(['mounted', 'unmounted']);
@@ -187,7 +188,7 @@ describe('onMounted / onUnmounted', () => {
   it('onMounted que retorna teardown: monta o recurso e limpa no unmount ("depende de ambos")', () => {
     let active = false;
     const App = $.div(() => {
-      $.onMounted(() => {
+      $onMounted(() => {
         active = true;
         return () => {
           active = false;
@@ -195,7 +196,7 @@ describe('onMounted / onUnmounted', () => {
       });
       return 'x';
     });
-    const unmount = $.mount(document.body, App);
+    const unmount = $mount(document.body, App);
     expect(active).toBe(true);
     unmount();
     expect(active).toBe(false);
@@ -205,10 +206,10 @@ describe('onMounted / onUnmounted', () => {
     const items = signal([{ id: 1 }, { id: 2 }]);
     const cleaned: number[] = [];
     const Row = $.li<{ id: number }>((props) => {
-      $.onUnmounted(() => cleaned.push(props.id));
+      $onUnmounted(() => cleaned.push(props.id));
       return `#${props.id}`;
     });
-    $.mount(document.body, $.ul({}, () =>
+    $mount(document.body, $.ul({}, () =>
       items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
     ));
 
@@ -222,7 +223,7 @@ describe('onMounted / onUnmounted', () => {
 describe('behaviors', () => {
   it('model faz two-way binding', () => {
     const text = signal('hi');
-    const input = $.input({ use: $.model(text) });
+    const input = $.input({ use: $model(text) });
     expect(input.value).toBe('hi');
     input.value = 'yo';
     input.dispatchEvent(new Event('input'));
@@ -233,8 +234,8 @@ describe('behaviors', () => {
 
   it('model remove o listener no unmount (teardown via onUnmounted)', () => {
     const text = signal('hi');
-    const App = () => $.input({ use: $.model(text) });
-    const unmount = $.mount(document.body, App);
+    const App = () => $.input({ use: $model(text) });
+    const unmount = $mount(document.body, App);
     const input = document.querySelector('input')!;
 
     input.value = 'yo';
@@ -250,7 +251,7 @@ describe('behaviors', () => {
 
   it('show alterna hidden', () => {
     const vis = signal(true);
-    const el = $.div({ use: $.show(vis) });
+    const el = $.div({ use: $show(vis) });
     expect(el.hidden).toBe(false);
     vis.value = false;
     expect(el.hidden).toBe(true);
@@ -273,7 +274,7 @@ describe('style / cx (DX)', () => {
   });
 
   it('cx compõe condicionais', () => {
-    expect($.cx('a', false, 'b', ['c', null])).toBe('a b c');
+    expect($cx('a', false, 'b', ['c', null])).toBe('a b c');
     void computed;
   });
 
@@ -304,16 +305,16 @@ describe('style / cx (DX)', () => {
 });
 
 describe('$ expõe control-flow flat', () => {
-  it('$.match / $.switch / $.else existem', () => {
-    expect(typeof $.match).toBe('function');
-    expect(typeof $.switch).toBe('function');
-    expect($.else).toBeTruthy();
+  it('$match / $switch / $else existem', () => {
+    expect(typeof $match).toBe('function');
+    expect(typeof $switch).toBe('function');
+    expect($else).toBeTruthy();
   });
 
-  it('$.match renderiza via $.mount', () => {
+  it('$match renderiza via $mount', () => {
     const on = signal(true);
-    const App = () => $.div({}, $.match([on, () => $.p({ id: 'm' }, 'M')]));
-    $.mount(document.body, App);
+    const App = () => $.div({}, $match([on, () => $.p({ id: 'm' }, 'M')]));
+    $mount(document.body, App);
     expect(document.getElementById('m')?.textContent).toBe('M');
     on.value = false;
     expect(document.getElementById('m')).toBeNull();
@@ -331,12 +332,12 @@ describe('specs integradas (E5)', () => {
     };
     const items = signal([{ id: 1 }, { id: 2 }]);
     const Row = (p: { id: number }) =>
-      $.input({ id: `inp-${p.id}`, use: $.model(models[p.id]!) });
+      $.input({ id: `inp-${p.id}`, use: $model(models[p.id]!) });
     const App = () =>
       $.ul({}, () =>
         items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // digita no id 2 → signal do id 2 recebe
     const inp2 = document.getElementById('inp-2') as HTMLInputElement;
@@ -376,13 +377,13 @@ describe('specs integradas (E5)', () => {
     };
     const items = signal([{ id: 1 }, { id: 2 }]);
     const Row = $.li<{ id: number }>((p) =>
-      $.when(opens[p.id]!, () => $.p({ id: `panel-${p.id}` }, `#${p.id}`)),
+      $when(opens[p.id]!, () => $.p({ id: `panel-${p.id}` }, `#${p.id}`)),
     );
     const App = () =>
       $.ul({}, () =>
         items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     // abre só o painel do id 2
     expect(document.getElementById('panel-2')).toBeNull();
@@ -406,7 +407,7 @@ describe('specs integradas (E5)', () => {
     const live: Record<number, boolean> = {};
     const items = signal([{ id: 1 }, { id: 2 }]);
     const Row = $.li<{ id: number }>((p) => {
-      $.onMounted(() => {
+      $onMounted(() => {
         live[p.id] = true;
         return () => {
           live[p.id] = false;
@@ -418,7 +419,7 @@ describe('specs integradas (E5)', () => {
       $.ul({}, () =>
         items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
       );
-    $.mount(document.body, App);
+    $mount(document.body, App);
 
     expect(live).toEqual({ 1: true, 2: true });
 

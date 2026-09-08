@@ -1,4 +1,5 @@
 import $ from 'mini-q';
+import { $when } from 'mini-q';
 import { style } from 'mini-q/style';
 
 export const inputClass = style('input', {
@@ -38,11 +39,11 @@ export function Field(p: {
     { $class: () => fieldStyle({ invalid: !!p.error?.() }) },
     $.label({ class: fieldStyle.label }, p.label),
     p.control,
-    $.when(
+    $when(
       () => !!(p.hint && p.hint() && !p.error?.()),
       () => $.p({ class: fieldStyle.hint }, () => p.hint?.() ?? ''),
     ),
-    $.when(
+    $when(
       () => !!p.error?.(),
       () => $.p({ class: fieldStyle.error }, () => p.error?.() ?? ''),
     ),

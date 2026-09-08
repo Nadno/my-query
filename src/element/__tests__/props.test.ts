@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { signal } from '@preact/signals-core';
 import $ from '../../index';
+import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 beforeEach(() => {
   document.body.innerHTML = '';

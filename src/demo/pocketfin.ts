@@ -6,6 +6,7 @@
 
 import { signal, computed, type Signal } from '@preact/signals-core';
 import $ from '../index';
+import { $when, $model } from '../index';
 
 export type Kind = 'income' | 'expense';
 export interface Tx {
@@ -93,7 +94,7 @@ function Modal() {
     close();
   };
 
-  return $.when(modalOpen, () =>
+  return $when(modalOpen, () =>
     $.div(
       { class: 'overlay' },
       $.div(
@@ -108,18 +109,18 @@ function Modal() {
           $.div(
             { class: 'field' },
             $.label({ class: 'field-label' }, 'Título'),
-            $.input({ class: 'input', type: 'text', placeholder: 'Ex.: Salário', use: $.model(title) }),
+            $.input({ class: 'input', type: 'text', placeholder: 'Ex.: Salário', use: $model(title) }),
           ),
           $.div(
             { class: 'field' },
             $.label({ class: 'field-label' }, 'Valor'),
-            $.input({ class: 'input', type: 'number', step: '0.01', placeholder: '0,00', use: $.model(amount) }),
+            $.input({ class: 'input', type: 'number', step: '0.01', placeholder: '0,00', use: $model(amount) }),
           ),
           $.div(
             { class: 'field' },
             $.label({ class: 'field-label' }, 'Tipo'),
             $.select(
-              { class: 'input', use: $.model(type as Signal<string>) },
+              { class: 'input', use: $model(type as Signal<string>) },
               $.option({ value: 'income' }, 'Entrada'),
               $.option({ value: 'expense' }, 'Saída'),
             ),

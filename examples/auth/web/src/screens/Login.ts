@@ -1,5 +1,6 @@
 import { signal } from '@preact/signals-core';
 import $ from 'mini-q';
+import { $handle } from 'mini-q';
 import { ApiError } from '../api';
 import { screen, useAuth } from '../composables/useAuth';
 import { useToast } from '../composables/useToast';
@@ -32,7 +33,7 @@ export function Login() {
     $.h1({ class: card.title }, 'Entrar'),
     $.p({ class: card.muted }, 'Sessão JWT com refresh em cookie.'),
     $.form(
-      { class: form, on: { submit: [submit, $.handle.prevent] } },
+      { class: form, on: { submit: [submit, $handle.prevent] } },
       Field({
         label: 'E-mail',
         control: TextInput({

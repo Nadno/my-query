@@ -1,13 +1,12 @@
-/** Monta o `$`: selector + factories de tag + mount/handle/when/style/useSignal. */
+/**
+ * `$` = namespace de factories de tag (`$.div`, `$.p`, …) — só manipulação de DOM.
+ * Os recursos do mini-q são exports **nomeados** com prefixo `$` (`$mount`, `$when`,
+ * `$handle`, `$model`, `$useSignal`, …), importados à parte. O engine de CSS mora no
+ * entry opcional `mini-q/style`.
+ */
 
-import { createTag, when, match, switchOn, ELSE, appendChild } from './element';
-import { mount } from './mount';
-import { onMounted, onUnmounted } from './lifecycle';
-import { useSignal } from './reactive';
+import { createTag } from './element';
 import { handle } from './events/handle';
-import { registerCustomEvent } from './events/custom';
-import { cx, getElement } from './dom/nodes';
-import { model, show } from './behaviors';
 import type { MQ, Props, TagElement, TagName } from './types';
 
 const TAGS: TagName[] = [
@@ -24,7 +23,7 @@ const TAGS: TagName[] = [
   'template', 'textarea', 'tfoot', 'th', 'thead', 'time', 'tr', 'track', 'u',
   'ul', 'var', 'video', 'wbr',
 ];
-// 'style' fica de fora dos factories: `$.style` é a função de CSS.
+// 'style' fica de fora dos factories (elemento raro; sem conflito de nome).
 
 /** Factory de uma tag: componente (setup) ou elemento (props+children). */
 export interface TagFactory<T extends TagName> {
@@ -35,66 +34,42 @@ export interface TagFactory<T extends TagName> {
   (...children: unknown[]): TagElement<T>;
 }
 
-type Factories = { [T in Exclude<TagName, 'style'>]: TagFactory<T> };
+/** O `$`: dicionário de factories de tag (sem seletor, sem helpers). */
+export type MiniQuery = { [T in Exclude<TagName, 'style'>]: TagFactory<T> };
 
-export interface MiniQuery extends Factories {
-  <E extends Element = Element>(target: string | E): MQ<E>;
-  mount: typeof mount;
-  onMounted: typeof onMounted;
-  onUnmounted: typeof onUnmounted;
-  useSignal: typeof useSignal;
-  handle: typeof handle;
-  handlers: typeof handle.handlers;
-  when: typeof when;
-  match: typeof match;
-  switch: typeof switchOn;
-  else: typeof ELSE;
-  append: typeof appendChild;
-  cx: typeof cx;
-  model: typeof model;
-  show: typeof show;
-  registerCustomEvent: typeof registerCustomEvent;
-}
-
-function query<E extends Element = Element>(target: string | E): MQ<E> {
-  return { element: getElement(target) as E };
-}
-
-const $ = query as unknown as MiniQuery;
+const $ = {} as MiniQuery;
 
 for (const tag of TAGS) {
   ($ as unknown as Record<string, unknown>)[tag] = (...args: unknown[]) =>
     (createTag as (...a: unknown[]) => unknown)(tag, ...args);
 }
 
-Object.assign($, {
-  mount,
-  onMounted,
-  onUnmounted,
-  useSignal,
-  handle,
-  handlers: handle.handlers,
-  when,
-  match,
-  switch: switchOn,
-  else: ELSE,
-  append: appendChild,
-  cx,
-  model,
-  show,
-  registerCustomEvent,
-});
-
 export default $;
 
-export { createTag, when, match, switchOn, ELSE, appendChild } from './element';
-export { mount } from './mount';
-export { onMounted, onUnmounted } from './lifecycle';
-export { useSignal, isSignal, isReactive, read, bind, untrack } from './reactive';
-export { handle, compose } from './events/handle';
-export { registerCustomEvent, getCustomEvent } from './events/custom';
-export { applyUse, model, show } from './behaviors';
-export { cx } from './dom/nodes';
+/* Recursos desaninhados — prefixo `$` (evita colisão com palavras reservadas). */
+export { mount as $mount } from './mount';
+export {
+  when as $when,
+  match as $match,
+  switchOn as $switch,
+  ELSE as $else,
+  appendChild as $append,
+} from './element';
+export { onMounted as $onMounted, onUnmounted as $onUnmounted } from './lifecycle';
+export { useSignal as $useSignal } from './reactive';
+export { handle as $handle } from './events/handle';
+export { registerCustomEvent as $registerCustomEvent } from './events/custom';
+export { model as $model, show as $show } from './behaviors';
+export { cx as $cx } from './dom/nodes';
+export const $handlers = handle.handlers;
+
+/* Baixo nível — exports bare (nunca estiveram no `$`). */
+export { createTag } from './element';
+export { compose } from './events/handle';
+export { getCustomEvent } from './events/custom';
+export { applyUse } from './behaviors';
+export { isSignal, isReactive, read, bind, untrack } from './reactive';
+
 export type { ReactiveAdapter, Bindable } from './reactive';
 export type { Cleanup, Scope } from './lifecycle';
 export type {

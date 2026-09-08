@@ -1,6 +1,6 @@
 # mini-q — Fluxo fundamental
 
-Como uma árvore ganha vida e morre no mini-q: o caminho de `$.mount` até `unmount`, e onde
+Como uma árvore ganha vida e morre no mini-q: o caminho de `$mount` até `unmount`, e onde
 reatividade e cleanup se encaixam. Para *nomes*, veja [GLOSSARY.md](GLOSSARY.md); para *onde o
 código mora*, [STRUCTURE.md](STRUCTURE.md); para *como usar*, [USAGE.md](USAGE.md). Esta doc é o
 **mapa mental** que liga tudo.
@@ -21,7 +21,7 @@ regra. Cada assunto (element, events, style, reactive, lifecycle…) é uma fati
 
 ```mermaid
 flowchart TD
-  A["$.mount(target, App)"] --> B["createScope(null)\nescopo raiz"]
+  A["$mount(target, App)"] --> B["createScope(null)\nescopo raiz"]
   B --> C["runInScope(scope, …)"]
   C --> D["build: App(props)\n(createTag)"]
   D --> E["applyProps\n$-props → bind → effect"]
@@ -61,7 +61,7 @@ chave com **`$`-prefixo** (`$disabled`, `$value`…) vira atributo/propriedade *
 ## 4. Reatividade (slice `reactive`)
 
 A lib é **agnóstica de signal**: o usuário instala um [adapter](../src/reactive.ts) mínimo com
-`$.useSignal({ isSignal, getValue, effect, untrack?, signal? })`. Um valor reativo (**Bindable**)
+`$useSignal({ isSignal, getValue, effect, untrack?, signal? })`. Um valor reativo (**Bindable**)
 é um signal **ou** uma função `() => expr` — esta funciona com qualquer adapter (só depende de
 `effect`).
 
@@ -102,22 +102,27 @@ e é governada pela mesma maquinaria de região da seção 5.
 
 ## 7. Como estilo e breakpoints se encaixam
 
-- **Estilo** ([slice `style/`](../src/style)): `$.style(nome, config)` injeta CSS e devolve um
-  **StyleHandle** callable. No fluxo acima ele aparece em `class`/`$class`/`cx` — que **chamam** o
-  handle (branded por `STYLE_HANDLE`) e resolvem para a string de classes. Vocabulário completo no
-  GLOSSARY (§Estilo).
-- **Breakpoints** ([config](../src/config.ts) + [media](../src/media.ts)): `$.config` registra
-  medias nomeadas; `resolveMedia` traduz `@md` no CSS (via emit) **e** alimenta `$.media`, que é um
-  signal booleano de `matchMedia` com cleanup no escopo — reatividade pela mesma via da seção 4.
+Estilo e breakpoints **saíram do core** para o entry opcional `mini-q/style` (não são manipulação
+direta de DOM). O core só sabe do brand `STYLE_HANDLE` (em `types.ts`), então `class`/`$class`/`$cx`
+seguem aceitando handles mesmo com o engine à parte.
+
+- **Estilo** ([slice `style/`](../src/style)): `style(nome, config)` (de `mini-q/style`) injeta CSS e
+  devolve um **StyleHandle** callable. No fluxo acima ele aparece em `class`/`$class`/`$cx` — que
+  **chamam** o handle (branded por `STYLE_HANDLE`) e resolvem para a string de classes. Vocabulário
+  completo no GLOSSARY (§Estilo).
+- **Breakpoints** ([style/config](../src/style/config.ts) + [style/media](../src/style/media.ts)):
+  `config` registra medias nomeadas; `resolveMedia` traduz `@md` no CSS (via emit) **e** alimenta
+  `media`, que é um signal booleano de `matchMedia` com cleanup no escopo — reatividade pela mesma
+  via da seção 4.
 
 ## 8. Onde mora cada peça
 
 | Etapa do fluxo | Módulo | Símbolos |
 |---|---|---|
-| Compor o `$` | [index.ts](../src/index.ts) | `$`, factories de tag |
-| Montar/desmontar | [mount.ts](../src/mount.ts) | `mount` → `unmount` |
+| Barril público (`$` tags + `$`-helpers) | [index.ts](../src/index.ts) | `$` (tags), `$mount`, `$when`, `$handle`, `$model`, `$useSignal`, … |
+| Montar/desmontar | [mount.ts](../src/mount.ts) | `mount` → `unmount` (`$mount`) |
 | Escopo & cleanup | [lifecycle.ts](../src/lifecycle.ts) | `createScope`, `runInScope`, `registerCleanup`, `disposeScope`, `onMounted`, `onUnmounted` |
-| Contrato reativo | [reactive.ts](../src/reactive.ts) | `useSignal`, `bind`, `read`, `untrack`, `isReactive` |
+| Contrato reativo | [reactive.ts](../src/reactive.ts) | `useSignal` (`$useSignal`), `bind`, `read`, `untrack`, `isReactive` |
 | Criar tag | [element/create.ts](../src/element/create.ts) | `createTag` (dual) |
 | Aplicar props | [element/props.ts](../src/element/props.ts) | `applyProps` (+ `$`-prefixo) |
 | Anexar filhos | [element/children.ts](../src/element/children.ts) | `appendChild` |
@@ -127,11 +132,11 @@ e é governada pela mesma maquinaria de região da seção 5.
 | Nós & classes | [dom/nodes.ts](../src/dom/nodes.ts) | `isNode`, `toNodes`, `resolveClass`, `cx`, `getElement` |
 | Eventos | [events/](../src/events) | `handle`, `applyEvents`, custom events |
 | Behaviors (`use`) | [behaviors.ts](../src/behaviors.ts) | `applyUse`, `model`, `show` |
-| Estilo (CSS) | [style/](../src/style) | `$.style`, `StyleHandle`, `emit` |
-| Breakpoints | [config.ts](../src/config.ts) · [media.ts](../src/media.ts) | `config`, `resolveMedia`, `media` |
+| Estilo (CSS) — entry `mini-q/style` | [style/](../src/style) | `style`, `StyleHandle`, `emit` |
+| Breakpoints — entry `mini-q/style` | [style/config.ts](../src/style/config.ts) · [style/media.ts](../src/style/media.ts) | `config`, `resolveMedia`, `media` |
 | Tipos de View | [types.ts](../src/types.ts) | `Props`, `Child`, `Component`, `MQ`, `STYLE_HANDLE` |
 
-> Regra de ouro para navegar: **entra pelo `$`** (index) → o assunto é uma **slice** com barril
-> (`element/`, `events/`, `style/`) ou um **arquivo solto** coeso (`reactive`, `lifecycle`,
-> `mount`, `behaviors`). O interior de uma slice se importa por caminho direto; de fora, só o
-> barril. Detalhes do padrão em [STRUCTURE.md](STRUCTURE.md).
+> Regra de ouro para navegar: **entra pelo barril** ([index.ts](../src/index.ts) — `$` de tags +
+> os `$`-helpers) → o assunto é uma **slice** com barril (`element/`, `events/`, `style/`) ou um
+> **arquivo solto** coeso (`reactive`, `lifecycle`, `mount`, `behaviors`). O interior de uma slice
+> se importa por caminho direto; de fora, só o barril. Detalhes do padrão em [STRUCTURE.md](STRUCTURE.md).

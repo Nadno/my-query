@@ -27,6 +27,13 @@ Defasou com o **redesenho de estilos** e os **fixes de runtime** (2026-09-06).
 - [ ] **F** Referência rápida: adicionar `$.config`, `$.media`; ajustar linha de `$.style`/`$.parts`.
 - [ ] **H** §5 eventos: `handle.debounce`/`throttle` adiam o handler, então `prevent` composto atrás deles
   chega tarde — documentar a ordem (ou tratar `preventDefault` na captura).
+- [ ] **A** **Refactor de API (2026-09-08)**: o USAGE inteiro (~87 refs) usa a forma antiga aninhada
+  `$.mount`/`$.when`/`$.handle`/`$.model`/`$.onMounted`/`$.useSignal`/`$.style`/`$.config`/`$.media` e o
+  seletor `$(sel)`. Reescrever: `$` = **só tags** (`$.div`); recursos = **exports nomeados** `$mount`/
+  `$when`/`$match`/`$switch`/`$else`/`$append`/`$handle`/`$handlers`/`$onMounted`/`$onUnmounted`/
+  `$useSignal`/`$model`/`$show`/`$cx`/`$registerCustomEvent`; estilo/breakpoints via
+  `import { style, config, media } from 'mini-q/style'`. Remover a menção ao seletor `$(sel)`. Ver
+  GLOSSARY (já atualizado) como referência dos nomes.
 
 ## `docs/BACKLOG.md`
 

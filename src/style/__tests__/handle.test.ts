@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import $ from '../../index';
+import { $mount, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { style, cx } from '../index';
 
-$.useSignal(preact);
+$useSignal(preact);
 
 // Nomes de bloco únicos por caso: a slice mantém registries de módulo
 // (registered/injected/warnedDup) que persistem por toda a suíte. Sem um reset
@@ -57,7 +58,7 @@ describe('style — class/cx aceitam o handle', () => {
   it('class: handle aplica a classe no elemento montado', () => {
     document.body.innerHTML = '';
     const badge = style('h-cx-badge', { color: 'red' });
-    const unmount = $.mount(document.body, () => $.span({ class: badge }));
+    const unmount = $mount(document.body, () => $.span({ class: badge }));
     expect(document.body.querySelector('span')!.className).toBe('h-cx-badge');
     unmount();
   });

@@ -3,11 +3,15 @@
 Linguagem comum dos recursos de DX. Use estes nomes nas docs, commits e conversas para consistência.
 Cada termo: **nome** — definição curta · `token de código`.
 
+**Forma da API (2026-09-08):** `$` é **só o namespace de factories de tag** (`$.div`, `$.p`, …). Os
+recursos são **exports nomeados com prefixo `$`** (`$mount`, `$when`, `$handle`, `$model`,
+`$useSignal`, …), importados à parte. O engine de CSS vive no entry **opcional** `mini-q/style`.
+
 ---
 
 ## Núcleo (DOM / render)
 
-- **`$` (raiz)** — o objeto único: selector `$(sel)` + factories de tag + utilitários (`$.mount`, `$.style`, `$.handle`…). · `import $ from 'mini-q'`
+- **`$` (namespace de tags)** — dicionário de factories de tag (sem seletor, sem helpers). · `import $ from 'mini-q'`
 - **Factory de tag** — função que cria um elemento de uma tag. · `$.div(props?, ...children)`
 - **Forma elemento** — chamada que devolve um `Element` agora. · `$.button({ type:'button' }, 'ok')`
 - **Forma setup (componente)** — 1º arg função ⇒ define um componente cuja raiz é a tag; recebe `(props, ctx)`, retorna filhos. · `$.div<P>((props, ctx) => [...])`
@@ -19,13 +23,13 @@ Cada termo: **nome** — definição curta · `token de código`.
 - **Âncora** — nó-marcador invisível que fixa a posição de uma região no DOM.
 - **Tupla de componente** — `[Component, props]`: renderização **lazy** e **cacheável** (ideal em listas). · `[Row, { ...t, key: t.id }]`
 - **Reconciliação keyed** — reuso/reordenação de nós por `key` (move só o fora de posição; preserva foco). · `key`
-- **Escopo (owner)** — fronteira de lifecycle que coleta **cleanups**; aberta por `$.mount` e por cada região/componente aninhado. `unmount` roda os cleanups do escopo.
+- **Escopo (owner)** — fronteira de lifecycle que coleta **cleanups**; aberta por `$mount` e por cada região/componente aninhado. `unmount` roda os cleanups do escopo.
 - **Cleanup** — função de desmontagem (para effects, listeners, custom events, behaviors).
-- **untrack** — leitura que **não** cria dependência (constrói a subárvore de uma região/`when` sem virar dep dela).
+- **untrack** — leitura que **não** cria dependência (constrói a subárvore de uma região/`$when` sem virar dep dela).
 
 ## Reatividade
 
-- **Adapter de reatividade** — ponte agnóstica para a lib de signal. · `$.useSignal({ isSignal, getValue, effect, untrack?, signal? })`
+- **Adapter de reatividade** — ponte agnóstica para a lib de signal. · `$useSignal({ isSignal, getValue, effect, untrack?, signal? })`
 - **Signal** — fonte reativa com `.value`. **Bindable** — valor de `$`-prop: signal | `() => expr` | cru.
 - **Effect** — reação que roda e re-roda quando deps mudam; retorna stop.
 
@@ -33,22 +37,22 @@ Cada termo: **nome** — definição curta · `token de código`.
 
 - **Mapa de eventos (`on`)** — record `{ evento: valor }`. · `on: { click, keydown }`
 - **Handler** — `(event, ctx) => void` (`ctx.element` = nó cru).
-- **Modificador** — transformador de handler composável. · `$.handle.keys('Enter')`, `.prevent`, `.debounce(300)`
-- **`handle` (namespace)** — combina handler + modificadores; `$.handlers({...})` nomeia/reusa. · `handle(fn, ...mods)`
-- **Custom event** — evento que **dispara** e é escutado no `on` (fonte registrada). · `clickOutside`, `hover`
+- **Modificador** — transformador de handler composável. · `$handle.keys('Enter')`, `.prevent`, `.debounce(300)`
+- **`$handle` (namespace)** — combina handler + modificadores; `$handlers({...})` nomeia/reusa. · `$handle(fn, ...mods)`
+- **Custom event** — evento que **dispara** e é escutado no `on` (fonte registrada via `$registerCustomEvent`). · `clickOutside`, `hover`
 - **Fronteira on/use** — regra: *dispara e chama handler* → `on`; *só se comporta* → `use`.
 
 ## Behaviors
 
-- **Behavior (`use`)** — comportamento pós-criação que **não dispara**; um **composable vinculado a um elemento** (recebe `ctx`). Registra teardown no escopo (retornando cleanup **ou** via `registerCleanup`). Ver *Hooks vs. behavior* no Ciclo de vida. · `use: $.model(sig)`, `$.show(cond)`
+- **Behavior (`use`)** — comportamento pós-criação que **não dispara**; um **composable vinculado a um elemento** (recebe `ctx`). Registra teardown no escopo (retornando cleanup **ou** via `registerCleanup`). Ver *Hooks vs. behavior* no Ciclo de vida. · `use: $model(sig)`, `$show(cond)`
 
-## Estilo / CSS (namespace de entidade)
+## Estilo / CSS — `mini-q/style` (entry opcional, namespace de entidade)
 
-Filosofia: **caixas maiores compostas por caixas menores.** Hierarquia semântica (convenção, não imposta):
-**Layout** ⊃ **Componente** ⊃ **Elemento visual**; e Componente pode conter Componente.
+Fora do core de DOM: `import { style } from 'mini-q/style'`. Filosofia: **caixas maiores compostas por
+caixas menores.** Hierarquia semântica (convenção): **Layout** ⊃ **Componente** ⊃ **Elemento visual**.
 
-- **`style` (namespace)** — subsistema de CSS na raiz: `$.style(nome, config)` define entidade e injeta; `$.style.css(sel, obj)` = escape hatch global. · `$.style('category-card', {...})`
-- **StyleHandle** — o retorno de `$.style(nome, config)`: **callable** (`field({ size, invalid })` → string de classes) com as **partes promovidas** ao próprio objeto (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`slots`. `class`/`$class`/`cx` **aceitam o handle** (chamam-no).
+- **`style` (namespace)** — `style(nome, config)` define entidade e injeta; `style.css(sel, obj)` = escape hatch global. · `style('category-card', {...})`
+- **StyleHandle** — o retorno de `style(nome, config)`: **callable** (`field({ size, invalid })` → string de classes) com as **partes promovidas** ao próprio objeto (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`slots`. `class`/`$class`/`$cx` **aceitam o handle** (chamam-no; brand `STYLE_HANDLE` fica no core).
 - **Bloco** — a entidade raiz; nome `escopo-elemento`. · `category-card`
 - **Tipos de bloco (semântica, convenção):**
   - **Layout** — estrutura/posição/espaçamento (`header`, `grid`, `sidebar`); contém outros blocos.
@@ -62,19 +66,19 @@ Filosofia: **caixas maiores compostas por caixas menores.** Hierarquia semântic
 - **Override em flag/variante** — corpo unificado: decls + `parts: { p: {…} }` e/ou `slots: { s: {…} }`. `flags.x.parts.p` → `.bloco.--is-x .-bloco-p`.
 - **Keyframe escopado** — animação (na árvore, chave `keyframes`) nomeada `bloco-nome`. · `card.keyframes.pulse` → `'category-card-pulse'`
 - **Decls no topo** — escalares/`&`/`@` no topo do config = declarações do bloco (**não há `base`**). Chaves reservadas: `parts`/`flags`/`variants`/`defaults`/`slots`/`keyframes`. Chave-objeto inesperada no topo → `warn` (não vira parte silenciosa); parte com nome reservado (`self`/`flags`/…) → `warn`.
-- **Deprecados** — `$.parts(nome, tree)` → `$.style(nome, { parts: tree })`; `$.css` → `$.style.css` (alias por 1 versão).
+- **Deprecados** — `parts(nome, tree)` → `style(nome, { parts: tree })`; `css` → `style.css` (alias por 1 versão).
 
-## Breakpoints
+## Breakpoints — `mini-q/style`
 
-- **Breakpoint** — media nomeada num registro compartilhado. · `$.config({ breakpoints: { md: 768 } })`
-- **`@nome` (CSS)** — chave de media na árvore de estilo, resolvida pelo registro. · `base: { '@md': {...} }`
-- **`$.media` (reativo)** — signal booleano de uma media (matchMedia + cleanup). · `const md = $.media('md')`
+- **Breakpoint** — media nomeada num registro compartilhado. · `config({ breakpoints: { md: 768 } })`
+- **`@nome` (CSS)** — chave de media na árvore de estilo, resolvida pelo registro. · `{ '@md': {...} }`
+- **`media` (reativo)** — signal booleano de uma media (matchMedia + cleanup). · `const md = media('md')`
 
 ## Ciclo de vida / infra
 
-- **`$.mount(target, App) → unmount`** — injeta a árvore num escopo raiz; `unmount` limpa tudo. Idioma: passar **builder/componente**, não árvore pronta.
-- **`$.onMounted(fn)`** — roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn` retornar função, ela vira teardown (idioma "monta um recurso e devolve sua limpeza"). · `$.onMounted(() => { const id = setInterval(t); return () => clearInterval(id); })`
-- **`$.onUnmounted(fn)`** — registra um teardown no escopo ativo (roda no `unmount`/remoção do item). · `$.onUnmounted(() => …)`
-- **Hooks vs. behavior** — `onMounted`/`onUnmounted` são o **composable sem elemento**; um **behavior** (`use`) é o mesmo conceito **vinculado a um elemento** (recebe `ctx.element`). Fora de escopo os **hooks públicos avisam** (`warn`); o teardown **interno** de behaviors degrada em silêncio (mesmo caminho do `bind`).
+- **`$mount(target, App) → unmount`** — injeta a árvore num escopo raiz; `unmount` limpa tudo. Idioma: passar **builder/componente**, não árvore pronta.
+- **`$onMounted(fn)`** — roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn` retornar função, ela vira teardown (idioma "monta um recurso e devolve sua limpeza"). · `$onMounted(() => { const id = setInterval(t); return () => clearInterval(id); })`
+- **`$onUnmounted(fn)`** — registra um teardown no escopo ativo (roda no `unmount`/remoção do item). · `$onUnmounted(() => …)`
+- **Hooks vs. behavior** — `$onMounted`/`$onUnmounted` são o **composable sem elemento**; um **behavior** (`use`) é o mesmo conceito **vinculado a um elemento** (recebe `ctx.element`). Fora de escopo os **hooks públicos avisam** (`warn`); o teardown **interno** de behaviors degrada em silêncio (mesmo caminho do `bind`).
 - **Timing** — "mounted" = o componente **construiu** (elemento criado), **não** necessariamente conectado ao `document` (a lib não tem fase de commit pós-attach). Limitação conhecida.
-- **Adapter** — ver Reatividade. **Plugin/extend** — mecanismo de composição do `$` (as partes constroem as demais).
+- **Adapter** — ver Reatividade.
