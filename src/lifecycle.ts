@@ -53,3 +53,31 @@ export function disposeScope(scope: Scope): void {
   }
   cleanups.length = 0;
 }
+
+/**
+ * Registra um teardown de unmount no escopo ativo. Hook público sobre
+ * `registerCleanup`; fora de escopo `warn` (não é no-op silencioso como o interno,
+ * pois quase sempre indica um effect órfão — passe um builder a `$.mount`).
+ */
+export function onUnmounted(fn: Cleanup): void {
+  if (!current) {
+    console.warn('[mini-q] onUnmounted fora de escopo — passe um builder a $.mount');
+    return;
+  }
+  registerCleanup(fn);
+}
+
+/**
+ * Roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn`
+ * retornar uma função, ela é registrada como teardown via `onUnmounted` — o idioma
+ * "monta um recurso e devolve sua limpeza". Fora de escopo `warn` (mas ainda roda `fn`).
+ */
+export function onMounted(fn: () => void | Cleanup): void {
+  if (!current) {
+    console.warn('[mini-q] onMounted fora de escopo — passe um builder a $.mount');
+    fn(); // roda uma vez; sem escopo, o cleanup retornado não tem onde ser registrado
+    return;
+  }
+  const cleanup = fn();
+  if (typeof cleanup === 'function') registerCleanup(cleanup);
+}

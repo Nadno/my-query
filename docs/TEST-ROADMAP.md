@@ -59,22 +59,27 @@ Branches sem teste que a fatia por papel deixou à vista.
 - **Onde:** `src/element/__tests__/props.test.ts`, `.../control.test.ts`, `.../children.test.ts`.
 - **Depende de:** nada.
 
-## E4 — Feature: `onMount` / `onUnmount` ⬜  ·  `feat(lifecycle):` + `test(lifecycle):`
+## E4 — Feature: `onMounted` / `onUnmounted` ✅  ·  `feat(lifecycle):` + `test(lifecycle):`
 
-Hoje **não há hook público** de lifecycle (só behaviors `use` que retornam cleanup, e a forma
-setup como timing de "montou"). Projetar e expor.
+Não havia hook público de lifecycle (só behaviors `use` que retornam cleanup, e a forma setup como
+timing de "montou"). Expostos os hooks globais + realinhado o modelo de behaviors.
 
-- **A decidir no planejamento da etapa (esboço):**
-  - Superfície: `$.onMount(fn)` + `$.onCleanup(fn)` (expõe o `registerCleanup` interno) — ou via
-    `ctx` no setup (`(props, ctx) => { ctx.onCleanup(…) }`)? Provável: ambos apontando pro mesmo
-    registro no escopo ativo.
-  - `onMount(fn)` roda `fn` **agora** (já estamos no escopo/DOM do setup) e, se `fn` retornar função,
-    registra-a como cleanup (ergonomia estilo effect).
-  - Fora de escopo: `warn` (não silencioso) — reaproveita o modo de falha do caso E1.4.
-- **Implementação:** exportar `registerCleanup` de `lifecycle`, compor em `$` (index), tipar em
-  `types.ts`/`MQ` se for via `ctx`. Atualizar GLOSSARY (§Ciclo de vida) e FLOW.
-- **Testes:** timing (roda no mount), cleanup no unmount, **ordem** relativa a outros cleanups,
-  no-op/`warn` fora de escopo, cleanup retornado por `onMount`.
+- **Decisões travadas:**
+  - **Superfície: só global** (`$.onMounted`/`$.onUnmounted`). **Não** mexe em `MQ`/`ctx` — o mesmo
+    `ctx` vai a handlers/behaviors (rodam após o mount): expor cleanup neles é footgun. Quem quer
+    vincular a um elemento usa `use:` (a forma Behavior, que recebe `ctx.element`).
+  - **Nomes:** par `onMounted`/`onUnmounted` (past tense). `onUnmounted` é o teardown e absorve o
+    nome "onCleanup" (não vira API pública); o `registerCleanup` interno permanece como base.
+  - `onMounted(fn)` roda `fn` **agora** (build, no escopo); se `fn` retornar função → registra-a via
+    `onUnmounted`. Fora de escopo: `warn` (ainda roda `fn` uma vez). `onUnmounted` fora de escopo:
+    `warn` + no-op.
+  - **Behaviors sobre os hooks:** documentado "behavior = composable **com elemento**". O teardown
+    interno de `model` registra no escopo via `registerCleanup` (**silencioso**, mesmo caminho do
+    `bind`) — o `warn` é reservado aos hooks públicos. `show` não tem teardown imperativo.
+  - **Caveat:** "mounted" = componente **construiu** (não necessariamente conectado ao `document`).
+- **Testes:** puros em `lifecycle.test.ts` (timing, cleanup retornado, ordem, `warn` fora de escopo);
+  integração em `index.test.ts` (unmount raiz, cleanup em item de lista keyed removido, regressão do
+  `model`). **101 testes.**
 - **Depende de:** E1 (base de escopo verificada).
 
 ## E5 — Specs integradas ⬜  ·  `test(integration):`
@@ -119,7 +124,7 @@ array de mods) e carrega pendências de design herdadas do `old-my-query/dom-eve
 
 ## Ordem sugerida
 
-`E1 → E2 → E3 → E4 → E5 → E6`. E1–E3 são independentes e podem trocar de ordem; E4 usa E1; E5 fecha
-os fluxos cruzados; E6 (eventos/`handle`) também usa E1 e pode entrar antes de E5 se preferir atacar
-a slice de eventos mais cedo. Cada uma vira seu próprio commit e uma linha no §Progresso do
-[BACKLOG.md](BACKLOG.md) ao concluir.
+`E1 → E2 → E3 → E4 → E6 → E5` (decidido: **E6 antes de E5** — atacar a slice de eventos antes das
+specs integradas). E1–E3 são independentes e podem trocar de ordem; E4 usa E1; E6 (eventos/`handle`)
+também usa E1; E5 fecha os fluxos cruzados por último. Os rótulos (E5/E6) não mudam. Cada etapa vira
+seu próprio commit e uma linha no §Progresso do [BACKLOG.md](BACKLOG.md) ao concluir.

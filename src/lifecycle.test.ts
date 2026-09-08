@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createScope, runInScope, registerCleanup, disposeScope, currentScope } from './lifecycle';
+import {
+  createScope,
+  runInScope,
+  registerCleanup,
+  disposeScope,
+  currentScope,
+  onMounted,
+  onUnmounted,
+} from './lifecycle';
 
 describe('lifecycle — contrato de escopo e cleanup', () => {
   it('disposeScope roda os cleanups em ordem inversa do registro', () => {
@@ -65,5 +73,78 @@ describe('lifecycle — contrato de escopo e cleanup', () => {
       expect(currentScope()).toBe(outer);
     });
     expect(currentScope()).toBeNull();
+  });
+});
+
+describe('lifecycle — onMounted / onUnmounted (hooks públicos)', () => {
+  it('onMounted roda fn imediatamente (síncrono) dentro do escopo', () => {
+    const scope = createScope(null);
+    const fn = vi.fn();
+    runInScope(scope, () => {
+      onMounted(fn);
+      expect(fn).toHaveBeenCalledTimes(1); // já rodou, sem esperar dispose
+    });
+  });
+
+  it('onMounted cujo fn retorna função → o retorno vira teardown no disposeScope', () => {
+    const order: string[] = [];
+    const scope = createScope(null);
+    runInScope(scope, () => {
+      registerCleanup(() => order.push('a'));
+      onMounted(() => {
+        order.push('mount');
+        return () => order.push('teardown');
+      });
+    });
+
+    expect(order).toEqual(['mount']); // só o mount rodou até aqui
+    disposeScope(scope);
+    // ordem inversa de registro: teardown do onMounted (topo) antes de 'a'
+    expect(order).toEqual(['mount', 'teardown', 'a']);
+  });
+
+  it('onMounted cujo fn não retorna função → disposeScope não quebra', () => {
+    const scope = createScope(null);
+    runInScope(scope, () => {
+      onMounted(() => {
+        /* efeito sem teardown */
+      });
+    });
+    expect(() => disposeScope(scope)).not.toThrow();
+  });
+
+  it('onUnmounted registra o teardown no escopo ativo (roda no dispose)', () => {
+    const fn = vi.fn();
+    const scope = createScope(null);
+    runInScope(scope, () => onUnmounted(fn));
+
+    expect(fn).not.toHaveBeenCalled();
+    disposeScope(scope);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('fora de escopo: onMounted roda fn uma vez + warn, não registra teardown', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(currentScope()).toBeNull();
+    const teardown = vi.fn();
+    const fn = vi.fn(() => teardown);
+
+    onMounted(fn);
+    expect(fn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('onMounted fora de escopo'));
+    // não havia escopo → o teardown retornado não roda nunca
+    expect(teardown).not.toHaveBeenCalled();
+    expect(currentScope()).toBeNull();
+    warn.mockRestore();
+  });
+
+  it('fora de escopo: onUnmounted é no-op + warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fn = vi.fn();
+
+    expect(() => onUnmounted(fn)).not.toThrow();
+    expect(fn).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('onUnmounted fora de escopo'));
+    warn.mockRestore();
   });
 });

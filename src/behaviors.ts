@@ -31,11 +31,19 @@ export function model<T extends string>(
       signal.value = el.value as T;
     };
     el.addEventListener('input', onInput);
-    return () => el.removeEventListener('input', onInput);
+    // Behavior = composable com elemento: registra o teardown no escopo ativo, o
+    // mesmo caminho silencioso do `bind` acima (registerCleanup). Fora de escopo
+    // degrada em silêncio (elemento construído ansiosamente) — o `warn` é reservado
+    // aos hooks públicos $.onMounted/$.onUnmounted chamados diretamente.
+    registerCleanup(() => el.removeEventListener('input', onInput));
   };
 }
 
-/** Alterna `hidden` conforme a condição (preserva estado, sem desmontar). */
+/**
+ * Alterna `hidden` conforme a condição (preserva estado, sem desmontar).
+ * Sem teardown imperativo: o cleanup do `bind` já é auto-registrado no escopo,
+ * então não há nada a mover para `onUnmounted`.
+ */
 export function show(cond: Bindable<boolean>): Behavior<HTMLElement> {
   return (ctx) => {
     bind(cond, (value) => {

@@ -27,6 +27,10 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
 - **2026-09-07** — **E3** do roadmap: branches de `element/` cobertos — `style`/`$style`, `data`
   estático, `setAttr` (fallback `setAttribute` + remoção), `$class` vazio, ramo `else` do `when`,
   signal cru/tupla/nullish como filho, `createTag` sem props. 75 testes.
+- **2026-09-08** — **E4** do roadmap: hooks públicos `$.onMounted`/`$.onUnmounted` (só global; par
+  que absorve o "onCleanup"; `warn` fora de escopo; `onMounted` retornando teardown). Documentado
+  "behavior = composable com elemento"; `model` registra teardown via `registerCleanup` silencioso
+  (o `warn` fica p/ os hooks públicos). Ordem do roadmap agora E4 → **E6 → E5**. 101 testes.
 
 ---
 

@@ -167,6 +167,57 @@ describe('lifecycle / mount → unmount', () => {
   });
 });
 
+describe('onMounted / onUnmounted', () => {
+  it('setup: onMounted roda no build; onUnmounted roda no unmount da raiz', () => {
+    const order: string[] = [];
+    const App = $.div(() => {
+      $.onMounted(() => {
+        order.push('mounted');
+      });
+      $.onUnmounted(() => order.push('unmounted'));
+      return 'x';
+    });
+    const unmount = $.mount(document.body, App);
+    expect(order).toEqual(['mounted']);
+    unmount();
+    expect(order).toEqual(['mounted', 'unmounted']);
+  });
+
+  it('onMounted que retorna teardown: monta o recurso e limpa no unmount ("depende de ambos")', () => {
+    let active = false;
+    const App = $.div(() => {
+      $.onMounted(() => {
+        active = true;
+        return () => {
+          active = false;
+        };
+      });
+      return 'x';
+    });
+    const unmount = $.mount(document.body, App);
+    expect(active).toBe(true);
+    unmount();
+    expect(active).toBe(false);
+  });
+
+  it('sub-escopo: onUnmounted dentro de item de lista keyed dispara ao remover o item', () => {
+    const items = signal([{ id: 1 }, { id: 2 }]);
+    const cleaned: number[] = [];
+    const Row = $.li<{ id: number }>((props) => {
+      $.onUnmounted(() => cleaned.push(props.id));
+      return `#${props.id}`;
+    });
+    $.mount(document.body, $.ul({}, () =>
+      items.value.map((t) => [Row, { ...t, key: t.id }] as [typeof Row, any]),
+    ));
+
+    expect(cleaned).toEqual([]);
+    // remove o id 2 → só o cleanup dele dispara (não o unmount da raiz)
+    items.value = [{ id: 1 }];
+    expect(cleaned).toEqual([2]);
+  });
+});
+
 describe('behaviors', () => {
   it('model faz two-way binding', () => {
     const text = signal('hi');
@@ -177,6 +228,23 @@ describe('behaviors', () => {
     expect(text.value).toBe('yo');
     text.value = 'zap';
     expect(input.value).toBe('zap');
+  });
+
+  it('model remove o listener no unmount (teardown via onUnmounted)', () => {
+    const text = signal('hi');
+    const App = () => $.input({ use: $.model(text) });
+    const unmount = $.mount(document.body, App);
+    const input = document.querySelector('input')!;
+
+    input.value = 'yo';
+    input.dispatchEvent(new Event('input'));
+    expect(text.value).toBe('yo');
+
+    unmount();
+    // após o unmount o listener saiu: novo input não escreve mais no signal
+    input.value = 'ignored';
+    input.dispatchEvent(new Event('input'));
+    expect(text.value).toBe('yo');
   });
 
   it('show alterna hidden', () => {

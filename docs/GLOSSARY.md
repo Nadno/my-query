@@ -40,7 +40,7 @@ Cada termo: **nome** — definição curta · `token de código`.
 
 ## Behaviors
 
-- **Behavior (`use`)** — comportamento pós-criação que **não dispara**; recebe `ctx`, retorna cleanup. · `use: $.model(sig)`, `$.show(cond)`
+- **Behavior (`use`)** — comportamento pós-criação que **não dispara**; um **composable vinculado a um elemento** (recebe `ctx`). Registra teardown no escopo (retornando cleanup **ou** via `registerCleanup`). Ver *Hooks vs. behavior* no Ciclo de vida. · `use: $.model(sig)`, `$.show(cond)`
 
 ## Estilo / CSS (namespace de entidade)
 
@@ -73,4 +73,8 @@ Filosofia: **caixas maiores compostas por caixas menores.** Hierarquia semântic
 ## Ciclo de vida / infra
 
 - **`$.mount(target, App) → unmount`** — injeta a árvore num escopo raiz; `unmount` limpa tudo. Idioma: passar **builder/componente**, não árvore pronta.
+- **`$.onMounted(fn)`** — roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn` retornar função, ela vira teardown (idioma "monta um recurso e devolve sua limpeza"). · `$.onMounted(() => { const id = setInterval(t); return () => clearInterval(id); })`
+- **`$.onUnmounted(fn)`** — registra um teardown no escopo ativo (roda no `unmount`/remoção do item). · `$.onUnmounted(() => …)`
+- **Hooks vs. behavior** — `onMounted`/`onUnmounted` são o **composable sem elemento**; um **behavior** (`use`) é o mesmo conceito **vinculado a um elemento** (recebe `ctx.element`). Fora de escopo os **hooks públicos avisam** (`warn`); o teardown **interno** de behaviors degrada em silêncio (mesmo caminho do `bind`).
+- **Timing** — "mounted" = o componente **construiu** (elemento criado), **não** necessariamente conectado ao `document` (a lib não tem fase de commit pós-attach). Limitação conhecida.
 - **Adapter** — ver Reatividade. **Plugin/extend** — mecanismo de composição do `$` (as partes constroem as demais).

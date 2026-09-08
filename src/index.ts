@@ -2,6 +2,7 @@
 
 import { createTag, when, match, switchOn, ELSE, appendChild } from './element';
 import { mount } from './mount';
+import { onMounted, onUnmounted } from './lifecycle';
 import { useSignal } from './reactive';
 import { handle } from './events/handle';
 import { registerCustomEvent } from './events/custom';
@@ -42,6 +43,8 @@ type Factories = { [T in Exclude<TagName, 'style'>]: TagFactory<T> };
 export interface MiniQuery extends Factories {
   <E extends Element = Element>(target: string | E): MQ<E>;
   mount: typeof mount;
+  onMounted: typeof onMounted;
+  onUnmounted: typeof onUnmounted;
   useSignal: typeof useSignal;
   handle: typeof handle;
   handlers: typeof handle.handlers;
@@ -76,6 +79,8 @@ for (const tag of TAGS) {
 
 Object.assign($, {
   mount,
+  onMounted,
+  onUnmounted,
   useSignal,
   handle,
   handlers: handle.handlers,
@@ -99,6 +104,7 @@ export default $;
 
 export { createTag, when, match, switchOn, ELSE, appendChild } from './element';
 export { mount } from './mount';
+export { onMounted, onUnmounted } from './lifecycle';
 export { useSignal, isSignal, isReactive, read, bind, untrack } from './reactive';
 export { handle, compose } from './events/handle';
 export { registerCustomEvent, getCustomEvent } from './events/custom';

@@ -38,6 +38,11 @@ flowchart TD
   registre limpeza chama `registerCleanup`, que anexa ao escopo ativo. `disposeScope` roda os
   cleanups **em ordem inversa** (e engole erros por cleanup, sem abortar os demais).
 - Regiões e componentes aninhados abrem **sub-escopos** — o `unmount` da raiz cascateia.
+- **Hooks públicos** [`onMounted`/`onUnmounted`](../src/lifecycle.ts) leem esse mesmo escopo ativo:
+  `onUnmounted` é um `registerCleanup` fino; `onMounted(fn)` roda `fn` no build e, se ele retornar
+  função, registra-a como teardown. Fora de escopo **avisam** (`warn`) — o footgun do effect órfão.
+  Um **behavior** (`use`) é o mesmo composable **com elemento** (recebe `ctx.element`); seu teardown
+  interno usa `registerCleanup` (silencioso), não os hooks que avisam.
 
 ## 3. Construção do elemento (slice `element/`)
 
@@ -111,7 +116,7 @@ e é governada pela mesma maquinaria de região da seção 5.
 |---|---|---|
 | Compor o `$` | [index.ts](../src/index.ts) | `$`, factories de tag |
 | Montar/desmontar | [mount.ts](../src/mount.ts) | `mount` → `unmount` |
-| Escopo & cleanup | [lifecycle.ts](../src/lifecycle.ts) | `createScope`, `runInScope`, `registerCleanup`, `disposeScope` |
+| Escopo & cleanup | [lifecycle.ts](../src/lifecycle.ts) | `createScope`, `runInScope`, `registerCleanup`, `disposeScope`, `onMounted`, `onUnmounted` |
 | Contrato reativo | [reactive.ts](../src/reactive.ts) | `useSignal`, `bind`, `read`, `untrack`, `isReactive` |
 | Criar tag | [element/create.ts](../src/element/create.ts) | `createTag` (dual) |
 | Aplicar props | [element/props.ts](../src/element/props.ts) | `applyProps` (+ `$`-prefixo) |
