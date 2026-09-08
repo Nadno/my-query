@@ -27,6 +27,11 @@ export interface ReactiveAdapter {
    * criar estado reativo (ex.: `$.media`). Sem ele, essas primitivas lançam erro.
    */
   signal?<T>(initial: T): Signalish<T> & { value: T };
+  /**
+   * Escreve o valor de um signal gravável (two-way, ex.: `$model`). Opcional; sem
+   * ele, `setValue` faz fallback para `signal.value = value` (formato preact-like).
+   */
+  setValue?<T>(signal: unknown, value: T): void;
 }
 
 /** Signal genérico (formato mínimo observável pela lib). */
@@ -75,6 +80,17 @@ export function createSignal<T>(initial: T): Signalish<T> & { value: T } {
     );
   }
   return a.signal(initial);
+}
+
+/**
+ * Escreve `value` num signal gravável (two-way). Usa `adapter.setValue` se existir;
+ * senão faz fallback para `signal.value = value` (formato preact-like). Necessário
+ * para primitivas de two-way binding como `$model`.
+ */
+export function setValue<T>(signal: unknown, value: T): void {
+  const a = getAdapter();
+  if (a.setValue) a.setValue(signal, value);
+  else (signal as { value: T }).value = value;
 }
 
 /** Lê o valor atual de um `Bindable` (signal | função | cru). */

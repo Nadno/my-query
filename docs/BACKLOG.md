@@ -46,6 +46,17 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   `STYLE_HANDLE` fica no core, então `class`/`$class`/`$cx` seguem aceitando handles. Migrados testes,
   demo e `examples/auth` (typecheck do exemplo ok). Docs GLOSSARY/FLOW atualizados; USAGE em DOCS-DRIFT.
   2 commits (`refactor(style):`, `refactor(api):`). 124 testes verdes, typecheck+build ok.
+- **2026-09-08** — **`$model` completo** (item 4 da §Ordem) + **`setValue` no adapter**: `model` agora
+  **auto-detecta** o modo pelo elemento+tipo do valor — checkbox booleano (`.checked`), radio (compara
+  `el.value`, escreve ao selecionar), checkbox-group (signal **array** → alterna presença de `el.value`),
+  `<select multiple>` (array dos selecionados), demais → `el.value` string (comportamento antigo). Ligação
+  DOM→signal agora via **`$on`** (dogfood); DOM←signal via `bind`. Escrita agnóstica: novo `setValue`
+  (reactive.ts) usa `adapter.setValue?` com fallback `signal.value =` (preact-like); `setValue` add ao
+  `ReactiveAdapter` + adapter preact + export bare `setValue`. **Mudança de ordem:** `use` (behaviors)
+  passa a rodar **pós-children** em `createTag` (`applyProps` devolve o `use`, `createTag` aplica após
+  anexar filhos) — semântica "composable com elemento completo"; corrige `$model` em `<select>` (initial
+  value precisa das `<option>`) e o bug latente no `examples/auth/Select`. 6 testes novos
+  (`src/behaviors.test.ts`), **138 verdes**, typecheck+build+typecheck do exemplo ok.
 - **2026-09-08** — **`$on(ctx, name, value)`** (item 3 da §Ordem): primitivo de evento p/ behaviors/setups.
   Extraído `bindEvent` (miolo unitário do loop) em `events/apply.ts` → `applyEvents` e `on` dividem o
   mesmo caminho (resolve tupla + `handle` + roteamento nativo|custom); comportamento/testes de `applyEvents`
@@ -183,19 +194,18 @@ suprimir contextmenu/seleção, `delayIn`/`delayOut`. API preferida: **handler r
 
 ---
 
-## `$model` — cobrir os tipos de input (P1)
+## ✅ `$model` — cobrir os tipos de input (P1) — FEITO (2026-09-08)
 
-`model` hoje só trata `el.value` como string (ver `src/behaviors.ts`) → **bug latente**: com `type=checkbox`
-escreve `"true"`/`"on"` em vez de mexer em `.checked`; radio group, checkbox-group e `<select multiple>`
-ficam errados **em silêncio**. A API anuncia two-way "p/ inputs/select/textarea" e quebra nos casos mais
-comuns de formulário. Fechar: checkbox booleano (`.checked`), radio (compara `value`), checkbox-group (array),
-`<select multiple>` (array). Casa com o `setValue?` do adapter abaixo. Ganho direto no `examples/auth`.
+Resolvido: `model` auto-detecta o modo pelo elemento+tipo do valor — checkbox booleano (`.checked`),
+radio (compara `value`, escreve ao selecionar), checkbox-group (signal **array** → alterna presença de
+`el.value`), `<select multiple>` (array), demais → `el.value` string. DOM→signal via `$on`; escrita via
+`setValue` agnóstico. **Convenção:** um checkbox-group deve **inicializar o signal como array** (a
+detecção array-vs-boolean lê o valor atual). Ver §Progresso.
 
 ## Reatividade / adapter (P2)
 
-- Adapter tem `isSignal`/`getValue`/`effect`, mas **não tem `setValue`**. `model` escreve `signal.value`
-  direto → acoplado a signals no formato preact. Para two-way realmente agnóstico, adicionar
-  `setValue?` opcional ao adapter. P2 — **fazer junto do `$model` acima.**
+- ~~Adapter sem `setValue`~~ ✅ FEITO (2026-09-08): `setValue?` opcional no `ReactiveAdapter` + helper
+  `setValue` (fallback `signal.value =` preact-like) + adapter preact + export bare. `model` usa-o (two-way agnóstico).
 - Só o adapter `preact` foi entregue. Documentar/entregar outro (ou um fake) e o **teste de agnosticidade**. P3
 - **Objetos/listas reativas próprios — RECUSADO (2026-09-08).** Contradiz o posicionamento **agnóstico de
   signal**: coleção reativa é responsabilidade da lib de signals via adapter, não do mini-q (que já monta
@@ -246,7 +256,7 @@ após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a m
 1. ~~Decidir/entregar o modelo de estilo~~ ✅ feito (entidade + breakpoints).
 2. ~~Migrar `examples/auth` p/ a nova API de estilo~~ ✅ feito (todos os call sites migrados).
 3. ~~**`$on(ctx, name, onValue)`** — primitivo de evento p/ behaviors~~ ✅ feito (2026-09-08; ver §Progresso).
-4. **`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter.** (P1)
+4. ~~**`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter**~~ ✅ feito (2026-09-08; ver §Progresso).
 5. **Runtime rico de eventos** (enter↔leave pareado): `interactOutside` + `focusOutside` por `relatedTarget`
    + `hover` hold-to-hover (mobile). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
 6. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)

@@ -6,6 +6,7 @@
 
 import { isSignal } from '../reactive';
 import { applyProps } from './props';
+import { applyUse } from '../behaviors';
 import { appendChild } from './children';
 import { isProps } from './guards';
 import type { Component, MQ, Props, TagElement, TagName } from '../types';
@@ -40,10 +41,14 @@ export function createTag<T extends TagName>(
   const el = document.createElement(tag);
   const ctx: MQ = { element: el };
   let start = 0;
+  let use: unknown;
   if (isProps(first)) {
-    applyProps(el, ctx, first);
+    use = applyProps(el, ctx, first);
     start = 1;
   }
   for (let i = start; i < args.length; i++) appendChild(el, args[i]);
+  // Behaviors rodam pós-children: o elemento já está completo (ex.: `$model` num
+  // `<select>` precisa das `<option>` para refletir o valor inicial).
+  if (use != null) applyUse(ctx, use as Parameters<typeof applyUse>[1]);
   return el as TagElement<T>;
 }

@@ -9,4 +9,7 @@ export const preact: ReactiveAdapter = {
   effect: (run) => effect(run),
   untrack: (fn) => untracked(fn),
   signal: <T>(initial: T) => createSignal<T>(initial),
+  setValue: <T>(signal: unknown, value: T) => {
+    (signal as Signal<T>).value = value;
+  },
 };

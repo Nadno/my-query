@@ -69,7 +69,7 @@ export { createTag } from './element';
 export { compose } from './events/handle';
 export { getCustomEvent } from './events/custom';
 export { applyUse } from './behaviors';
-export { isSignal, isReactive, read, bind, untrack } from './reactive';
+export { isSignal, isReactive, read, bind, untrack, setValue } from './reactive';
 
 export type { ReactiveAdapter, Bindable } from './reactive';
 export type { Cleanup, Scope } from './lifecycle';

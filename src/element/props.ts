@@ -6,7 +6,6 @@
 import { bind, type Bindable } from '../reactive';
 import { resolveClass } from '../dom/nodes';
 import { applyEvents } from '../events/apply';
-import { applyUse } from '../behaviors';
 import type { ClassValue, MQ } from '../types';
 
 function applyClass(el: Element, value: ClassValue): void {
@@ -38,7 +37,17 @@ function setAttr(el: Element, key: string, value: unknown): void {
   el.setAttribute(key, String(value));
 }
 
-export function applyProps(el: Element, ctx: MQ, props: Record<string, unknown>): void {
+/**
+ * Aplica as props ao elemento e **devolve** o valor de `use` (behaviors) sem aplicá-lo:
+ * o caller (`createTag`) roda os behaviors **depois** de anexar os filhos, para que o
+ * elemento já esteja completo (ex.: `$model` num `<select>` precisa das `<option>`).
+ */
+export function applyProps(
+  el: Element,
+  ctx: MQ,
+  props: Record<string, unknown>,
+): unknown {
+  let use: unknown;
   for (const key in props) {
     const value = props[key];
 
@@ -75,7 +84,7 @@ export function applyProps(el: Element, ctx: MQ, props: Record<string, unknown>)
         applyEvents(ctx, value as Parameters<typeof applyEvents>[1]);
         continue;
       case 'use':
-        applyUse(ctx, value as Parameters<typeof applyUse>[1]);
+        use = value; // aplicado pelo caller, pós-children
         continue;
     }
 
@@ -88,4 +97,5 @@ export function applyProps(el: Element, ctx: MQ, props: Record<string, unknown>)
 
     setAttr(el, key, value);
   }
+  return use;
 }
