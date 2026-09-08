@@ -1,7 +1,8 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 import type { Bindable } from 'mini-q';
 
-export const btnClass = $.style('btn', {
+export const btnClass = style('btn', {
   border: 'none',
   cursor: 'pointer',
   fontWeight: 500,

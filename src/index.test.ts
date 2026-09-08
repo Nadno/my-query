@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { signal, computed } from '@preact/signals-core';
 import $ from './index';
 import { preact } from './adapters/preact';
+import { style } from './style';
 
 $.useSignal(preact);
 
@@ -258,11 +259,11 @@ describe('behaviors', () => {
 
 describe('style / cx (DX)', () => {
   it('classes legíveis nomeadas', () => {
-    const card = $.style('card', { parts: { title: {}, body: {} } });
+    const card = style('card', { parts: { title: {}, body: {} } });
     expect(card.self).toBe('card');
     expect(card.title.self).toBe('-card-title');
     expect(card.body.self).toBe('-card-body');
-    const btn = $.style('btn', {
+    const btn = style('btn', {
       variants: { size: { sm: {}, md: {} } },
       defaults: { size: 'md' },
     });
@@ -277,7 +278,7 @@ describe('style / cx (DX)', () => {
   });
 
   it('injeta regras a partir de $.style / $.style.css', () => {
-    const cls = $.style('mq-auth-card', {
+    const cls = style('mq-auth-card', {
       padding: 16,
       '&:hover': { color: 'red' },
     });
@@ -286,7 +287,7 @@ describe('style / cx (DX)', () => {
     expect(sheet?.textContent).toContain('.mq-auth-card { padding: 16px; }');
     expect(sheet?.textContent).toContain('.mq-auth-card:hover { color: red; }');
 
-    const field = $.style('mq-auth-field', {
+    const field = style('mq-auth-field', {
       display: 'flex',
       parts: { label: { fontSize: 14 } },
     });
@@ -297,7 +298,7 @@ describe('style / cx (DX)', () => {
       '.mq-auth-field .-mq-auth-field-label { font-size: 14px; }',
     );
 
-    $.style.css('.mq-auth-global', { margin: 0 });
+    style.css('.mq-auth-global', { margin: 0 });
     expect(sheet?.textContent).toContain('.mq-auth-global { margin: 0px; }');
   });
 });

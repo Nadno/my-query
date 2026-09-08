@@ -1,6 +1,5 @@
-import $ from 'mini-q';
-
-$.style.css(':root', {
+import { style } from 'mini-q/style';
+style.css(':root', {
   colorScheme: 'dark',
   '--bg': '#1a1a1a',
   '--fg': '#fff',
@@ -13,9 +12,9 @@ $.style.css(':root', {
   '--ok': '#10b981',
 });
 
-$.style.css('*', { boxSizing: 'border-box' });
+style.css('*', { boxSizing: 'border-box' });
 
-$.style.css('body', {
+style.css('body', {
   margin: 0,
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -24,7 +23,7 @@ $.style.css('body', {
   lineHeight: 1.6,
 });
 
-export const app = $.style('app', {
+export const app = style('app', {
   maxWidth: 800,
   margin: '0 auto',
   padding: '2rem 1rem',
@@ -34,7 +33,7 @@ export const app = $.style('app', {
   gap: '1.5rem',
 });
 
-export const header = $.style('header', {
+export const header = style('header', {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
@@ -48,7 +47,7 @@ export const header = $.style('header', {
   },
 });
 
-export const card = $.style('card', {
+export const card = style('card', {
   padding: '1.5rem',
   background: 'var(--card)',
   borderRadius: 16,
@@ -62,7 +61,7 @@ export const card = $.style('card', {
   },
 });
 
-export const form = $.style('form', {
+export const form = style('form', {
   display: 'flex',
   flexDirection: 'column',
   gap: '1.25rem',
@@ -77,7 +76,7 @@ export const form = $.style('form', {
   },
 });
 
-export const authGate = $.style('auth-gate', {
+export const authGate = style('auth-gate', {
   margin: 0,
   opacity: 0.8,
   fontSize: '.95rem',

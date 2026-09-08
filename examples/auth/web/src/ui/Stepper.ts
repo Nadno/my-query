@@ -1,6 +1,7 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 
-export const stepperStyle = $.style('stepper', {
+export const stepperStyle = style('stepper', {
   listStyle: 'none',
   margin: 0,
   padding: 0,

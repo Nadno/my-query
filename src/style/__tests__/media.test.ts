@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import $ from './index';
-import { preact } from './adapters/preact';
+import $ from '../../index';
+import { preact } from '../../adapters/preact';
+import { config, media } from '../index';
 
 $.useSignal(preact);
 
-describe('$.media — sinal de breakpoint', () => {
+describe('media — sinal de breakpoint', () => {
   beforeEach(() => {
-    $.config({ breakpoints: { md: 768, lg: '1024px' } });
+    config({ breakpoints: { md: 768, lg: '1024px' } });
   });
 
   it('sinal reflete matchMedia e limpa o listener no unmount', () => {
@@ -27,7 +28,7 @@ describe('$.media — sinal de breakpoint', () => {
     document.body.innerHTML = '';
     let md!: { readonly value: boolean };
     const App = () => {
-      md = $.media('md');
+      md = media('md');
       return $.div({ $class: () => (md.value ? 'wide' : 'narrow') });
     };
     const unmount = $.mount(document.body, App);

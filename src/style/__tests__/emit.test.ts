@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import $ from '../../index';
 import { preact } from '../../adapters/preact';
+import { style, config } from '../index';
 
 $.useSignal(preact);
 
 // Nomes de bloco únicos por caso: ver nota em handle.test.ts (registries de módulo).
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';
 
-describe('$.style — CSS gerado', () => {
+describe('style — CSS gerado', () => {
   it('descendente, pseudo via &, flag --is composta, override de parte em flag, keyframes', () => {
-    $.style('emit-category-card', {
+    style('emit-category-card', {
       padding: 16,
       '&:hover': { boxShadow: '0 0 0' },
       flags: { featured: { borderColor: 'gold' } },
@@ -19,7 +20,7 @@ describe('$.style — CSS gerado', () => {
         content: { parts: { description: { opacity: 0.8 } } },
       },
     });
-    $.style('emit-field', {
+    style('emit-field', {
       parts: { input: {} },
       flags: { invalid: { parts: { input: { borderColor: 'red' } } } },
     });
@@ -38,7 +39,7 @@ describe('$.style — CSS gerado', () => {
   });
 
   it('números viram px, exceto propriedades unitless', () => {
-    $.style('emit-units', {
+    style('emit-units', {
       padding: 8, // dimensional → px
       opacity: 0.5, // unitless
       zIndex: 10, // unitless
@@ -50,8 +51,8 @@ describe('$.style — CSS gerado', () => {
   });
 
   it('at-rule cru (com espaço) é preservada; @nome resolve via breakpoint', () => {
-    $.config({ breakpoints: { md: 768 } });
-    $.style('emit-atrule', {
+    config({ breakpoints: { md: 768 } });
+    style('emit-atrule', {
       color: 'black',
       '@media (min-width: 900px)': { color: 'blue' },
       '@supports (display: grid)': { display: 'grid' },
@@ -64,28 +65,28 @@ describe('$.style — CSS gerado', () => {
   });
 
   it('@md/@lg resolvem para @media (min-width) (número e string com unidade)', () => {
-    $.config({ breakpoints: { md: 768, lg: '1024px' } });
-    $.style('emit-bp', { padding: 8, '@md': { padding: 16 }, '@lg': { padding: 24 } });
+    config({ breakpoints: { md: 768, lg: '1024px' } });
+    style('emit-bp', { padding: 8, '@md': { padding: 16 }, '@lg': { padding: 24 } });
     const css = sheet();
     expect(css).toContain('@media (min-width: 768px) { .emit-bp { padding: 16px; } }');
     expect(css).toContain('@media (min-width: 1024px) { .emit-bp { padding: 24px; } }');
   });
 
   it('custom property é preservada (sem camel→kebab); boolean é descartado', () => {
-    $.style('emit-custom', { '--gap-x': '4px', color: 'red', hidden: false });
+    style('emit-custom', { '--gap-x': '4px', color: 'red', hidden: false });
     const css = sheet();
     expect(css).toContain('.emit-custom { --gap-x: 4px; color: red; }');
     expect(css).not.toContain('hidden');
   });
 
   it('$.style.css injeta seletor cru (escape hatch global)', () => {
-    $.style.css('.emit-global-hatch', { margin: 0, boxSizing: 'border-box' });
+    style.css('.emit-global-hatch', { margin: 0, boxSizing: 'border-box' });
     expect(sheet()).toContain('.emit-global-hatch { margin: 0px; box-sizing: border-box; }');
   });
 
   it('regra idêntica não é injetada duas vezes (dedup por string)', () => {
-    $.style.css('.emit-idem', { color: 'red' });
-    $.style.css('.emit-idem', { color: 'red' });
+    style.css('.emit-idem', { color: 'red' });
+    style.css('.emit-idem', { color: 'red' });
     const occurrences = sheet().split('.emit-idem { color: red; }').length - 1;
     expect(occurrences).toBe(1);
   });

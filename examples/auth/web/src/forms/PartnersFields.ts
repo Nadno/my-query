@@ -1,4 +1,5 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 import type { Signal } from '@preact/signals-core';
 import { maskCpf, maskPercent } from '../composables/useMask';
 import { Field } from '../ui/Field';
@@ -9,7 +10,7 @@ import { fieldStyle } from '../ui/Field';
 import { createPartner, type PartnerFields } from './model';
 import type { CompanyType } from '../../../shared/types';
 
-const row = $.style('partner-row', {
+const row = style('partner-row', {
   display: 'grid',
   gridTemplateColumns: '1fr 1fr auto auto',
   gap: '.75rem',

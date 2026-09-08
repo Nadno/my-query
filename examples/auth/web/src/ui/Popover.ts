@@ -1,6 +1,7 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 
-export const popoverStyle = $.style('popover', {
+export const popoverStyle = style('popover', {
   position: 'relative',
   parts: {
     panel: {

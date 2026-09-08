@@ -3,8 +3,8 @@
  * (aceita nome de breakpoint registrado, número, ou query crua), com cleanup no escopo.
  */
 
-import { createSignal } from './reactive';
-import { registerCleanup } from './lifecycle';
+import { createSignal } from '../reactive';
+import { registerCleanup } from '../lifecycle';
 import { resolveMedia } from './config';
 
 export function media(nameOrQuery: string): { readonly value: boolean } {

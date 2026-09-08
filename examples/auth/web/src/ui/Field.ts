@@ -1,6 +1,7 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 
-export const inputClass = $.style('input', {
+export const inputClass = style('input', {
   padding: '.875rem 1rem',
   background: 'rgba(255,255,255,.05)',
   border: '1px solid var(--line)',
@@ -12,7 +13,7 @@ export const inputClass = $.style('input', {
   '&:disabled': { opacity: 0.6 },
 });
 
-export const fieldStyle = $.style('field', {
+export const fieldStyle = style('field', {
   display: 'flex',
   flexDirection: 'column',
   gap: '.5rem',

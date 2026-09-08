@@ -7,9 +7,6 @@ import { useSignal } from './reactive';
 import { handle } from './events/handle';
 import { registerCustomEvent } from './events/custom';
 import { cx, getElement } from './dom/nodes';
-import { style, parts, css } from './style';
-import { config } from './config';
-import { media } from './media';
 import { model, show } from './behaviors';
 import type { MQ, Props, TagElement, TagName } from './types';
 
@@ -54,13 +51,6 @@ export interface MiniQuery extends Factories {
   else: typeof ELSE;
   append: typeof appendChild;
   cx: typeof cx;
-  style: typeof style;
-  /** @deprecated Use `$.style(name, { parts: { … } })`. */
-  parts: typeof parts;
-  /** @deprecated Use `$.style.css(selector, obj)`. */
-  css: typeof css;
-  config: typeof config;
-  media: typeof media;
   model: typeof model;
   show: typeof show;
   registerCustomEvent: typeof registerCustomEvent;
@@ -90,11 +80,6 @@ Object.assign($, {
   else: ELSE,
   append: appendChild,
   cx,
-  style,
-  parts,
-  css,
-  config,
-  media,
   model,
   show,
   registerCustomEvent,
@@ -110,20 +95,6 @@ export { handle, compose } from './events/handle';
 export { registerCustomEvent, getCustomEvent } from './events/custom';
 export { applyUse, model, show } from './behaviors';
 export { cx } from './dom/nodes';
-export { style, parts, css, compile, inject } from './style';
-export type {
-  CSSValue,
-  CSSObject,
-  StyleObject,
-  StyleConfig,
-  FlagBody,
-  SlotRef,
-  StyleHandle,
-  StyleApi,
-} from './style';
-export { config } from './config';
-export type { MiniQConfig } from './config';
-export { media } from './media';
 export type { ReactiveAdapter, Bindable } from './reactive';
 export type { Cleanup, Scope } from './lifecycle';
 export type {

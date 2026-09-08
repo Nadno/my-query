@@ -3,7 +3,7 @@
  * camelCase→kebab, números→`px` (exceto unitless), aninhamento `&`/`@media`/`@supports`.
  */
 
-import { resolveMedia } from '../config';
+import { resolveMedia } from './config';
 import type { CSSObject } from './types';
 
 const UNITLESS = new Set([

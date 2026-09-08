@@ -1,7 +1,8 @@
 import $ from 'mini-q';
+import { style } from 'mini-q/style';
 import { toasts, type Toast } from '../composables/useToast';
 
-const host = $.style('toast-host', {
+const host = style('toast-host', {
   position: 'fixed',
   top: '1rem',
   right: '1rem',
@@ -16,7 +17,7 @@ const host = $.style('toast-host', {
 });
 
 // `type` é exclusivo (error XOR success) → variante, não flags.
-const item = $.style('toast', {
+const item = style('toast', {
   padding: '.85rem 1rem',
   borderRadius: 12,
   border: '1px solid var(--line)',

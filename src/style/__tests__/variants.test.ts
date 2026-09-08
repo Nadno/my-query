@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import $ from '../../index';
 import { preact } from '../../adapters/preact';
+import { style } from '../index';
 
 $.useSignal(preact);
 
 // Nomes de bloco únicos por caso: ver nota em handle.test.ts (registries de módulo).
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';
 
-describe('$.style — flags e variants coexistem; callable', () => {
+describe('style — flags e variants coexistem; callable', () => {
   it('bloco com partes E variantes E flags; tokens no call-site', () => {
-    const btn = $.style('var-btn', {
+    const btn = style('var-btn', {
       border: 'none',
       parts: { icon: { width: 16 } },
       variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
@@ -32,7 +33,7 @@ describe('$.style — flags e variants coexistem; callable', () => {
   });
 
   it('variante pode sobrescrever uma parte descendente (variants → parts)', () => {
-    $.style('var-parts', {
+    style('var-parts', {
       parts: { label: {} },
       variants: { tone: { danger: { parts: { label: { color: 'red' } } } } },
     });
@@ -40,8 +41,8 @@ describe('$.style — flags e variants coexistem; callable', () => {
   });
 
   it('variante pode sobrescrever um slot hospedado (variants → slots)', () => {
-    const control = $.style('var-slot-input', { padding: 8 });
-    $.style('var-slot-field', {
+    const control = style('var-slot-input', { padding: 8 });
+    style('var-slot-field', {
       slots: { control },
       variants: { tone: { danger: { slots: { control: { borderColor: 'crimson' } } } } },
     });
@@ -49,7 +50,7 @@ describe('$.style — flags e variants coexistem; callable', () => {
   });
 
   it('call-site: false desliga a default, valor inexistente é ignorado, flag só liga com true', () => {
-    const btn = $.style('var-callsite', {
+    const btn = style('var-callsite', {
       variants: { size: { sm: {}, md: {} } },
       flags: { block: {} },
       defaults: { size: 'md' },

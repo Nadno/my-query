@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import $ from '../../index';
 import { preact } from '../../adapters/preact';
+import { style, cx } from '../index';
 
 $.useSignal(preact);
 
@@ -8,9 +9,9 @@ $.useSignal(preact);
 // (registered/injected/warnedDup) que persistem por toda a suíte. Sem um reset
 // no source, nomes distintos evitam colisão de regras e warns cruzados.
 
-describe('$.style — handle: partes promovidas e nomes', () => {
+describe('style — handle: partes promovidas e nomes', () => {
   it('self do bloco, partes promovidas (nome completo do bloco), flags --is-*, keyframes escopado', () => {
-    const card = $.style('h-category-card', {
+    const card = style('h-category-card', {
       padding: 16,
       flags: { featured: { borderColor: 'gold' } },
       keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
@@ -35,27 +36,27 @@ describe('$.style — handle: partes promovidas e nomes', () => {
   });
 
   it('bloco simples é StyleHandle callable (self + call)', () => {
-    const input = $.style('h-text-input', { padding: 8 });
+    const input = style('h-text-input', { padding: 8 });
     expect(input.self).toBe('h-text-input');
     expect(input()).toBe('h-text-input');
   });
 });
 
-describe('$.style — class/cx aceitam o handle', () => {
+describe('style — class/cx aceitam o handle', () => {
   it('cx chama o handle (bloco → self+defaults, parte → classe da parte)', () => {
-    const box = $.style('h-cx-box', {
+    const box = style('h-cx-box', {
       variants: { tone: { warn: {}, ok: {} } },
       defaults: { tone: 'ok' },
       parts: { head: {} },
     });
-    expect($.cx(box)).toBe('h-cx-box --tone-ok');
-    expect($.cx(box.head)).toBe('-h-cx-box-head');
-    expect($.cx('x', box.head, false)).toBe('x -h-cx-box-head');
+    expect(cx(box)).toBe('h-cx-box --tone-ok');
+    expect(cx(box.head)).toBe('-h-cx-box-head');
+    expect(cx('x', box.head, false)).toBe('x -h-cx-box-head');
   });
 
   it('class: handle aplica a classe no elemento montado', () => {
     document.body.innerHTML = '';
-    const badge = $.style('h-cx-badge', { color: 'red' });
+    const badge = style('h-cx-badge', { color: 'red' });
     const unmount = $.mount(document.body, () => $.span({ class: badge }));
     expect(document.body.querySelector('span')!.className).toBe('h-cx-badge');
     unmount();
