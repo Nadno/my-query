@@ -58,6 +58,7 @@ export {
 export { onMounted as $onMounted, onUnmounted as $onUnmounted } from './lifecycle';
 export { useSignal as $useSignal } from './reactive';
 export { handle as $handle } from './events/handle';
+export { on as $on } from './events/apply';
 export { registerCustomEvent as $registerCustomEvent } from './events/custom';
 export { model as $model, show as $show } from './behaviors';
 export { cx as $cx } from './dom/nodes';

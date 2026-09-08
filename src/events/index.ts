@@ -1,5 +1,5 @@
 export { handle, compose } from './handle';
-export { applyEvents } from './apply';
+export { applyEvents, on } from './apply';
 export {
   registerCustomEvent,
   getCustomEvent,

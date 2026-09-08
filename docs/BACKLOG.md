@@ -46,6 +46,12 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   `STYLE_HANDLE` fica no core, então `class`/`$class`/`$cx` seguem aceitando handles. Migrados testes,
   demo e `examples/auth` (typecheck do exemplo ok). Docs GLOSSARY/FLOW atualizados; USAGE em DOCS-DRIFT.
   2 commits (`refactor(style):`, `refactor(api):`). 124 testes verdes, typecheck+build ok.
+- **2026-09-08** — **`$on(ctx, name, value)`** (item 3 da §Ordem): primitivo de evento p/ behaviors/setups.
+  Extraído `bindEvent` (miolo unitário do loop) em `events/apply.ts` → `applyEvents` e `on` dividem o
+  mesmo caminho (resolve tupla + `handle` + roteamento nativo|custom); comportamento/testes de `applyEvents`
+  inalterados. `on` **auto-registra** o teardown no escopo **e retorna** cleanup **idempotente** (`once()`);
+  fora de escopo degrada em silêncio. Overloads inferem o evento pelo nome (nativo/`MQCustomEventMap`/fallback).
+  Export `on as $on`. 8 testes novos (`events/__tests__/on.test.ts`), **131 verdes**, typecheck+build ok.
 - **2026-09-08** — **E5 (specs integradas)** do roadmap — **fecha o roadmap de testes E1–E6**:
   `describe('specs integradas (E5)')` em `src/index.test.ts` com 3 fluxos cross-slice novos —
   `model` em item de lista keyed (foco+valor preservados no reorder, listener limpo na remoção),
@@ -143,10 +149,19 @@ Design registrado p/ o futuro: bloco `vars` por componente (estado **reescreve a
 ## Eventos — migração ficou enxuta (P2)
 
 Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` antigo. Faltam:
-- **Delegation** de eventos (havia no antigo). P2
+- **`$on(ctx, name, onValue)` — primitivo de evento p/ behaviors (P1, próxima frente).** Hoje um behavior
+  ouve evento na mão (`el.addEventListener` + `registerCleanup`, ver `model`), duplicando à margem o que
+  a pipeline de `on:{}` já resolve. `$on` reusa **o mesmo `applyEvents`** (roteamento nativo vs custom +
+  `handle` + cleanup no escopo) → behavior vira "composable com elemento" de verdade e ganha o mesmo
+  vocabulário do builder. É o substrato p/ reescrever os custom events ricos abaixo **como behaviors**.
+- **Runtime rico de custom events (P2)**: hoje `emit` é fire-and-forget; falta o modelo de **enter↔leave
+  pareado** com cleanup retornado pelo handler (era o `cleanupHover`). É o que destrava, sobre a mesma base:
+  `interactOutside` (**hoje não existe**), `focusOutside` via `relatedTarget` (mais correto que o `focusin`
+  global atual) e `hover` hold-to-hover (`delayIn`/`delayOut` + Pointer Events p/ mobile).
+- **Delegation** de eventos (havia no antigo) — **adiada/em dúvida**. Numa lib de escopo por-componente com
+  cleanup por escopo, delegação global é aposta grande de payoff incerto (acopla o `DOMHandlerStore`).
+  Segurar até ter um caso real que doa (lista gigante). P3
 - **Dedup/registro** de handlers (`DOMHandlerStore`). P3
-- **Runtime rico de custom events**: hoje `emit` é fire-and-forget; falta o modelo de **enter↔leave
-  pareado** com cleanup retornado pelo handler (era o `cleanupHover`). P2
 - Mais modificadores e o açúcar de token (`'.enter'`) sobre os composables. P3
 
 ### hover com touch (P2)
@@ -168,12 +183,23 @@ suprimir contextmenu/seleção, `delayIn`/`delayOut`. API preferida: **handler r
 
 ---
 
+## `$model` — cobrir os tipos de input (P1)
+
+`model` hoje só trata `el.value` como string (ver `src/behaviors.ts`) → **bug latente**: com `type=checkbox`
+escreve `"true"`/`"on"` em vez de mexer em `.checked`; radio group, checkbox-group e `<select multiple>`
+ficam errados **em silêncio**. A API anuncia two-way "p/ inputs/select/textarea" e quebra nos casos mais
+comuns de formulário. Fechar: checkbox booleano (`.checked`), radio (compara `value`), checkbox-group (array),
+`<select multiple>` (array). Casa com o `setValue?` do adapter abaixo. Ganho direto no `examples/auth`.
+
 ## Reatividade / adapter (P2)
 
 - Adapter tem `isSignal`/`getValue`/`effect`, mas **não tem `setValue`**. `model` escreve `signal.value`
   direto → acoplado a signals no formato preact. Para two-way realmente agnóstico, adicionar
-  `setValue?` opcional ao adapter. P2
+  `setValue?` opcional ao adapter. P2 — **fazer junto do `$model` acima.**
 - Só o adapter `preact` foi entregue. Documentar/entregar outro (ou um fake) e o **teste de agnosticidade**. P3
+- **Objetos/listas reativas próprios — RECUSADO (2026-09-08).** Contradiz o posicionamento **agnóstico de
+  signal**: coleção reativa é responsabilidade da lib de signals via adapter, não do mini-q (que já monta
+  lista keyed a partir de fonte reativa). O gap legítimo aqui é só o açúcar **`$.each` tipado** (ver Componentes).
 
 ---
 
@@ -214,10 +240,15 @@ estabilizarem (mover cedo demais só gera churn).
 
 ## Ordem sugerida quando retomarmos
 
+Roadmap de testes **E1–E6 fechado** (2026-09-08) → frente atual é **feature**. Ordem repriorizada
+após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a mesma pipeline de eventos.
+
 1. ~~Decidir/entregar o modelo de estilo~~ ✅ feito (entidade + breakpoints).
-2. **Migrar `examples/auth`** para a nova API de estilo (call sites `theme/Field/ToastHost/Stepper/PartnersFields/Popover/Button`). (P2)
-3. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)
-4. Portar runtime rico de eventos → **hover touch** + delegation. (P2)
-5. `setValue` no adapter + teste de agnosticidade. (P2)
-6. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
-7. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)
+2. ~~Migrar `examples/auth` p/ a nova API de estilo~~ ✅ feito (todos os call sites migrados).
+3. ~~**`$on(ctx, name, onValue)`** — primitivo de evento p/ behaviors~~ ✅ feito (2026-09-08; ver §Progresso).
+4. **`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter.** (P1)
+5. **Runtime rico de eventos** (enter↔leave pareado): `interactOutside` + `focusOutside` por `relatedTarget`
+   + `hover` hold-to-hover (mobile). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
+6. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)
+7. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
+8. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)
