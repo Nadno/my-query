@@ -93,7 +93,13 @@ Cenários que cruzam slices — pegam regressões que o unit não pega.
   fluxos do app.
 - **Depende de:** idealmente após E1–E4 (usa os contratos já fixados).
 
-## E6 — Eventos & `handle` (tratamento da lib dom-events) ⬜  ·  `test(events):` + `feat(events):`
+## E6 — Eventos & `handle` (tratamento da lib dom-events) 🟡  ·  `test(events):` + `feat(events):`
+
+> **Testes de contrato ✅ (2026-09-08)** — slice `events/` coberta em `src/events/__tests__/`
+> (`handle`/`apply`/`custom`, 20 casos). As **decisões pendentes de design** abaixo (deprecar
+> `$.handlers` raiz, delegation + dedup via `DOMHandlerStore`, hover-touch) ficam como etapas
+> próprias (`feat(events):`), fora deste commit.
+
 
 A slice `events/` é o tratamento de eventos via **`handle`** (modificadores composáveis + custom
 events). Hoje só é tocada de lado ([index.test.ts](../src/index.test.ts): "handler simples" e um

@@ -31,6 +31,13 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   que absorve o "onCleanup"; `warn` fora de escopo; `onMounted` retornando teardown). Documentado
   "behavior = composable com elemento"; `model` registra teardown via `registerCleanup` silencioso
   (o `warn` fica p/ os hooks públicos). Ordem do roadmap agora E4 → **E6 → E5**. 101 testes.
+- **2026-09-08** — **E6 (testes de contrato)** do roadmap: slice `events/` fixada em
+  `src/events/__tests__/` — `handle`/`compose` (ordem, callable, todos os modificadores,
+  `debounce`/`throttle` com fake timers, `handlers`), `applyEvents` (options da tupla, roteamento
+  nativo vs custom, cleanup remove listener no dispose, nullish ignorado), custom events built-in
+  (`clickOutside`/`focusOutside`/`hover` montam/limpam listener; fora vs dentro). As **decisões de
+  design** de E6 (deprecar `$.handlers` raiz, delegation + `DOMHandlerStore`, hover-touch) ficam
+  como etapas `feat(events):` próprias. **121 testes.**
 
 ---
 
