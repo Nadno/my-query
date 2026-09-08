@@ -11,4 +11,4 @@
 
 export { createTag } from './create';
 export { appendChild } from './children';
-export { when } from './control';
+export { when, match, switchOn, ELSE } from './control';

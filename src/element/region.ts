@@ -10,6 +10,7 @@ import { createScope, disposeScope, registerCleanup, runInScope, type Scope } fr
 import { bind, untrack, type Bindable } from '../reactive';
 import { toNodes } from '../dom/nodes';
 import { isComponentTuple } from './guards';
+import { appendChild } from './children';
 
 interface RegionEntry {
   nodes: Node[];
@@ -54,8 +55,19 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
         }
         ordered.push(entry);
       } else {
+        // Item cru/reativo: monta de verdade via `appendChild` (uma função/região
+        // retornada vira sub-região, não `String(fn)` como texto). Anexa no `parent`
+        // real e captura os nós pelo intervalo de índices (o loop de reordenação
+        // reposiciona depois) — anexar num fragment quebraria uma sub-região, que fecha
+        // sobre `parent`. Construir NÃO deve virar dependência da região → `untrack`.
         const scope = createScope();
-        const nodes = runInScope(scope, () => untrack(() => toNodes(item)));
+        const before = parent.childNodes.length;
+        runInScope(scope, () => untrack(() => appendChild(parent, item)));
+        const nodes: Node[] = [];
+        for (let k = before; k < parent.childNodes.length; k++) {
+          const n = parent.childNodes[k];
+          if (n) nodes.push(n);
+        }
         const entry: RegionEntry = { nodes, scope };
         volatile.push(entry);
         ordered.push(entry);

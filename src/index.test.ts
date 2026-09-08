@@ -233,3 +233,20 @@ describe('style / cx (DX)', () => {
     expect(sheet?.textContent).toContain('.mq-auth-global { margin: 0px; }');
   });
 });
+
+describe('$ expõe control-flow flat', () => {
+  it('$.match / $.switch / $.else existem', () => {
+    expect(typeof $.match).toBe('function');
+    expect(typeof $.switch).toBe('function');
+    expect($.else).toBeTruthy();
+  });
+
+  it('$.match renderiza via $.mount', () => {
+    const on = signal(true);
+    const App = () => $.div({}, $.match([on, () => $.p({ id: 'm' }, 'M')]));
+    $.mount(document.body, App);
+    expect(document.getElementById('m')?.textContent).toBe('M');
+    on.value = false;
+    expect(document.getElementById('m')).toBeNull();
+  });
+});

@@ -10,10 +10,12 @@ export function App() {
   return $.div(
     { class: app },
     ToastHost(),
-    $.when(
-      isAuthenticated,
-      () => Dashboard(),
-      () => (screen.value === 'register' ? Register() : Login()),
+    // Condicional flat: cada condição é rastreada; cada view é construída
+    // destrastreada (como no `$.when`). 1ª condição verdadeira vence.
+    $.match(
+      [isAuthenticated, Dashboard],
+      [() => screen.value === 'register', Register],
+      [$.else, Login],
     ),
   );
 }

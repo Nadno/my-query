@@ -99,6 +99,85 @@ describe('bug 2: reconcile só move nós fora de posição (preserva foco)', () 
   });
 });
 
+describe('região: função/região retornada de um ramo monta de verdade', () => {
+  it('view que retorna outra região monta nós reais, não texto (regressão String(fn))', () => {
+    const outer = signal(true);
+    const inner = signal(true);
+    const App = () =>
+      $.div(
+        {},
+        $.match([
+          outer,
+          () =>
+            $.when(
+              inner,
+              () => $.p({ id: 'x' }, 'X'),
+              () => $.p({ id: 'y' }, 'Y'),
+            ),
+        ]),
+      );
+    $.mount(document.body, App);
+
+    // a região aninhada montou de verdade
+    expect(document.getElementById('x')).not.toBeNull();
+    // e nenhum código-fonte de função vazou como texto
+    expect(document.body.textContent).not.toContain('=>');
+    expect(document.body.textContent).not.toContain('untrack');
+  });
+
+  it('a região aninhada reage à própria condição', () => {
+    const outer = signal(true);
+    const inner = signal(true);
+    const App = () =>
+      $.div(
+        {},
+        $.match([
+          outer,
+          () =>
+            $.when(
+              inner,
+              () => $.p({ id: 'x' }, 'X'),
+              () => $.p({ id: 'y' }, 'Y'),
+            ),
+        ]),
+      );
+    $.mount(document.body, App);
+
+    expect(document.getElementById('x')).not.toBeNull();
+    inner.value = false; // effect da região interna está vivo
+    expect(document.getElementById('x')).toBeNull();
+    expect(document.getElementById('y')).not.toBeNull();
+  });
+
+  it('desmontar o ramo externo limpa a região aninhada (cascata de disposeScope)', () => {
+    const outer = signal(true);
+    const inner = signal(true);
+    const App = () =>
+      $.div(
+        {},
+        $.match([
+          outer,
+          () =>
+            $.when(
+              inner,
+              () => $.p({ id: 'x' }, 'X'),
+              () => $.p({ id: 'y' }, 'Y'),
+            ),
+        ]),
+      );
+    $.mount(document.body, App);
+
+    expect(document.getElementById('x')).not.toBeNull();
+    outer.value = false; // ramo externo sai → sub-escopo (região interna) descartado
+    expect(document.getElementById('x')).toBeNull();
+    expect(document.getElementById('y')).toBeNull();
+    // effect interno parou: mexer em inner não recria nada
+    inner.value = false;
+    expect(document.getElementById('x')).toBeNull();
+    expect(document.getElementById('y')).toBeNull();
+  });
+});
+
 describe('escopos aninhados: cleanup dispara ao remover item da região', () => {
   it('effect de um binding dentro do item para quando o item é removido', () => {
     const tick = signal(0);

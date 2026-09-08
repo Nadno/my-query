@@ -1,6 +1,6 @@
 /** Monta o `$`: selector + factories de tag + mount/handle/when/style/useSignal. */
 
-import { createTag, when, appendChild } from './element';
+import { createTag, when, match, switchOn, ELSE, appendChild } from './element';
 import { mount } from './mount';
 import { useSignal } from './reactive';
 import { handle } from './events/handle';
@@ -46,6 +46,9 @@ export interface MiniQuery extends Factories {
   handle: typeof handle;
   handlers: typeof handle.handlers;
   when: typeof when;
+  match: typeof match;
+  switch: typeof switchOn;
+  else: typeof ELSE;
   append: typeof appendChild;
   cx: typeof cx;
   style: typeof style;
@@ -77,6 +80,9 @@ Object.assign($, {
   handle,
   handlers: handle.handlers,
   when,
+  match,
+  switch: switchOn,
+  else: ELSE,
   append: appendChild,
   cx,
   style,
@@ -91,9 +97,9 @@ Object.assign($, {
 
 export default $;
 
-export { createTag, when, appendChild } from './element';
+export { createTag, when, match, switchOn, ELSE, appendChild } from './element';
 export { mount } from './mount';
-export { useSignal, isSignal, isReactive, read, bind } from './reactive';
+export { useSignal, isSignal, isReactive, read, bind, untrack } from './reactive';
 export { handle, compose } from './events/handle';
 export { registerCustomEvent, getCustomEvent } from './events/custom';
 export { applyUse, model, show } from './behaviors';

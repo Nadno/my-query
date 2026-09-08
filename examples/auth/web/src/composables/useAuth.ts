@@ -1,4 +1,4 @@
-import { computed, signal } from '@preact/signals-core';
+import { batch, computed, signal } from '@preact/signals-core';
 import type { AuthResponse, ProfilePayload, RegisterPayload, UserPublic } from '../../../shared/types';
 import { ApiError, send } from '../api';
 import { useToast } from './useToast';
@@ -17,8 +17,14 @@ let refreshTimer: number | undefined;
 let refreshInFlight: Promise<boolean> | null = null;
 
 function applyAuth(res: AuthResponse) {
-  accessToken.value = res.accessToken;
-  user.value = res.user;
+  // `isAuthenticated` (lido por `accessToken`) governa a região do `$.match`, que
+  // monta o Dashboard sob `untrack` e NÃO rastreia `user`. Sem batch, a escrita de
+  // `accessToken` re-roda a região sincronamente com `user` ainda null → Dashboard
+  // trava em "Carregando…". O batch garante os dois setados antes do effect rodar.
+  batch(() => {
+    accessToken.value = res.accessToken;
+    user.value = res.user;
+  });
   scheduleRefresh(res.expiresIn);
 }
 
