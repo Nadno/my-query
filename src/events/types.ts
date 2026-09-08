@@ -35,5 +35,8 @@ export type OnMap<E extends Element = Element> = {
 } & {
   [K in keyof MQCustomEventMap]?: OnValue<MQCustomEventMap[K], E>;
 } & {
-  [event: string]: OnValue<Event, E> | undefined;
+  // Fallback p/ nomes de evento arbitrários (custom events). `any` no tipo do
+  // evento evita o conflito de variância com as chaves tipadas acima: uma tupla
+  // com `Modifier<KeyboardEvent>` não é atribuível a `OnValue<Event>`, mas é a `OnValue<any>`.
+  [event: string]: OnValue<any, E> | undefined;
 };

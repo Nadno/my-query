@@ -15,7 +15,7 @@ export function TextInput(p: {
     class: inputClass,
     type: p.type ?? 'text',
     placeholder: p.placeholder,
-    autocomplete: p.autocomplete,
+    autoComplete: p.autocomplete,
     use: p.mask ? useMask(p.value, p.mask) : $model(p.value),
     on: p.onBlur ? { blur: p.onBlur } : undefined,
   });

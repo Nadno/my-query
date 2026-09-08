@@ -7,7 +7,7 @@
 
 import { createTag } from './element';
 import { handle } from './events/handle';
-import type { MQ, Props, TagElement, TagName } from './types';
+import type { Child, MQ, Props, TagElement, TagName } from './types';
 
 const TAGS: TagName[] = [
   'a', 'abbr', 'address', 'article', 'aside', 'audio', 'b', 'bdi', 'bdo',
@@ -30,8 +30,8 @@ export interface TagFactory<T extends TagName> {
   <P = Record<string, unknown>>(
     setup: (props: P, ctx: MQ<TagElement<T>>) => unknown,
   ): (props: P) => TagElement<T>;
-  (props?: Props<T>, ...children: unknown[]): TagElement<T>;
-  (...children: unknown[]): TagElement<T>;
+  (props?: Props<T>, ...children: Child[]): TagElement<T>;
+  (...children: Child[]): TagElement<T>;
 }
 
 /** O `$`: dicionário de factories de tag (sem seletor, sem helpers). */
@@ -75,6 +75,7 @@ export type { Cleanup, Scope } from './lifecycle';
 export type {
   MQ,
   Props,
+  PropsOf,
   Component,
   ComponentTuple,
   Behavior,

@@ -9,7 +9,11 @@ import { useToast } from '../composables/useToast';
 import { AccessFields } from '../forms/AccessFields';
 import { checkEmail } from '../forms/checkEmail';
 import { CompanyFields } from '../forms/CompanyFields';
-import { createPartner, snapshotPartners, type RegisterFormValues } from '../forms/model';
+import {
+  createPartner,
+  snapshotPartners,
+  type RegisterFormValues,
+} from '../forms/model';
 import { PartnersFields } from '../forms/PartnersFields';
 import { validateStep } from '../forms/validate';
 import { Button } from '../ui/Button';
@@ -40,7 +44,11 @@ export function Register() {
       emailAsync: emailAsync.error.value,
     });
     if (Object.keys(errs).length) return false;
-    if (step.value === 0 && (emailAsync.loading.value || emailAsync.error.value)) return false;
+    if (
+      step.value === 0 &&
+      (emailAsync.loading.value || emailAsync.error.value)
+    )
+      return false;
     return true;
   };
 
@@ -49,9 +57,18 @@ export function Register() {
       emailAsync: emailAsync.error.value,
     });
     formApi.errors.value = errs;
-    formApi.touched.value = { ...formApi.touched.value, companyName: true, cnpj: true, email: true };
+    formApi.touched.value = {
+      ...formApi.touched.value,
+      companyName: true,
+      cnpj: true,
+      email: true,
+    };
     if (Object.keys(errs).length) return;
-    if (step.value === 0 && (emailAsync.loading.value || emailAsync.error.value)) return;
+    if (
+      step.value === 0 &&
+      (emailAsync.loading.value || emailAsync.error.value)
+    )
+      return;
     step.value += 1;
   };
 
@@ -77,7 +94,10 @@ export function Register() {
   return $.div(
     { class: card },
     $.h1({ class: card.title }, 'Cadastrar empresa'),
-    $.p({ class: card.muted }, 'PJ multi-step — os mesmos campos são reusados na área interna.'),
+    $.p(
+      { class: card.muted },
+      'PJ multi-step — os mesmos campos são reusados na área interna.',
+    ),
     Stepper({
       step: () => step.value,
       labels: ['Empresa', 'Sócios', 'Acesso'],

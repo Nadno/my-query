@@ -23,17 +23,17 @@ function handleFn<Ev extends Event>(
   return compose(handler, mods);
 }
 
-const prevent: Modifier = (next) => (e, ctx) => {
+const prevent: Modifier<any> = (next) => (e, ctx) => {
   e.preventDefault();
   next(e, ctx);
 };
 
-const stop: Modifier = (next) => (e, ctx) => {
+const stop: Modifier<any> = (next) => (e, ctx) => {
   e.stopPropagation();
   next(e, ctx);
 };
 
-const self: Modifier = (next) => (e, ctx) => {
+const self: Modifier<any> = (next) => (e, ctx) => {
   if (e.target === ctx.element) next(e, ctx);
 };
 
@@ -52,7 +52,7 @@ const sysKey =
   };
 
 const debounce =
-  (ms: number): Modifier =>
+  (ms: number): Modifier<any> =>
   (next) => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return (e, ctx) => {
@@ -62,7 +62,7 @@ const debounce =
   };
 
 const throttle =
-  (ms: number): Modifier =>
+  (ms: number): Modifier<any> =>
   (next) => {
     let last = 0;
     return (e, ctx) => {

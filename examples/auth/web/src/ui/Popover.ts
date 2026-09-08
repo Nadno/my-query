@@ -1,5 +1,5 @@
 import $ from 'mini-q';
-import { $when } from 'mini-q';
+import { $when, type Child } from 'mini-q';
 import { style } from 'mini-q/style';
 
 export const popoverStyle = style('popover', {
@@ -27,8 +27,8 @@ export function Popover(p: {
   hostOn: Record<string, unknown>;
   hostUse: unknown;
   open: () => boolean;
-  trigger: unknown;
-  panel: () => unknown;
+  trigger: Child;
+  panel: () => Child;
 }) {
   return $.div(
     {

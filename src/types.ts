@@ -44,13 +44,21 @@ export type Behavior<E extends Element = Element> = (ctx: MQ<E>) => Cleanup | vo
 
 type AttributesOf<T extends TagName> = HTMLElementAttributeMap[T];
 
-/** Chaves reativas `$attr` derivadas dos atributos da tag. */
-type ReactiveAttrs<T extends TagName> = {
-  [K in keyof AttributesOf<T> as `$${string & K}`]?: Bindable<AttributesOf<T>[K]>;
+/**
+ * Atributos estáticos: cada valor aceita também `false`/`null` — em runtime isso
+ * **remove** o atributo (mesmo contrato do `setAttr`).
+ */
+type StaticAttrs<T extends TagName> = {
+  [K in keyof AttributesOf<T>]?: AttributesOf<T>[K] | false | null;
 };
 
-/** Props de um elemento: atributos (estáticos + `$reativos`) + chaves especiais. */
-export type Props<T extends TagName> = Partial<AttributesOf<T>> &
+/** Chaves reativas `$attr` derivadas dos atributos da tag (valor pode resolver p/ `false`/`null`). */
+type ReactiveAttrs<T extends TagName> = {
+  [K in keyof AttributesOf<T> as `$${string & K}`]?: Bindable<AttributesOf<T>[K] | false | null>;
+};
+
+/** Props de um elemento: atributos (estáticos + `$reativos`) + chaves especiais + arbitrárias. */
+export type Props<T extends TagName> = StaticAttrs<T> &
   ReactiveAttrs<T> & {
     class?: ClassValue;
     $class?: Bindable<ClassValue>;
@@ -62,7 +70,16 @@ export type Props<T extends TagName> = Partial<AttributesOf<T>> &
     use?: Behavior<TagElement<T>> | Behavior<TagElement<T>>[];
     /** Chave para reconciliação em listas keyed. */
     key?: string | number;
+    /**
+     * Atributo arbitrário → cai no fallback `setAttribute` em runtime. `unknown`
+     * (não `string`) porque a index signature precisa coexistir com as chaves
+     * especiais (`on`/`use`/`data`/…); as chaves conhecidas **mantêm** seu tipo.
+     */
+    [attr: string]: unknown;
   };
+
+/** Props de um componente: as de uma tag `T` + campos próprios `Extra`. · `PropsOf<'div', { count: number }>` */
+export type PropsOf<T extends TagName, Extra = {}> = Props<T> & Extra;
 
 /** Componente: recebe props e devolve o(s) nó(s) da sua raiz. */
 export type Component<P = Record<string, unknown>> = (props: P) => Node | Node[];

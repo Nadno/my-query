@@ -138,7 +138,7 @@ export function PartnersFields(p: {
 
   return $.div(
     { class: form },
-    $.ul({ class: form, style: { listStyle: 'none', margin: 0, padding: 0 } }, () =>
+    $.ul({ class: form, style: { listStyle: 'none', margin: '0', padding: '0' } }, () =>
       p.partners.value.map(
         (partner) =>
           [
