@@ -2,8 +2,9 @@
 
 SPA com **mini-q** no front e **Fastify** no back: cadastro PJ multi-step, sessão JWT
 (access curto + refresh com rotação), toasts, popover e edição de perfil reusando os
-mesmos campos do cadastro. CSS via `$.style` / `$.parts` / `$.css` (injeção num
-`<style id="mq-styles">`).
+mesmos campos do cadastro. CSS via `style` de `mini-q/style`: globais com `style.css`
+e blocos `style(name, config)` (partes, variantes, slots), injetados num
+`<style id="mq-styles">`.
 
 Dados ficam **em memória** — somem ao reiniciar o servidor.
 
