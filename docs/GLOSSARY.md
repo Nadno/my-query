@@ -24,6 +24,7 @@ recursos são **exports nomeados com prefixo `$`** (`$mount`, `$when`, `$handle`
 - **Tupla de componente** — `[Component, props]`: renderização **lazy** e **cacheável** (ideal em listas). Props **não conferidas em tipo** (`ComponentTuple<P = any>`; o caminho tipado é `$.each`). · `[Row, { ...t, key: t.id }]`
 - **Reconciliação keyed** — reuso/reordenação de nós por `key` (move só o fora de posição; preserva foco). · `key`
 - **`$each` (lista keyed)** — açúcar de região para listas: fonte (signal·função·array, readonly ok) + componente + `keyFn`; cada item vira `[Comp, { ...item, key }]`. `key` é **reservada** (keyFn prevalece; Comp não lê `key` tipada). Tupla crua é a saída para branching/props derivadas. · `$.each(fonte, Row, t => t.id)`
+- **`$when` (condicional)** — monta/desmonta o ramo conforme a condição; **estado fresco por design** (cada alternância recria o ramo — preservar estado = `$show`). · `$.when(aberto, () => Modal())`
 - **Escopo (owner)** — fronteira de lifecycle que coleta **cleanups**; aberta por `$mount` e por cada região/componente aninhado. `unmount` roda os cleanups do escopo.
 - **Cleanup** — função de desmontagem (para effects, listeners, custom events, behaviors).
 - **untrack** — leitura que **não** cria dependência (constrói a subárvore de uma região/`$when` sem virar dep dela).

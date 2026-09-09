@@ -238,8 +238,9 @@ $.div({},
 );
 ```
 
-`$.when(cond, then, else?)` devolve um filho reativo; coloque-o na posição de filho. Para apenas
-esconder (preservando estado/foco), use o behavior `$.show` (§6).
+`$.when(cond, then, else?)` devolve um filho reativo; coloque-o na posição de filho. Cada alternância
+**recria** o ramo — o estado interno do ramo é **fresco por design** (não há cache de ramo). Para
+esconder **preservando** estado/foco, use o behavior `$.show` (§6).
 
 ---
 
@@ -405,5 +406,4 @@ Props especiais: `class`/`$class`, `style`/`$style`, `data`/`$data`, `on`, `use`
 
 - **Engine de CSS avançada** (tokens, SSR, GC de regras, compound variants, prefixo/namespace configurável).
 - **Delegation de eventos** e **dedup de handlers** (o runtime de eventos é enxuto).
-- **Cache de ramo do `$.when`** (recria a subárvore ao alternar — não preserva estado interno).
 - **API de manipulação estilo jQuery** (`append/remove/text`…) — use `$.mount` + render reativo.

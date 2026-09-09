@@ -84,6 +84,10 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   em tupla (solto erra). **Furo mapeado e documentado como costura intencional**: tupla crua em
   view/Child (`[Comp, props]` crua) NÃO confere props em tipo (`ComponentTuple<P = any>`) — o caminho
   tipado é `$.each`; nota em USAGE §8 + GLOSSARY. 142 verdes (type-tests são compile-only).
+- **2026-09-08** — **Decisão: `$.when` sem cache de ramo (RECUSADO)**. Cache de ramo sobrepõe o
+  `$show` (caminho canônico de "preservar estado sem desmontar", USAGE §6/§9) e manteria effects
+  vivos em subárvore fora do DOM. `$when` = monta/desmonta, **estado fresco por design** — travado
+  por teste novo (`control.test.ts`) + linha na tabela "Decisões travadas" do manifesto. 143 verdes.
 
 ---
 
@@ -201,7 +205,9 @@ suprimir contextmenu/seleção, `delayIn`/`delayOut`. API preferida: **handler r
 
 ## Componentes / render (P2–P3)
 
-- **`$.when` sem cache de ramo**: recria a subárvore ao alternar (perde estado interno). Adicionar cache por ramo. P2
+- ~~**`$.when` sem cache de ramo**~~ ✅ **RECUSADO (2026-09-08)**: cache de ramo sobrepõe o `$show`
+  (preservar estado = `$show`, USAGE §6/§9) e manteria effects vivos fora do DOM. `$when` =
+  monta/desmonta, **estado fresco por design** (princípio 5/8 do manifesto). Ver §Progresso.
 - ~~**Açúcar de lista tipada `$.each`**~~ ✅ FEITO (2026-09-08): `$.each(items, Comp, t => t.id)` —
   a tupla `[Comp, {...t, key}]` exige `as [...]`; o açúcar mata o cast e tipa a key (Comp = item). Ver §Progresso.
 - **`$.tag(...children)` sem `{}` vazio**: permitir omitir props quando o 1º arg é claramente filho
@@ -274,6 +280,6 @@ após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a m
 4. ~~**`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter**~~ ✅ feito (2026-09-08; ver §Progresso).
 5. **Runtime rico de eventos** (enter↔leave pareado): `interactOutside` + `focusOutside` por `relatedTarget`
    + `hover` hold-to-hover (mobile). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
-6. ~~`$.each` tipado~~ ✅ feito (2026-09-08; ver §Progresso) + `$.when` com cache de ramo (ganho de DX barato). (P2)
+6. ~~`$.each` tipado~~ ✅ feito (2026-09-08; ver §Progresso) + ~~`$.when` com cache de ramo~~ ✅ **RECUSADO** (2026-09-08; preservação é `$show`).
 7. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
 8. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)

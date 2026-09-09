@@ -110,6 +110,7 @@ Escolhas canônicas registradas (não reabrir sem motivo):
 | `$` | tags + exports nomeados `$`-prefixados | `$` = superfície do mini-q (princípio 3) |
 | Reatividade | `$`-prefixo em props; `() => expr` com qualquer adapter | reativo visível (princípio 4) |
 | Eventos | `on` (dispara) vs `use` (se comporta) | fronteira explícita (princípio 5) |
+| Condicional | `$when` = monta/desmonta (estado fresco); preservação = `$show` | uma forma por conceito (princípio 5/8) |
 | Signal | agnóstico via adapter (`$useSignal`) | sem lock-in |
 | Estilo | entry opcional `mini-q/style` | core enxuto (princípio 8) |
 

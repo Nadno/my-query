@@ -54,6 +54,37 @@ describe('when (açúcar de match)', () => {
   });
 });
 
+describe('when — estado fresco por design (sem cache de ramo)', () => {
+  it('alternar recria o ramo: signal do closure reseta (preservação é $show)', () => {
+    const open = signal(true);
+    const App = () =>
+      $.div(
+        {},
+        $when(open, () => {
+          const local = signal(0);
+          return $.button(
+            { id: 'fresh', on: { click: () => local.value++ } },
+            () => `n=${local.value}`,
+          );
+        }),
+      );
+    $mount(document.body, App);
+
+    const btn = document.getElementById('fresh') as HTMLButtonElement;
+    btn.click();
+    btn.click();
+    expect(btn.textContent).toBe('n=2');
+
+    open.value = false;
+    expect(document.getElementById('fresh')).toBeNull();
+    open.value = true;
+
+    const btn2 = document.getElementById('fresh') as HTMLButtonElement;
+    expect(btn2).not.toBeNull();
+    expect(btn2.textContent).toBe('n=0'); // recriado do zero — estado fresco
+  });
+});
+
 describe('match', () => {
   it('a 1ª condição truthy vence (ordem importa)', () => {
     const a = signal(true);
