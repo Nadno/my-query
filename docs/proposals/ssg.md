@@ -42,7 +42,7 @@ ativo. Casa com o item do BACKLOG "quebrar `dom/nodes.ts`". É o refactor que de
 ### Fase 1 — SSG de verdade
 Duas rotas, da mais barata à mais limpa:
 
-1. **Rota jsdom (quase de graça, para validar):** `$.mount` num `document` de jsdom/linkedom no Node,
+1. **Rota jsdom (quase de graça, para validar):** `$mount` num `document` de jsdom/linkedom no Node,
    serializar `innerHTML`. Sai HTML com estado inicial correto **sem tocar no source**. Bom para um spike.
 2. **Rota backend-string (recomendada):** um **StringBackend** que implementa `RenderBackend` emitindo uma
    string de HTML em vez de mutar DOM. Sem dependência de jsdom, mais rápido, e é o mesmo caminho que a

@@ -1,8 +1,9 @@
 # mini-q — Manifesto de DX
 
 > O que "DX" significa para o mini-q e o critério que guia decisões de API.
-> USAGE diz *como usar*; FLOW diz *como flui*; STRUCTURE diz *onde mora*; este documento diz
-> **por que a API é assim** — e é a fonte de verdade das decisões de superfície.
+> USAGE diz *como usar*; [ARCHITECTURE](ARCHITECTURE.md) diz *como flui e onde mora*;
+> [GLOSSARY](GLOSSARY.md) dá *os nomes*; este documento diz **por que a API é assim** — e é a
+> fonte de verdade das decisões de superfície.
 
 ## Norte
 
@@ -26,7 +27,7 @@ O padrão que todo usuário escreve todo dia tem a menor cerimônia possível. S
 `{}` vazio, cast ou boilerplate, **a API está errada — não o usuário**.
 
 - `$.div({}, ...)` → `$.div(...)` (props opcionais quando o 1º arg é claramente filho).
-- `[Comp, {...t, key}] as [...]` → `$.each(items, Comp, t => t.id)` (tipa a key, mata o cast).
+- `[Comp, {...t, key}] as [...]` → `$each(items, Comp, t => t.id)` (tipa a key, mata o cast).
 - `$model(type as Signal<string>)` → overloads que inferem o modo pelo elemento + tipo.
 
 ### 2. Silêncio só quando é intencional
@@ -37,7 +38,7 @@ como filho some de propósito, e isso é documentado.
 
 - ✅ warn de estilo duplicado; warn de `onUnmounted` fora de escopo.
 - ⚠️ débito: `$disabeld` (typo) vira `setAttribute` mudo — a prop nunca atualiza e nada avisa.
-- ⚠️ débito: `$.mount` com árvore pronta vaza effects sem avisar.
+- ⚠️ débito: `$mount` com árvore pronta vaza effects sem avisar.
 
 ### 3. `$` é a marca do mini-q
 
@@ -64,7 +65,7 @@ Uma única forma para cada conceito. Duas formas "equivalentes" custam aprendiza
 
 - **Componente = closure** (canônica); setup é açúcar para "raiz é a tag + preciso de `ctx`".
 - **Evento que dispara → `on`; que se comporta → `use`** (fronteira explícita).
-- Ao achar duas formas, escolher uma e deprecar a outra (ex.: `$handlers` raiz → `$.handle.handlers`).
+- Ao achar duas formas, escolher uma e deprecar a outra (ex.: `$handlers` raiz → `$handle.handlers`).
 
 ### 6. Tipos que guiam
 

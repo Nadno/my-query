@@ -6,48 +6,51 @@ marque `[x]`. (O código é a fonte de verdade; esta lista aponta o débito docu
 
 Legenda: **A** = afirma algo falso (corrigir já que induz a erro) · **F** = falta (cobrir) · **H** = histórico/menor.
 
+**Estrutura atual das docs (2026-09-09):** `USAGE.md` (guia do usuário — reescrito na API atual na Fase 3)
+· `STYLE.md` (**novo na F3**: engine de estilo + breakpoints) · `ARCHITECTURE.md` (como funciona + onde
+mora — fusão do antigo `FLOW.md`+`STRUCTURE.md`) · `GLOSSARY.md` (índice) · `DX-MANIFESTO.md` (por quê) ·
+`BACKLOG.md` (pendências + ordem) · `DOCS-PLAN.md` (campanha de docs) · `proposals/` (ADRs). O
+`TEST-ROADMAP.md` (E1–E6) foi arquivado no §Histórico do BACKLOG.
+
 ---
 
 ## `docs/USAGE.md`
 
-Defasou com o **redesenho de estilos** e os **fixes de runtime** (2026-09-06).
+> **Fechada na Fase 3 (2026-09-09)** — `USAGE.md` reescrito na API atual (estrutura temática, §1–9) e o
+> engine de estilo migrou p/ o novo `STYLE.md`. Nada de `$.recurso` aninhado nem `$(sel)` resta nas docs
+> (verificado na sanidade do fechamento).
 
-- [x] **A** §11 CSS: reescrita p/ o **namespace** (2026-09-06): `$.style(name, config)` → `StyleHandle`
-  (callable + `self`/`parts`/`flags`/`variants`/`keyframes`); `base`/`parts`/`flags`/`variants`/`defaults`/`keyframes`;
-  parte = nome completo do bloco; `$.style.css` global. Partes e variantes coexistem.
-- [x] **A** §11: exemplos migrados de `$.parts('card', { root, title })` p/ `$.style('field', { parts:{…} })`
-  → `field.self` / `field.parts.input.self`. `$.parts`/`$.css` = **alias deprecated** (documentado).
-- [x] **A** Regras de ouro (item 8): reescrito — `$.style` devolve StyleHandle e injeta; globais em `$.style.css`.
-- [x] **A** §"Ainda não implementado": "Engine de CSS" removido; keyframes já feito. Mantidos os demais débitos.
-- [x] **A** §11/GLOSSARY reescritos de novo p/ a **polida** (2026-09-07): partes **promovidas** (`field.input`),
-  `class`/`cx` aceitam o handle, **sem `base`** (decls no topo), flags `--is-*`, **slots**, overload só-nome
-  removido. Os pontos acima que citam `.parts.x.self`/`--flag`/`base` são do estágio namespace anterior.
-- [ ] **F** Breakpoints: documentar `$.config({ breakpoints })`, `@nome`/`@número` no CSS, e `$.media(nome|query)` → signal.
-- [ ] **F** §1 Setup / adapter: contrato ganhou `untrack?` e `signal?` (necessário p/ `$.media`); mencionar.
-- [ ] **F** Referência rápida: adicionar `$.config`, `$.media`; ajustar linha de `$.style`/`$.parts`.
-- [ ] **H** §5 eventos: `handle.debounce`/`throttle` adiam o handler, então `prevent` composto atrás deles
-  chega tarde — documentar a ordem (ou tratar `preventDefault` na captura).
-- [ ] **A** **Refactor de API (2026-09-08)**: o USAGE inteiro (~87 refs) usa a forma antiga aninhada
-  `$.mount`/`$.when`/`$.handle`/`$.model`/`$.onMounted`/`$.useSignal`/`$.style`/`$.config`/`$.media` e o
-  seletor `$(sel)`. Reescrever: `$` = **só tags** (`$.div`); recursos = **exports nomeados** `$mount`/
-  `$when`/`$match`/`$switch`/`$else`/`$append`/`$handle`/`$handlers`/`$onMounted`/`$onUnmounted`/
-  `$useSignal`/`$model`/`$show`/`$cx`/`$registerCustomEvent`; estilo/breakpoints via
-  `import { style, config, media } from 'mini-q/style'`. Remover a menção ao seletor `$(sel)`. Ver
-  GLOSSARY (já atualizado) como referência dos nomes.
+- [x] §11 CSS e exemplos, Regras de ouro, "Ainda não implementado", GLOSSARY — reescritos nas levas de
+  estilos (2026-09-06/07: namespace → partes promovidas → slots/`--is-*`, sem `base`); o §11/engine virou
+  o `STYLE.md` na F3.
+- [x] **A** **Refactor de API (2026-09-08)** — fechado na F3: `$` = só tags; recursos = exports nomeados
+  `$*`; estilo/breakpoints via `mini-q/style`; sem o seletor `$(sel)`.
+- [x] **F** Breakpoints — `config({ breakpoints })`, `@nome`/`@número` no CSS e `media(nome|query)` →
+  signal, documentados em `STYLE.md`.
+- [x] **F** §1 Setup / adapter — contrato completo `{ isSignal, getValue, effect, untrack?, signal?,
+  setValue? }` no USAGE §1.
+- [x] **F** Referência rápida — cobertura total da API atual no USAGE (inclui `config`/`media`,
+  `$match`/`$switch`/`$else`, `$on`, hooks de lifecycle).
+- [x] **H** §3 eventos (era §5) — ordem de modificadores documentada no USAGE: `prevent` atrás de
+  `debounce`/`throttle` age só na invocação; `prevent` antes age na hora (ordem do array = execução).
 
 ## `docs/BACKLOG.md`
 
-- [x] §Progresso + status + §Estilo (resolvido) + organização modular + ordem — atualizados em 2026-09-06.
-- [ ] **H** Manter §Progresso e a "ordem sugerida" em dia a cada entrega.
+- [x] Reescrito em 2026-09-09 (campanha de redução): §Status com números reais (171 testes), §Progresso →
+  §Histórico condensado, pendências organizadas por área.
+- [ ] **H** Manter §Histórico (condensado) e a "ordem sugerida" em dia a cada entrega — o detalhe
+  continua nos commits.
 
 ## `~/.claude/plans/…-diffie.md` (spec de estilos)
 
-- [ ] **H** É a spec **aprovada** do redesenho de estilos; virou histórico após implementar. Um detalhe divergiu:
-  `base` ficou **opcional** (escalares/`&…`/`@…` no topo também são declarações) — a spec dizia declarações sob `base`.
+- [x] **H** Virou histórico junto com as levas seguintes de estilo; o desenho em dia está em
+  [STYLE.md](STYLE.md) + [GLOSSARY.md](GLOSSARY.md) §Estilo — o ADR
+  [proposals/style-namespace.md](proposals/style-namespace.md) ficou como registro da decisão (sintaxe da época).
 
 ## Memória do projeto (`mini-q-project.md`)
 
-- [x] Estado/desvios atualizados em 2026-09-06 (estilo entidade, fixes, pendências).
+- [x] **H** Criada em 2026-09-09 com a API atual + estrutura de docs + quirk de ambiente (WSL-UNC:
+  testes contados via Grep; `npm` não roda do caminho UNC).
 
 ---
 
