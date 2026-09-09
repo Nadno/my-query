@@ -106,7 +106,7 @@ Decidido em 2026-09-09, aplicado na Etapa 2:
 | 0 — Fundação | Doc + decisões (domínio, carousel, começo) | feita |
 | 1 — Task/TimeSpan | `useAsyncValidator` (debounce), `useAuth` (wait/cancel), `useToast` (TimeSpan) | feita |
 | 2 — Visual | Estrutura, tokens CSS, breakpoints (`config`/`media`), estados loading/empty/error | feita |
-| 3 — Carousel | Testemunhos no login com lib de terceiros (Embla) — padrão de coexistência | pendente |
+| 3 — Carousel | Testemunhos no login com lib de terceiros (Embla) — padrão de coexistência | feita |
 | 4 — A11y | Modal (`FocusScope`) + Accordion + Tabs (portados de vue-accessible-components) | pendente |
 | 5 — Dados | Lista de membros (`HttpQuery`/`Cache`), lembrar e-mail (`Storage`), settings | pendente |
 | — | Persistência de sessão no reload (`Storage`) | na fila |
