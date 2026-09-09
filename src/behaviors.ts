@@ -19,7 +19,21 @@ export interface WritableSignal<T> {
 }
 
 /** Valor two-way suportado por `model`, conforme o tipo de controle. */
-export type ModelValue = string | boolean | string[];
+export type ModelValue = string | number | boolean | (string | number)[];
+
+/** Opções de `$model` para alinhar com `v-model` do Vue. */
+export interface ModelOptions {
+  /** Valor escrito quando um checkbox único está marcado. Default: `true`. */
+  trueValue?: unknown;
+  /** Valor escrito quando desmarcado. Default: `false`. */
+  falseValue?: unknown;
+  /** Sincroniza DOM→signal no `change` em vez de `input` (só afeta o modo string). */
+  lazy?: boolean;
+  /** Casta o `value` string → número ao escrever (`looseToNumber`: falha → mantém string). */
+  number?: boolean;
+  /** Apara espaços do `value` string ao escrever. */
+  trim?: boolean;
+}
 
 type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 
@@ -28,7 +42,7 @@ type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
  * elemento + tipo do valor atual do signal:
  * - `<input type="checkbox">` com signal **array** → grupo (alterna `el.value` no array);
  * - `<input type="checkbox">` caso contrário → booleano (`.checked`);
- * - `<input type="radio">` → marca se `el.value === signal`, escreve `el.value` ao selecionar;
+ * - `<input type="radio">` → grupo de seleção única; marca se `el.value === signal`, escreve `el.value` ao selecionar;
  * - `<select multiple>` → array dos `value` selecionados;
  * - demais (`text`/`number`/`textarea`/`select` simples) → `el.value` string.
  *
@@ -36,66 +50,101 @@ type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
  * Um checkbox-group deve inicializar o signal como array.
  */
 export function model(signal: WritableSignal<string>): Behavior<FieldElement>;
+export function model(signal: WritableSignal<string>, options: ModelOptions): Behavior<FieldElement>;
+export function model(signal: WritableSignal<number>): Behavior<FieldElement>;
+export function model(signal: WritableSignal<number>, options: ModelOptions): Behavior<FieldElement>;
 export function model(signal: WritableSignal<boolean>): Behavior<HTMLInputElement>;
+export function model(signal: WritableSignal<boolean>, options: ModelOptions): Behavior<HTMLInputElement>;
 export function model(
-  signal: WritableSignal<string[]>,
+  signal: WritableSignal<(string | number)[]>,
+): Behavior<HTMLInputElement | HTMLSelectElement>;
+export function model(
+  signal: WritableSignal<(string | number)[]>,
+  options: ModelOptions,
 ): Behavior<HTMLInputElement | HTMLSelectElement>;
 export function model(
   signal: WritableSignal<ModelValue>,
+  options?: ModelOptions,
 ): Behavior<FieldElement> {
   return (ctx) => {
     const el = ctx.element;
 
     if (el instanceof HTMLInputElement && el.type === 'checkbox') {
       if (Array.isArray(read(signal as Bindable<ModelValue>))) {
-        bindCheckboxGroup(ctx as MQ<HTMLInputElement>, signal as WritableSignal<string[]>);
+        bindCheckboxGroup(ctx as MQ<HTMLInputElement>, signal as WritableSignal<string[]>, options);
       } else {
-        bindCheckbox(ctx as MQ<HTMLInputElement>, signal as WritableSignal<boolean>);
+        bindCheckbox(ctx as MQ<HTMLInputElement>, signal as WritableSignal<boolean>, options);
       }
       return;
     }
 
     if (el instanceof HTMLInputElement && el.type === 'radio') {
-      bindRadio(ctx as MQ<HTMLInputElement>, signal as WritableSignal<string>);
+      bindRadio(ctx as MQ<HTMLInputElement>, signal as WritableSignal<string | number>, options);
       return;
     }
 
     if (el instanceof HTMLSelectElement && el.multiple) {
-      bindSelectMultiple(ctx as MQ<HTMLSelectElement>, signal as WritableSignal<string[]>);
+      bindSelectMultiple(ctx as MQ<HTMLSelectElement>, signal as WritableSignal<string[]>, options);
       return;
     }
 
-    bindText(ctx as MQ<FieldElement>, signal as WritableSignal<string>);
+    bindText(ctx as MQ<FieldElement>, signal as WritableSignal<string | number>, options);
   };
 }
 
+/** Aplica `trim` e/ou `number` numa string vinda do DOM, conforme as opções. */
+function castString(value: string, options: ModelOptions | undefined): string | number {
+  let next = value;
+  if (options?.trim) next = next.trim();
+  if (options?.number) {
+    const n = parseFloat(next);
+    return Number.isNaN(n) ? next : n;
+  }
+  return next;
+}
+
 /** `text`/`number`/`textarea`/`select` simples → `el.value` string. */
-function bindText(ctx: MQ<FieldElement>, signal: WritableSignal<string>): void {
+function bindText(
+  ctx: MQ<FieldElement>,
+  signal: WritableSignal<string | number>,
+  options?: ModelOptions,
+): void {
   const el = ctx.element;
-  bind(signal as Bindable<string>, (value) => {
+  bind(signal as Bindable<string | number>, (value) => {
     const next = value == null ? '' : String(value);
     if (el.value !== next) el.value = next;
   });
-  on(ctx, 'input', () => setValue(signal, el.value));
+  on(ctx, options?.lazy ? 'change' : 'input', () => setValue(signal, castString(el.value, options)));
 }
 
-/** Checkbox único → booleano em `.checked`. */
-function bindCheckbox(ctx: MQ<HTMLInputElement>, signal: WritableSignal<boolean>): void {
+/** Checkbox único → booleano (ou `trueValue`/`falseValue`) em `.checked`. */
+function bindCheckbox(
+  ctx: MQ<HTMLInputElement>,
+  signal: WritableSignal<boolean>,
+  options?: ModelOptions,
+): void {
   const el = ctx.element;
+  const trueValue = options?.trueValue ?? true;
+  const falseValue = options?.falseValue ?? false;
+
   bind(signal as Bindable<boolean>, (value) => {
-    el.checked = !!value;
+    el.checked = value === trueValue;
   });
-  on(ctx, 'change', () => setValue(signal, el.checked));
+  on(ctx, 'change', () => setValue(signal, el.checked ? trueValue : (falseValue as boolean)));
 }
 
-/** Radio → marcado se `el.value === signal`; ao selecionar, escreve `el.value`. */
-function bindRadio(ctx: MQ<HTMLInputElement>, signal: WritableSignal<string>): void {
+/** Radio → marcado se `el.value === signal`; ao selecionar, escreve `castString(el.value)`. */
+function bindRadio(
+  ctx: MQ<HTMLInputElement>,
+  signal: WritableSignal<string | number>,
+  options?: ModelOptions,
+): void {
   const el = ctx.element;
-  bind(signal as Bindable<string>, (value) => {
+  bind(signal as Bindable<string | number>, (value) => {
     el.checked = el.value === (value == null ? '' : String(value));
   });
   on(ctx, 'change', () => {
-    if (el.checked) setValue(signal, el.value);
+    if (el.checked) setValue(signal, castString(el.value, options));
   });
 }
 
@@ -103,17 +152,20 @@ function bindRadio(ctx: MQ<HTMLInputElement>, signal: WritableSignal<string>): v
 function bindCheckboxGroup(
   ctx: MQ<HTMLInputElement>,
   signal: WritableSignal<string[]>,
+  options?: ModelOptions,
 ): void {
   const el = ctx.element;
   bind(signal as Bindable<string[]>, (value) => {
     const arr = Array.isArray(value) ? value : [];
-    el.checked = arr.includes(el.value);
+    el.checked = arr.map((v) => String(v)).includes(el.value);
   });
   on(ctx, 'change', () => {
     const current = read(signal as Bindable<string[]>);
     const arr = Array.isArray(current) ? current.slice() : [];
-    const i = arr.indexOf(el.value);
-    if (el.checked && i === -1) arr.push(el.value);
+    const strArr = arr.map((v) => String(v));
+    const i = strArr.indexOf(el.value);
+    const next = castString(el.value, options) as string;
+    if (el.checked && i === -1) arr.push(next);
     else if (!el.checked && i !== -1) arr.splice(i, 1);
     setValue(signal, arr);
   });
@@ -123,16 +175,17 @@ function bindCheckboxGroup(
 function bindSelectMultiple(
   ctx: MQ<HTMLSelectElement>,
   signal: WritableSignal<string[]>,
+  options?: ModelOptions,
 ): void {
   const el = ctx.element;
   bind(signal as Bindable<string[]>, (value) => {
-    const arr = Array.isArray(value) ? value : [];
+    const arr = Array.isArray(value) ? value.map((v) => String(v)) : [];
     for (const opt of Array.from(el.options)) opt.selected = arr.includes(opt.value);
   });
   on(ctx, 'change', () => {
     setValue(
       signal,
-      Array.from(el.selectedOptions).map((o) => o.value),
+      Array.from(el.selectedOptions).map((o) => castString(o.value, options) as string),
     );
   });
 }

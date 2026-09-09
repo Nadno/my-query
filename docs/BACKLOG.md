@@ -16,11 +16,11 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
   control-flow `$when`/`$match`/`$switch`/`$else`.
 - `events`: `on:{}` + `$handle` (modificadores, `debounce`/`throttle` estilo lodash) + custom events
   (enter↔leave pareados: `clickOutside`/`focusOutside`/`interactOutside`/`hover` com touch) + `$on`.
-- `behaviors`: `use` + `$model` (checkbox/radio/grupos/select-multiple) / `$show`.
+- `behaviors`: `use` + `$model(signal, options?)` (`trueValue`/`falseValue`, `lazy`, `number`, `trim`) / `$show`.
 - `style` (entry `mini-q/style`): namespace `style`/`css`/`config`/`media` (StyleHandle: partes promovidas,
   flags, variantes, slots, keyframes).
 - `$` = só tags; recursos = exports nomeados `$*`. Demo PocketFin e exemplo `examples/auth` migrados.
-- **171 testes verdes**, typecheck + build ok.
+- **185 testes verdes**, typecheck + build ok.
 
 ---
 
@@ -28,8 +28,8 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 ### Superfície / formulários (P1–P2)
 
-- **`$model` com `options`** — paridade Vue: `trueValue`/`falseValue`, `lazy`/`number`/`trim`.
-  Proposto em [proposals/model.md](proposals/model.md). (P2)
+- ~~`$model` com `options`~~ — **feito**: paridade Vue (`trueValue`/`falseValue`, `lazy`, `number`, `trim`).
+  Ver [proposals/model.md](proposals/model.md) (implementada). (P2)
 - **`useForm`/`useField`** — composable fino (value, error, touched, dirty, submit, async),
   **schema-agnóstico** (`validate: (values) => errors` **ou** Standard Schema `~standard` —
   Zod/Valibot/ArkType), field arrays via `$each`. Camada de *interação*, não de validação. (P2, gap deliberado)
@@ -74,10 +74,9 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 ## Ordem sugerida quando retomarmos
 
-1. **`$model` com `options`** (paridade Vue) — fecha a superfície de formulário; [proposal](proposals/model.md). (P2)
-2. **`useForm`/`useField` schema-agnóstico + a11y behaviors** (`trap-focus`…) no `examples/auth`. (P2)
-3. **Organização modular do `src/`** (refactor de estrutura, quando estabilizar). (P3)
-4. **SSG** (backend injetável + CSS por string; [proposal](proposals/ssg.md)). (P3)
+1. **`useForm`/`useField` schema-agnóstico + a11y behaviors** (`trap-focus`…) no `examples/auth`. (P2)
+2. **Organização modular do `src/`** (refactor de estrutura, quando estabilizar). (P3)
+3. **SSG** (backend injetável + CSS por string; [proposal](proposals/ssg.md)). (P3)
 
 ---
 
@@ -92,3 +91,4 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
   grupos/select-multiple); `$each`; control-flow (`$match/$switch/$else`). 142 testes.
 - **2026-09-09** — Backend de eventos rico: enter↔leave pareado, `debounce`/`throttle` estilo lodash,
   hover-touch + canal de opções do `EventSource`; açúcar `$.tag(...children)` sem `{}`. **171 testes**.
+- **2026-09-10** — `$model(signal, options?)`: `trueValue`/`falseValue`, `lazy`, `number`, `trim` (paridade Vue). **185 testes**.

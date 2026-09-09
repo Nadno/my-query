@@ -11,6 +11,13 @@ function fire(el: Element, type: string): void {
   el.dispatchEvent(new Event(type));
 }
 
+/** Dispara evento de input e, opcionalmente, change. */
+function typeInto(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, value: string, lazy?: boolean): void {
+  el.value = value;
+  fire(el, 'input');
+  if (lazy) fire(el, 'change');
+}
+
 describe('$model — text/select simples (string)', () => {
   it('two-way em input de texto', () => {
     const text = signal('hi');
@@ -36,6 +43,39 @@ describe('$model — text/select simples (string)', () => {
     fire(select, 'input');
     expect(choice.value).toBe('c');
   });
+
+  it('`lazy` sincroniza no change, não no input', () => {
+    const text = signal('hi');
+    const input = $.input({ use: $model(text, { lazy: true }) });
+    input.value = 'yo';
+    fire(input, 'input');
+    expect(text.value).toBe('hi');
+    fire(input, 'change');
+    expect(text.value).toBe('yo');
+  });
+
+  it('`number` casta string válida para número', () => {
+    const n = signal('0');
+    const input = $.input({ use: $model(n, { number: true }) });
+    typeInto(input, '3.5');
+    expect(n.value).toBe(3.5);
+    typeInto(input, 'x');
+    expect(n.value).toBe('x');
+  });
+
+  it('`trim` apara espaços', () => {
+    const text = signal('');
+    const input = $.input({ use: $model(text, { trim: true }) });
+    typeInto(input, '  spaced  ');
+    expect(text.value).toBe('spaced');
+  });
+
+  it('`trim` → `number` na ordem correta', () => {
+    const text = signal('');
+    const input = $.input({ use: $model(text, { trim: true, number: true }) });
+    typeInto(input, '  42  ');
+    expect(text.value).toBe(42);
+  });
 });
 
 describe('$model — checkbox booleano', () => {
@@ -48,6 +88,31 @@ describe('$model — checkbox booleano', () => {
     box.checked = false;
     fire(box, 'change');
     expect(on.value).toBe(false);
+  });
+
+  it('trueValue / falseValue', () => {
+    const status = signal<string>('inativo');
+    const box = $.input({ type: 'checkbox', use: $model(status, { trueValue: 'ativo', falseValue: 'inativo' }) });
+    expect(box.checked).toBe(false);
+    status.value = 'ativo';
+    expect(box.checked).toBe(true);
+    box.checked = false;
+    fire(box, 'change');
+    expect(status.value).toBe('inativo');
+    box.checked = true;
+    fire(box, 'change');
+    expect(status.value).toBe('ativo');
+  });
+
+  it('trueValue / falseValue numéricos', () => {
+    const status = signal<number>(0);
+    const box = $.input({ type: 'checkbox', use: $model(status, { trueValue: 1, falseValue: 0 }) });
+    expect(box.checked).toBe(false);
+    status.value = 1;
+    expect(box.checked).toBe(true);
+    box.checked = false;
+    fire(box, 'change');
+    expect(status.value).toBe(0);
   });
 });
 
@@ -68,6 +133,17 @@ describe('$model — radio', () => {
     // escrever no signal reflete de volta
     picked.value = 'b';
     expect(a.checked).toBe(false);
+    expect(b.checked).toBe(true);
+  });
+
+  it('number casta el.value do radio', () => {
+    const picked = signal('');
+    const a = $.input({ type: 'radio', name: 'g2', value: '1', use: $model(picked, { number: true }) });
+    const b = $.input({ type: 'radio', name: 'g2', value: '2', use: $model(picked, { number: true }) });
+    a.checked = true;
+    fire(a, 'change');
+    expect(picked.value).toBe(1);
+    picked.value = '2';
     expect(b.checked).toBe(true);
   });
 });
@@ -94,6 +170,14 @@ describe('$model — checkbox-group (array)', () => {
     tags.value = ['x'];
     expect(x.checked).toBe(true);
     expect(y.checked).toBe(false);
+  });
+
+  it('number/trim nos valores do grupo', () => {
+    const tags = signal<string[]>([]);
+    const a = $.input({ type: 'checkbox', value: ' 1 ', use: $model(tags, { number: true, trim: true }) });
+    a.checked = true;
+    fire(a, 'change');
+    expect(tags.value).toEqual([1]);
   });
 });
 
@@ -122,5 +206,18 @@ describe('$model — <select multiple> (array)', () => {
     expect(a!.selected).toBe(false);
     expect(b!.selected).toBe(true);
     expect(c!.selected).toBe(false);
+  });
+
+  it('number/trim nos valores selecionados', () => {
+    const sel = signal<string[]>([]);
+    const select = $.select(
+      { multiple: true, use: $model(sel, { number: true, trim: true }) },
+      $.option({ value: ' 1 ' }, 'One'),
+      $.option({ value: ' 2 ' }, 'Two'),
+    );
+    const [one] = Array.from(select.options);
+    one!.selected = true;
+    fire(select, 'change');
+    expect(sel.value).toEqual([1]);
   });
 });

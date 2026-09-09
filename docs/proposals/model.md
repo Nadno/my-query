@@ -1,6 +1,6 @@
 # Proposal — `$model` adequado (paridade Vue via `options`)
 
-Status: **proposto** (2026-09-08). Sucede a 1ª versão de `$model` (auto-detecção de modo,
+Status: **implementada** (2026-09-10). Sucede a 1ª versão de `$model` (auto-detecção de modo,
 commit `aed5872`). Objetivo: fechar a API num contrato único `$model(signal, options?)` em vez de
 acretar heurística, trazendo as peças boas do `v-model` do Vue que ainda faltam.
 
@@ -92,6 +92,7 @@ $.input({ use: $model(query, { trim: true }) });
 
 ## Verificação
 
-Estender `src/behaviors.test.ts`: `trueValue`/`falseValue` (marca/desmarca grava o valor certo; reflete
-de volta); `lazy` (não grava no `input`, grava no `change`); `number` (`'3.5'` → `3.5`; `'x'` → `'x'`);
-`trim`; e **regressão**: `$model(signal)` sem options = comportamento v1. Typecheck + build + exemplo.
+- [x] Estender `src/behaviors.test.ts`: `trueValue`/`falseValue` (marca/desmarca grava o valor certo; reflete
+  de volta); `lazy` (não grava no `input`, grava no `change`); `number` (`'3.5'` → `3.5`; `'x'` → `'x'`);
+  `trim`; e **regressão**: `$model(signal)` sem options = comportamento v1.
+- [x] `typecheck` + `test` + `build` passando.

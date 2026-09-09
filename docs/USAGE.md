@@ -260,16 +260,17 @@ const meuBehavior = (ctx) => {
 };
 ```
 
-### `$model(signal)` — two-way por elementos de formulário
+### `$model(signal, options?)` — two-way por elementos de formulário
 
-O modo é **auto-detectado** pelo elemento + tipo do signal (nada de configurar):
+O modo é **auto-detectado** pelo elemento + tipo do signal (nada de configurar). Um segundo argumento
+`options` estende o two-way com as opções clássicas do `v-model` do Vue:
 
 | controle | signal | liga |
 |---|---|---|
-| `text`/`number`/`textarea`/`select` simples | `string` | `el.value` |
+| `text`/`number`/`textarea`/`select` simples | `string`/`number` | `el.value` |
 | `checkbox` | `boolean` | `.checked` |
 | `checkbox` (**grupo**) | `string[]` | alterna `el.value` no array |
-| `radio` | `string` | marca se `el.value === signal`; selecionar escreve |
+| `radio` (grupo de seleção única) | `string`/`number` | marca se `el.value === signal`; selecionar escreve |
 | `select multiple` | `string[]` | `value` das opções selecionadas |
 
 ```ts
@@ -285,6 +286,31 @@ $.select({ multiple: true, use: $model(escolhidos) }, $.option({ value:'1' }, '1
 
 Fluxo: DOM→signal via `$on`, DOM←signal via `bind` e a escrita via `setValue` (usa o adapter).
 **Um checkbox-group deve inicializar o signal como `[]`** (é o que denuncia o modo).
+
+#### `options`
+
+```ts
+$model(texto, { lazy: true });                // sincroniza no `change`, não no `input`
+$model(numero, { number: true });             // converte `'3.5'` → `3.5`; inválido mantém string
+$model(busca, { trim: true });               // remove espaços ao escrever
+$model(status, { trim: true, number: true }); // ordem: trim → number (igual Vue)
+
+// checkbox booleano com valores de domínio
+$.input({ type: 'checkbox', use: $model(status, { trueValue: 'ativo', falseValue: 'inativo' }) });
+```
+
+| opção | aplica-se a | efeito |
+|---|---|---|
+| `lazy` | modo string (`text`/`number`/`textarea`/`select` simples) | escuta `change` em vez de `input` |
+| `number` | qualquer valor string produzido pelo controle | `parseFloat` (inválido mantém string) |
+| `trim` | qualquer valor string produzido pelo controle | `.trim()` |
+| `trueValue` / `falseValue` | checkbox booleano | valor gravado quando marcado/desmarcado (default `true`/`false`) |
+
+Regras:
+- `trueValue`/`falseValue` só afetam **checkbox booleano** (ignorados em grupo/radio/select).
+- `lazy` só afeta o modo string; checkbox/radio/select[multiple] já ouvem `change`.
+- `number`/`trim` são globais: funcionam em `text`, `radio`, `checkbox-group` e `select[multiple]`.
+- Ordem do cast: **trim → number**.
 
 ### `$show(cond)` — esconder preservando estado
 
