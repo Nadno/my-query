@@ -24,6 +24,8 @@ export type SlotRef = { readonly self: string } | string;
 export interface StyleConfig {
   /** Partes descendentes (recursivo). Classe = `-{bloco}-{chave}`, combinador descendente. */
   parts?: Record<string, StyleConfig>;
+  /** Atalho para partes descendentes: `'>title': { ... }` equivale a `parts: { title: { ... } }`. */
+  [shortcutPart: `>${string}`]: StyleConfig;
   /** Flags booleanas independentes. Classe composta `.sel.--is-{nome}`. */
   flags?: Record<string, FlagBody>;
   /** Grupos de variantes exclusivas. Classe composta `.sel.--{grupo}-{valor}`. */
@@ -43,7 +45,19 @@ type VariantProps<T extends StyleConfig> =
   & { [F in keyof T['flags']]?: boolean };
 
 type ReservedName = 'self' | 'flags' | 'variants' | 'keyframes' | 'slots';
-type PartKeys<T extends StyleConfig> = Exclude<keyof NonNullable<T['parts']>, ReservedName>;
+
+/** Tipo que normaliza partes explícitas + atalhos `\u003enome` num único record recursivo. */
+type ResolvedParts<T extends StyleConfig> =
+  & (T extends { parts?: infer P } ? (P extends Record<string, StyleConfig> ? P : {}) : {})
+  & (T extends Record<string, unknown>
+    ? {
+        [K in keyof T as K extends `>${infer R}` ? R : never]: T[K] extends StyleConfig
+          ? T[K]
+          : StyleConfig;
+      }
+    : {});
+
+type PartKeys<T extends StyleConfig> = Exclude<keyof ResolvedParts<T>, ReservedName>;
 
 interface StyleHandleBase<T extends StyleConfig> {
   /** Monta a string de classes: `self` + tokens de variante/flag ativos. */
@@ -67,7 +81,7 @@ interface StyleHandleBase<T extends StyleConfig> {
  */
 export type StyleHandle<T extends StyleConfig = StyleConfig> =
   & StyleHandleBase<T>
-  & { readonly [K in PartKeys<T>]: StyleHandle<NonNullable<T['parts']>[K]> };
+  & { readonly [K in PartKeys<T>]: StyleHandle<NonNullable<ResolvedParts<T>[K]>> };
 
 export interface StyleApi {
   <T extends StyleConfig>(name: string, config: T): StyleHandle<T>;

@@ -90,4 +90,41 @@ describe('style — CSS gerado', () => {
     const occurrences = sheet().split('.emit-idem { color: red; }').length - 1;
     expect(occurrences).toBe(1);
   });
+
+  it('atalho \u003eparte declara partes descendentes de forma plana', () => {
+    const card = style('emit-card-shortcut', {
+      display: 'block',
+      '>title': { fontWeight: 700 },
+      '>content': {
+        padding: 16,
+        '>description': { color: '#666' },
+      },
+    });
+
+    const css = sheet();
+    expect(css).toContain('.emit-card-shortcut { display: block; }');
+    expect(css).toContain('.emit-card-shortcut .-emit-card-shortcut-title { font-weight: 700; }');
+    expect(css).toContain('.emit-card-shortcut .-emit-card-shortcut-content { padding: 16px; }');
+    expect(css).toContain(
+      '.emit-card-shortcut .-emit-card-shortcut-content .-emit-card-shortcut-description { color: #666; }',
+    );
+    expect(card.title.self).toBe('-emit-card-shortcut-title');
+    expect(card.content.description.self).toBe('-emit-card-shortcut-description');
+  });
+
+  it('atalho \u003eparte mistura com parts explícito e shortcut prevalece em conflito', () => {
+    const card = style('emit-card-mixed', {
+      parts: {
+        header: { color: 'blue' },
+      },
+      '>header': { background: 'white' },
+      '>footer': { color: 'gray' },
+    });
+
+    const css = sheet();
+    expect(css).toContain('.emit-card-mixed .-emit-card-mixed-header { color: blue; background: white; }');
+    expect(css).toContain('.emit-card-mixed .-emit-card-mixed-footer { color: gray; }');
+    expect(card.header.self).toBe('-emit-card-mixed-header');
+    expect(card.footer.self).toBe('-emit-card-mixed-footer');
+  });
 });

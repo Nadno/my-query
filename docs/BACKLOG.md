@@ -20,7 +20,7 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 - `style` (entry `mini-q/style`): namespace `style`/`css`/`config`/`media` (StyleHandle: partes promovidas,
   flags, variantes, slots, keyframes).
 - `$` = só tags; recursos = exports nomeados `$*`. Demo PocketFin e exemplo `examples/auth` migrados.
-- **185 testes verdes**, typecheck + build ok.
+- **187 testes verdes**, typecheck + build ok.
 
 ---
 
@@ -47,7 +47,9 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 - Prefixo/namespace configurável (evitar colisão em monolito).
 - GC de regras (`injected` só cresce).
-- Compound variants; combinador filho-direto opt-in por parte (`'>parte': {}`) — atalho para declarar partes filhas dentro do bloco pai, refletindo o namespace local (`style('card', { '>title': { ... } })` → `sCard.title`).
+- ~~Combinador filho-direto opt-in por parte (`'>parte': {}`)~~ — **feito**: atalho `>nome` no topo do
+  `style()` para declarar partes de forma plana (`style('card', { '>title': { ... } })` → `sCard.title`).
+- Compound variants.
 - Extração em build-time (plugin Vite).
 - Tokens/variáveis de design — **deferida** (native-first: custom properties/`@scope`); ver
   [proposals/style-tokens.md](proposals/style-tokens.md).
@@ -92,3 +94,4 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 - **2026-09-09** — Backend de eventos rico: enter↔leave pareado, `debounce`/`throttle` estilo lodash,
   hover-touch + canal de opções do `EventSource`; açúcar `$.tag(...children)` sem `{}`. **171 testes**.
 - **2026-09-10** — `$model(signal, options?)`: `trueValue`/`falseValue`, `lazy`, `number`, `trim` (paridade Vue). **185 testes**.
+- **2026-09-10** — Style engine: atalho `>nome` para declarar partes de forma plana (`style('card', { '>title': {...} })` → `sCard.title`). **187 testes**.

@@ -10,7 +10,7 @@
 
 import { STYLE_HANDLE } from '../types';
 import { toKebab, compileKeyframes, inject, pushRule, css } from './emit';
-import type { CSSObject, FlagBody, StyleApi, StyleConfig, StyleHandle } from './types';
+import type { CSSObject, FlagBody, SlotRef, StyleApi, StyleConfig, StyleHandle } from './types';
 
 const RESERVED = new Set(['parts', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
 const RESERVED_PART_NAMES = new Set(['self', 'flags', 'variants', 'keyframes', 'slots']);
@@ -29,6 +29,52 @@ function warnDup(name: string): void {
     console.warn(`[mini-q] estilo "${name}" registrado mais de uma vez — as regras podem colidir.`);
   }
   registered.add(name);
+}
+
+/** Separa chaves `>nome` (atalho para partes) do resto do config, recursivamente. */
+function splitShortcutParts(config: StyleConfig): {
+  decls: Record<string, unknown>;
+  parts: Record<string, StyleConfig>;
+} {
+  const decls: Record<string, unknown> = {};
+  const parts: Record<string, StyleConfig> = {};
+  for (const key in config) {
+    if (key.startsWith('>')) {
+      const name = key.slice(1);
+      const value = config[key];
+      if (value && typeof value === 'object') {
+        const { decls: nestedDecls, parts: nestedParts } = splitShortcutParts(value as StyleConfig);
+        parts[name] = { ...nestedDecls, parts: nestedParts } as StyleConfig;
+      } else {
+        console.warn(`[mini-q] "${key}" deve ser um objeto de estilo — ignorado.`);
+      }
+      continue;
+    }
+    decls[key] = config[key];
+  }
+  return { decls, parts };
+}
+
+/** Junta partes do atalho `>nome` com partes declaradas em `parts`. */
+function mergeParts(
+  shortcut: Record<string, StyleConfig>,
+  explicit?: Record<string, StyleConfig>,
+): Record<string, StyleConfig> {
+  if (!explicit) return shortcut;
+  const merged: Record<string, StyleConfig> = {};
+  for (const k in explicit) merged[k] = explicit[k]!;
+  for (const k in shortcut) {
+    const { decls: nestedDecls, parts: nestedParts } = splitShortcutParts(shortcut[k]!);
+    if (explicit[k]) {
+      const { decls: expDecls, parts: expParts } = splitShortcutParts(explicit[k]!);
+      merged[k] = mergeParts(nestedParts, expParts);
+      // re-hidrata decls explícitos + decls do shortcut como config resultante
+      merged[k] = { ...expDecls, ...nestedDecls, parts: merged[k] } as StyleConfig;
+    } else {
+      merged[k] = { ...nestedDecls, parts: nestedParts } as StyleConfig;
+    }
+  }
+  return merged;
 }
 
 /** Injeta o corpo de uma flag/variante: decls no seletor + override de `parts` e `slots`. */
@@ -61,20 +107,24 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const selfClass = path[path.length - 1]!;
   const selfSel = path.map((c) => `.${c}`).join(' ');
 
+  const { decls: rawDecls, parts: shortcutParts } = splitShortcutParts(config);
+  const mergedParts = mergeParts(shortcutParts, rawDecls.parts as Record<string, StyleConfig> | undefined);
+
   // Slots resolvidos primeiro (flags/variants podem mirá-los).
   const slots: Record<string, string> = {};
-  if (config.slots) {
-    for (const name in config.slots) {
-      const ref = config.slots[name];
+  if (rawDecls.slots) {
+    const slotsConfig = rawDecls.slots as Record<string, SlotRef>;
+    for (const name in slotsConfig) {
+      const ref = slotsConfig[name]!;
       slots[name] = typeof ref === 'string' ? ref : ref!.self;
     }
   }
 
   // Declarações da própria parte: tudo que não é chave reservada (sem `base`).
   const decls: CSSObject = {};
-  for (const key in config) {
+  for (const key in rawDecls) {
     if (RESERVED.has(key)) continue;
-    const value = config[key];
+    const value = rawDecls[key];
     if (value == null) continue;
     if (typeof value !== 'object') {
       decls[key] = value as string | number | boolean;
@@ -120,15 +170,15 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   }
 
   const parts: Record<string, StyleHandle> = {};
-  if (config.parts) {
-    for (const key in config.parts) {
+  if (mergedParts) {
+    for (const key in mergedParts) {
       if (RESERVED_PART_NAMES.has(key)) {
         console.warn(
           `[mini-q] parte "${key}" em "${block}" usa um nome reservado do handle (self/flags/variants/keyframes/slots) — renomeie.`,
         );
         continue;
       }
-      parts[key] = buildNode(config.parts[key]!, block, [...path, partClass(block, key)]);
+      parts[key] = buildNode(mergedParts[key]!, block, [...path, partClass(block, key)]);
     }
   }
 

@@ -28,6 +28,7 @@ números viram `px` (exceto unitless como `opacity`/`zIndex`/`lineHeight`), anin
 |---|---|---|
 | *(topo)* | declarações do bloco (escalares/`&`/`@`) | `.bloco { … }` |
 | `parts` | partes descendentes (recursivo) | `.bloco .-bloco-parte { … }` |
+| `>nome` | atalho para uma parte (`>title` ≡ `parts: { title: {…} }`) | `.bloco .-bloco-nome { … }` |
 | `flags` | flags booleanas independentes | `.bloco.--is-flag { … }` |
 | `variants` | grupos exclusivos | `.bloco.--grupo-valor { … }` |
 | `defaults` | valor default por grupo de variante | — |
@@ -41,6 +42,9 @@ const field = style('field', {
     label: { fontSize: '.9rem' },
     error: { color: 'var(--danger)' },
   },
+  // ou, de forma plana, com o atalho `>nome`:
+  '>label': { fontSize: '.9rem' },
+  '>error': { color: 'var(--danger)' },
   slots: { control: inputHandle },           // hospeda o bloco `input`
   flags: { invalid: { slots: { control: { borderColor: 'red' } } } },
   variants: { size: { sm: { gap: 4 }, md: { gap: 8 } } },
@@ -76,6 +80,10 @@ class: field.label                            // parte: handle aceito direto
   miram por `slots: { control: { … } }` → `.bloco.--is-flag .hospedado`. É a composição de 1ª classe
   (em vez de CSS cru). Distingue-se de **parte** (descendente que a entidade **possui**).
 - **Override em flag/variante** — um corpo unificado: decls + `parts: { p: {…} }` e/ou `slots: { s: {…} }`.
+- **Atalho `>nome`** — declara uma parte no topo do bloco sem aninhar em `parts`; ideal para
+  hierarquias simples. `>` é um sinal visual de "filho direto" na fonte, mas o CSS continua
+  descendente (`.bloco .-bloco-nome`). Pode misturar com `parts` explícito; chaves iguais se
+  mesclam, com `parts` prevalecendo em conflito direto de declaração.
 - Bloco simples também é handle callable: `class: card` (chama → `'card'`) ou `card.self`.
 - Nomes reservados de parte: `self`/`flags`/`variants`/`keyframes`/`slots` (→ `warn`).
 

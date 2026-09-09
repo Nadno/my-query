@@ -63,7 +63,7 @@ O profundo (filosofia, blocos, exemplos, breakpoints) está no **[STYLE](STYLE.m
 - **`style` (namespace)** — `style(nome, config)` define entidade e injeta; `style.css(sel, obj)` = escape hatch global. · `style('category-card', {...})`
 - **StyleHandle** — retorno de `style`: **callable** (`field({ size, invalid })` → string de classes) com **partes promovidas** (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`slots`; `class`/`$class`/`$cx` aceitam o handle.
 - **Bloco** — entidade raiz estilizada; nome `escopo-elemento` (semântica: **Layout** ⊃ **Componente** ⊃ **Elemento visual**). · `category-card`
-- **Parte** — descendente do bloco (sob `parts`, recursivo), **promovida ao handle**; classe `-{bloco}-{chave}` em toda profundidade. · `card.title`
+- **Parte** — descendente do bloco (sob `parts` ou via atalho `>nome`, recursivo), **promovida ao handle**; classe `-{bloco}-{chave}` em toda profundidade. · `card.title`, `style('card', { '>title': {...} })`
 - **Flag / Variante** — estado booleano independente `.bloco.--is-{nome}` · grupo exclusivo `.bloco.--{grupo}-{valor}`. · `--is-featured`, `--size-sm`
 - **Slot** — bloco **estrangeiro** hospedado, mirado por flags/variants; composição de 1ª classe. · `slots: { control: bloco }`
 - **Keyframe escopado** — animação nomeada `bloco-nome`. · `card.keyframes.pulse`
