@@ -6,18 +6,27 @@
  * (sem `base`). Nomes: parte = `-{bloco}-{chave}` em toda profundidade, combinador descendente;
  * flag = `.sel.--is-{nome}`, variante = `.sel.--{grupo}-{valor}`; keyframes escopado `{bloco}-{nome}`;
  * slot = bloco estrangeiro hospedado, mirado por flags/variants via descendente.
+ *
+ * Escopo (docs/proposals/style-scope.md): dois motores alternativos.
+ * - `prefixed` (default): classes com prefixo (nome do escopo) + regras planas — comportamento atual.
+ * - `native`: classes sem prefixo, mas **todas** as regras do bloco agrupadas num único
+ *   `@scope (.bloco) to (…)` — escopo real (resolve Popover/Toast teleportado).
  */
 
 import { STYLE_HANDLE } from '../types';
-import { toKebab, compileKeyframes, inject, pushRule, css, type PartRefs } from './emit';
-import type { CSSObject, FlagBody, SlotRef, StyleApi, StyleConfig, StyleHandle } from './types';
+import { toKebab, compileKeyframes, pushRule, scopeBlock, compile, inject, type PartRefs } from './emit';
+import { getGlobalScope } from './config';
+import type { CSSObject, FlagBody, SlotRef, ScopeConfig, StyleApi, StyleConfig, StyleHandle } from './types';
 
-const RESERVED = new Set(['parts', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
+const RESERVED = new Set(['parts', 'scope', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
 const RESERVED_PART_NAMES = new Set(['self', 'flags', 'variants', 'keyframes', 'slots']);
 
-/** Classe de uma parte: nome completo do bloco + chave, em toda profundidade. */
-function partClass(block: string, key: string): string {
-  return `-${block}-${toKebab(key)}`;
+/** Hash curto e estável de um nome (base36, 4 chars) para `name: 'hashed'`. */
+export function hashScope(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+  const out = (h >>> 0).toString(36);
+  return out.length <= 4 ? out : out.slice(-4);
 }
 
 const registered = new Set<string>();
@@ -68,7 +77,6 @@ function mergeParts(
     if (explicit[k]) {
       const { decls: expDecls, parts: expParts } = splitShortcutParts(explicit[k]!);
       merged[k] = mergeParts(nestedParts, expParts);
-      // re-hidrata decls explícitos + decls do shortcut como config resultante
       merged[k] = { ...expDecls, ...nestedDecls, parts: merged[k] } as StyleConfig;
     } else {
       merged[k] = { ...nestedDecls, parts: nestedParts } as StyleConfig;
@@ -77,8 +85,49 @@ function mergeParts(
   return merged;
 }
 
-/** Injeta o corpo de uma flag/variante: decls no seletor + override de `parts` e `slots`. */
-function injectBody(sel: string, body: FlagBody, block: string, slots: Record<string, string>): void {
+/** Contexto de construção de um bloco: escopo resolvido + acumulador de regras CSS. */
+interface BuildCtx {
+  scope: ScopeConfig;
+  block: string;
+  /** Classe do root sob o escopo (`acme-card` | `card`). */
+  root: string;
+  native: boolean;
+  /** Regras CSS geradas (seletor plano). Em `native`, embrulhadas em `@scope` ao final. */
+  out: string[];
+  /** Mapa nome de slot → classe selecionada (para flags/variants mirarem). */
+  slots: Record<string, string>;
+  /** Resolve a classe selecionada de um slot declarado neste nó. */
+  slotSel?: (k: string) => string | undefined;
+}
+
+/** Classe da parte sob o escopo: `-{prefixo?}-{bloco}-{chave}`. */
+function partClass(ctx: BuildCtx, key: string): string {
+  const prefix = ctx.scope.name && ctx.scope.name !== 'hashed' ? ctx.scope.name : ctx.block;
+  return `-${prefix}-${toKebab(key)}`;
+}
+
+function resolveScope(local: ScopeConfig | undefined, block: string): ScopeConfig {
+  const merged: ScopeConfig = { ...getGlobalScope(), ...local };
+  if (merged.name === 'hashed') merged.name = hashScope(block);
+  if (!merged.strategy) merged.strategy = 'prefixed';
+  return merged;
+}
+
+/** Classe do root sob o escopo: `[prefixo-]bloco`. */
+function rootOf(scope: ScopeConfig, block: string): string {
+  if (scope.strategy === 'prefixed' && scope.name && scope.name !== 'hashed') {
+    return `${scope.name}-${block}`;
+  }
+  return block;
+}
+
+/** Compila `obj` para `sel` e acrescenta as regras ao `ctx.out`. */
+function pushObj(ctx: BuildCtx, sel: string, obj: CSSObject, parts?: PartRefs): void {
+  for (const rule of compile(sel, obj, parts)) ctx.out.push(rule);
+}
+
+/** Injeta o corpo de uma flag/variante: decls + override de `parts` e `slots`. */
+function injectBody(ctx: BuildCtx, sel: string, body: FlagBody): void {
   const decls: CSSObject = {};
   let partsOverride: Record<string, CSSObject> | undefined;
   let slotsOverride: Record<string, CSSObject> | undefined;
@@ -87,49 +136,57 @@ function injectBody(sel: string, body: FlagBody, block: string, slots: Record<st
     else if (k === 'slots') slotsOverride = body[k] as Record<string, CSSObject>;
     else decls[k] = body[k];
   }
-  if (Object.keys(decls).length) inject(sel, decls);
+  if (Object.keys(decls).length) pushObj(ctx, sel, decls);
   if (partsOverride) {
-    for (const pk in partsOverride) inject(`${sel} .${partClass(block, pk)}`, partsOverride[pk]!);
+    for (const pk in partsOverride) pushObj(ctx, `${sel} .${partClass(ctx, pk)}`, partsOverride[pk]!);
   }
   if (slotsOverride) {
     for (const sk in slotsOverride) {
-      const cls = slots[sk];
-      if (!cls) {
-        console.warn(`[mini-q] slot "${sk}" não declarado em "${block}" — declare em \`slots\`.`);
+      const slotSel = ctx.slotSel?.(sk);
+      if (!slotSel) {
+        console.warn(`[mini-q] slot "${sk}" não declarado em "${ctx.block}" — declare em \`slots\`.`);
         continue;
       }
-      inject(`${sel} .${cls}`, slotsOverride[sk]!);
+      pushObj(ctx, `${sel} .${slotSel}`, slotsOverride[sk]!);
     }
   }
 }
 
-function buildNode(config: StyleConfig, block: string, path: string[]): StyleHandle {
-  const selfClass = path[path.length - 1]!;
-  const selfSel = path.map((c) => `.${c}`).join(' ');
-
+function buildNode(config: StyleConfig, ctx: BuildCtx, path: string[]): StyleHandle {
   const { decls: rawDecls, parts: shortcutParts } = splitShortcutParts(config);
   const mergedParts = mergeParts(shortcutParts, rawDecls.parts as Record<string, StyleConfig> | undefined);
 
-  // Nomes de parte do nó atual → classe, para o resolver `[nome]` nos seletores.
+  // Seletor de self do nó. Em native, a raiz vira `:scope` e sub-partes descem dela
+  // (`:scope .-scp-card-title`) — a classe do root não se repete. Em prefixed, encadeia classes.
+  const isRoot = path.length === 1;
+  const selfSel = ctx.native
+    ? path.map((c, i) => (i === 0 ? ':scope' : `.${c}`)).join(' ')
+    : path.map((c) => `.${c}`).join(' ');
+  /** Classe própria deste nó (`card` no root; `-block-title` numa parte). */
+  const selfCls = path[path.length - 1]!;
+
+  // Nomes de parte do nó atual → classe, para o resolver `$nome`.
   const partRefs: PartRefs = {};
   if (mergedParts) {
     for (const key in mergedParts) {
       if (RESERVED_PART_NAMES.has(key)) continue;
-      partRefs[key] = partClass(block, key);
+      partRefs[key] = partClass(ctx, key);
     }
   }
 
-  // Slots resolvidos primeiro (flags/variants podem mirá-los).
-  const slots: Record<string, string> = {};
+  // Mapa nome de slot → classe selecionada (para flags mirarem).
+  const slotSel: Record<string, string> = {};
   if (rawDecls.slots) {
     const slotsConfig = rawDecls.slots as Record<string, SlotRef>;
     for (const name in slotsConfig) {
       const ref = slotsConfig[name]!;
-      slots[name] = typeof ref === 'string' ? ref : ref!.self;
+      slotSel[name] = typeof ref === 'string' ? ref : ref.self;
     }
   }
+  ctx.slots = slotSel;
+  ctx.slotSel = (k: string) => slotSel[k];
 
-  // Declarações da própria parte: tudo que não é chave reservada (sem `base`).
+  // Declarações da própria parte.
   const decls: CSSObject = {};
   for (const key in rawDecls) {
     if (RESERVED.has(key)) continue;
@@ -140,19 +197,19 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
       continue;
     }
     if (key.startsWith('&') || key.startsWith('@')) {
-      decls[key] = value as CSSObject; // pseudo/self ou at-rule
+      decls[key] = value as CSSObject;
       continue;
     }
     console.warn(
-      `[mini-q] chave "${key}" ignorada em "${block}" — partes vão sob "parts", flags sob "flags", variantes sob "variants".`,
+      `[mini-q] chave "${key}" ignorada em "${ctx.block}" — partes vão sob "parts", flags sob "flags", variantes sob "variants".`,
     );
   }
-  if (Object.keys(decls).length) inject(selfSel, decls, partRefs);
+  if (Object.keys(decls).length) pushObj(ctx, selfSel, decls, partRefs);
 
   const flags: Record<string, string> = {};
   if (config.flags) {
     for (const name in config.flags) {
-      injectBody(`${selfSel}.--is-${name}`, config.flags[name]!, block, slots);
+      injectBody(ctx, `${selfSel}.--is-${name}`, config.flags[name]!);
       flags[name] = `--is-${name}`;
     }
   }
@@ -163,7 +220,7 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
       variants[group] = {};
       const options = config.variants[group]!;
       for (const value in options) {
-        injectBody(`${selfSel}.--${group}-${value}`, options[value]!, block, slots);
+        injectBody(ctx, `${selfSel}.--${group}-${value}`, options[value]!);
         variants[group]![value] = `--${group}-${value}`;
       }
     }
@@ -172,7 +229,7 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const keyframes: Record<string, string> = {};
   if (config.keyframes) {
     for (const name in config.keyframes) {
-      const kn = `${block}-${toKebab(name)}`;
+      const kn = `${ctx.block}-${toKebab(name)}`;
       pushRule(compileKeyframes(kn, config.keyframes[name]!));
       keyframes[name] = kn;
     }
@@ -183,17 +240,19 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
     for (const key in mergedParts) {
       if (RESERVED_PART_NAMES.has(key)) {
         console.warn(
-          `[mini-q] parte "${key}" em "${block}" usa um nome reservado do handle (self/flags/variants/keyframes/slots) — renomeie.`,
+          `[mini-q] parte "${key}" em "${ctx.block}" usa um nome reservado do handle (self/flags/variants/keyframes/slots) — renomeie.`,
         );
         continue;
       }
-      parts[key] = buildNode(mergedParts[key]!, block, [...path, partClass(block, key)]);
+      const cls = partClass(ctx, key);
+      parts[key] = buildNode(mergedParts[key]!, ctx, [...path, cls]);
     }
   }
 
   const defaults = config.defaults ?? {};
+  const ownSelf = isRoot ? rootOf(ctx.scope, ctx.block) : selfCls;
   const handle = ((props: Record<string, unknown> = {}): string => {
-    const tokens: string[] = [selfClass];
+    const tokens: string[] = [ownSelf];
     const merged: Record<string, unknown> = { ...defaults, ...props };
     for (const k in merged) {
       const v = merged[k];
@@ -204,7 +263,7 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
     return tokens.join(' ');
   }) as StyleHandle;
 
-  Object.assign(handle, { self: selfClass, flags, variants, keyframes, slots }, parts);
+  Object.assign(handle, { self: ownSelf, flags, variants, keyframes, slots: { ...slotSel } }, parts);
   Object.defineProperty(handle, STYLE_HANDLE, { value: true });
   return handle;
 }
@@ -213,10 +272,26 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
 
 function styleFn<T extends StyleConfig>(name: string, config: T): StyleHandle<T> {
   warnDup(name);
-  return buildNode(config, name, [name]) as StyleHandle<T>;
+  const scope = resolveScope(config.scope as ScopeConfig | undefined, name);
+  const ctx: BuildCtx = {
+    scope,
+    block: name,
+    root: rootOf(scope, name),
+    native: scope.strategy === 'native',
+    out: [],
+    slots: {},
+  };
+
+  const handle = buildNode(config, ctx, [ctx.root]);
+
+  // Emite: native agrupa tudo em `@scope (.root) to (…)`; prefixed injeta plano.
+  const rules = ctx.native ? scopeBlock(ctx.out, `.${ctx.root}`, scope.to) : ctx.out;
+  for (const rule of rules) pushRule(rule);
+
+  return handle as StyleHandle<T>;
 }
 
-export const style: StyleApi = Object.assign(styleFn, { css }) as StyleApi;
+export const style: StyleApi = Object.assign(styleFn, { css: inject }) as StyleApi;
 
 /**
  * @deprecated Use `$.style(name, { parts: { … } })` e acesse `handle.x`. Alias por 1 versão.

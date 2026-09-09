@@ -21,7 +21,22 @@ export type FlagBody = CSSObject & {
 /** Referência de um slot na declaração: qualquer handle (lê `.self`) ou uma classe crua. */
 export type SlotRef = { readonly self: string } | string;
 
+/** Motor de escopo do bloco. `native` emite via `@scope` CSS; `prefixed` usa classes prefixadas. */
+export type ScopeStrategy = 'native' | 'prefixed';
+
+/** Configuração de escopo de um bloco ou do app (mesclada: global + local). */
+export interface ScopeConfig {
+  /** Como emitir o escopo. `native` = `@scope`; `prefixed` = classes com prefixo. */
+  strategy?: ScopeStrategy;
+  /** Identificação/leitura. `hashed` gera um hash estável do bloco. */
+  name?: string | 'hashed';
+  /** Limite superior do `@scope` (`to (sel)`). Recurso só do motor `native`. */
+  to?: string;
+}
+
 export interface StyleConfig {
+  /** Motor/nome/limite de escopo do bloco (mesclado com o global do `config`). */
+  scope?: ScopeConfig;
   /** Partes descendentes (recursivo). Classe = `-{bloco}-{chave}`, combinador descendente. */
   parts?: Record<string, StyleConfig>;
   /** Atalho para partes descendentes: `'>title': { ... }` equivale a `parts: { title: { ... } }`. */

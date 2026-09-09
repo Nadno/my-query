@@ -48,11 +48,7 @@ function toDecl(key: string, value: string | number | boolean): string | null {
   return `${toKebab(key)}: ${value}`;
 }
 
-/**
- * Compila um objeto de estilo em regras CSS (selector { decls } + aninhados).
- * `parts` opcional resolve nomes de parte declarados do nó atual dentro de seletores
- * (`'& > title'`, `'> title'`) para suas classes reais.
- */
+/** Compila `obj` para `selector` em strings de regra (sem injetar no DOM). */
 export function compile(selector: string, obj: CSSObject, parts?: PartRefs): string[] {
   const decls: string[] = [];
   const nested: string[] = [];
@@ -120,9 +116,20 @@ export function pushRule(rule: string): void {
   el.appendChild(document.createTextNode(`${rule}\n`));
 }
 
-/** Injeta regras para `selector` a partir de um objeto JS. */
+/** Compila `obj` para `selector` e injeta cada regra no DOM. */
 export function inject(selector: string, obj: CSSObject, parts?: PartRefs): void {
   for (const rule of compile(selector, obj, parts)) pushRule(rule);
+}
+
+/**
+ * Agrupa um `@scope` para o motor `native`: `@scope (sel) { regra }`.
+ * `sel` é o seletor do root (`.card`); `to?` a cláusula de limite. Se `rules`
+ * vazio, devolve vazio. Cada regra vira um `@scope` próprio (dedup por string preservado).
+ */
+export function scopeBlock(rules: string[], sel: string, to?: string): string[] {
+  if (rules.length === 0) return [];
+  const head = to ? `@scope (${sel}) to (${to})` : `@scope (${sel})`;
+  return rules.map((r) => `${head} { ${r} }`);
 }
 
 /** Estilo global / escape hatch (ex.: `$.style.css('body', { margin: 0 })`). */

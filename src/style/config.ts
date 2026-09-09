@@ -1,14 +1,19 @@
 /**
- * Config compartilhada do mini-q. Hoje: breakpoints — usados tanto pelo CSS
+ * Config compartilhada do mini-q. Hoje: breakpoints + escopo global — usados tanto pelo CSS
  * (`@nome` na árvore de `$.style`) quanto pelo reativo (`$.media`).
  */
+
+import type { ScopeConfig } from './types';
 
 export interface MiniQConfig {
   /** Mapa nome → largura (número = `(min-width: Npx)`) ou query crua (string). */
   breakpoints?: Record<string, number | string>;
+  /** Escopo global (motor/nome/limite) — default para todos os blocos. */
+  scope?: ScopeConfig;
 }
 
 const breakpoints = new Map<string, string>();
+let globalScope: ScopeConfig | undefined;
 
 /** Registra/mescla configuração global. */
 export function config(next: MiniQConfig): void {
@@ -17,6 +22,12 @@ export function config(next: MiniQConfig): void {
       breakpoints.set(name, toQuery(next.breakpoints[name]!));
     }
   }
+  if (next.scope) globalScope = { ...globalScope, ...next.scope };
+}
+
+/** Escopo global configurado (se houver). */
+export function getGlobalScope(): ScopeConfig | undefined {
+  return globalScope;
 }
 
 const NUMERIC = /^[0-9]+(\.[0-9]+)?$/;
