@@ -5,9 +5,12 @@ import { ApiError } from '../api';
 import { screen, useAuth } from '../composables/useAuth';
 import { useToast } from '../composables/useToast';
 import { Button } from '../ui/Button';
+import { Carousel } from '../ui/Carousel';
 import { Field } from '../ui/Field';
 import { TextInput } from '../ui/TextInput';
 import { sAuthGate, sCard, sForm } from '../ui/shell.style';
+import { sLoginHero, sLoginLayout, sTestimonialCard } from './Login.style';
+import { testimonials } from './LoginTestimonials';
 
 export function Login() {
   const auth = useAuth();
@@ -29,44 +32,71 @@ export function Login() {
   };
 
   return $.div(
-    { class: sCard },
-    $.h1({ class: sCard.title }, 'Entrar'),
-    $.p({ class: sCard.muted }, 'Sessão JWT com refresh em cookie.'),
-    $.form(
-      { class: sForm, on: { submit: [submit, $handle.prevent] } },
-      Field({
-        label: 'E-mail',
-        control: TextInput({
-          value: email,
-          type: 'email',
-          autocomplete: 'username',
-          placeholder: 'contato@empresa.com',
-        }),
-      }),
-      Field({
-        label: 'Senha',
-        control: TextInput({
-          value: password,
-          type: 'password',
-          autocomplete: 'current-password',
-        }),
-      }),
-      Button({
-        type: 'submit',
-        label: 'Entrar',
-        loading: () => submitting.value,
+    { class: sLoginLayout },
+    $.div(
+      { class: sLoginHero },
+      $.div(
+        {},
+        $.h1({ class: sLoginHero.brand }, 'mini-q auth'),
+        $.p(
+          { class: sLoginHero.pitch },
+          'Exemplo completo de autenticação JWT com cadastro multi-step, signals granulares e estilos reativos — sem build e sem JSX.',
+        ),
+      ),
+      Carousel({
+        items: testimonials,
+        renderSlide: (t) =>
+          $.article(
+            { class: sTestimonialCard },
+            $.p({ class: sTestimonialCard.quote }, `“${t.quote}”`),
+            $.div(
+              {},
+              $.p({ class: sTestimonialCard.author }, t.author),
+              $.p({ class: sTestimonialCard.role }, t.role),
+            ),
+          ),
       }),
     ),
-    $.p(
-      { class: sAuthGate.self },
-      'Não tem conta? ',
-      $.button(
-        {
-          class: sAuthGate.link,
-          type: 'button',
-          on: { click: () => (screen.value = 'register') },
-        },
-        'Cadastrar empresa',
+    $.div(
+      { class: sCard },
+      $.h2({ class: sCard.title }, 'Entrar'),
+      $.p({ class: sCard.muted }, 'Sessão JWT com refresh em cookie.'),
+      $.form(
+        { class: sForm, on: { submit: [submit, $handle.prevent] } },
+        Field({
+          label: 'E-mail',
+          control: TextInput({
+            value: email,
+            type: 'email',
+            autocomplete: 'username',
+            placeholder: 'contato@empresa.com',
+          }),
+        }),
+        Field({
+          label: 'Senha',
+          control: TextInput({
+            value: password,
+            type: 'password',
+            autocomplete: 'current-password',
+          }),
+        }),
+        Button({
+          type: 'submit',
+          label: 'Entrar',
+          loading: () => submitting.value,
+        }),
+      ),
+      $.p(
+        { class: sAuthGate.self },
+        'Não tem conta? ',
+        $.button(
+          {
+            class: sAuthGate.link,
+            type: 'button',
+            on: { click: () => (screen.value = 'register') },
+          },
+          'Cadastrar empresa',
+        ),
       ),
     ),
   );

@@ -1,7 +1,7 @@
 import { style } from 'mini-q/style';
 
 export const sApp = style('app', {
-  maxWidth: 800,
+  maxWidth: 1100,
   margin: '0 auto',
   padding: 'var(--space-3xl) var(--space-lg)',
   minHeight: '100vh',
