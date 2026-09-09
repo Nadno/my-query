@@ -176,22 +176,37 @@ $.div({
   on: {
     hover: () => {
       // enter: monta o tooltip…
-      return () => tooltip.remove(); // un-hover: roda no mouseleave
+      return () => tooltip.remove(); // un-hover: roda no pointerleave
     },
     interactOutside: () => (aberto.value = false), // sem cleanup → nada no leave
   },
 }, ...);
 ```
 
-- **`hover`** — `mouseenter` → handler (devolve o un-hover); `mouseleave` → roda o cleanup. Sem delay/touch (etapa própria).
+- **`hover`** — Pointer Events unificados: `pointerenter` → handler (devolve o un-hover);
+  `pointerleave` → roda o cleanup. Com **opções**: `delayIn`/`delayOut` (atrasos) e `touchable`
+  (hold-to-hover no touch — segurar o dedo por `holdDelay` = hover, soltar = sair; cancela no
+  scroll; suprime `contextmenu`/seleção durante o hold). O handler recebe `PointerEvent` (leia
+  `e.pointerType`).
 - **`focusOutside`** — enter quando o foco **sai** do alvo (via `relatedTarget`), leave quando volta.
 - **`interactOutside`** — enter no 1º `pointerdown` **fora** do alvo, leave num `pointerdown` **dentro** (backdrop de popover/modal).
 
-Registrar o seu:
+**Canal de opções** — o objeto no fim da tupla de um custom event são as **opções da fonte** (não
+`AddEventListenerOptions` — quem decide os listeners DOM é a fonte). Tipadas por evento via
+`MQCustomEventOptions` (estenda por declaration merging junto do `MQCustomEventMap`):
 
 ```ts
-$.registerCustomEvent('longpress', (target, emit) => {
-  const onDown = (e) => { const t = setTimeout(() => emit(e), 500); /* ... */ };
+$.div({ on: { hover: [handler, { touchable: true, delayIn: 100, delayOut: 250 }] } });
+```
+
+Registrar o seu (a fonte recebe as opções no 3º parâmetro):
+
+```ts
+$.registerCustomEvent<PointerEvent, { delay?: number }>('longpress', (target, emit, opts) => {
+  const onDown = (e) => {
+    const t = setTimeout(() => emit(e), opts?.delay ?? 500);
+    // ...
+  };
   target.addEventListener('pointerdown', onDown);
   return () => target.removeEventListener('pointerdown', onDown); // cleanup
 });
@@ -440,7 +455,7 @@ $.mount('#app', App);
 | `$.style(name, config)` | → `StyleHandle` | callable + partes promovidas + `self`/`flags`/`variants`/`keyframes`/`slots`; injeta CSS |
 | `$.style.css(selector, obj)` | → void | estilo global / escape hatch (seletor cru) |
 | `$.parts` / `$.css` | *deprecados* | alias p/ `$.style(…, {parts})` / `$.style.css` |
-| `$.registerCustomEvent(name, source)` | `(target, emit) => cleanup` | novo custom event; `emit` devolve o retorno do handler (pareado: cleanup do un-enter) |
+| `$.registerCustomEvent(name, source)` | `(target, emit, options?) => cleanup` | novo custom event; `emit` devolve o retorno do handler (pareado: cleanup do un-enter); `options` = canal de opções da fonte (objeto no fim da tupla) |
 
 Props especiais: `class`/`$class`, `style`/`$style`, `data`/`$data`, `on`, `use`, `key`. Qualquer outra chave = atributo (com `$` = reativo).
 

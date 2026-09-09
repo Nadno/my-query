@@ -104,6 +104,15 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   handler em invocações **leading** (síncronas); trailing/`maxWait` seguem sem propagar (o retorno morre
   no `setTimeout`) — problema documentado em USAGE §5 + GLOSSARY. 6 testes novos (`handle.test.ts`),
   **158 verdes**, typecheck ok.
+- **2026-09-09** — **Item 5c: hover-touch + canal de opções do `EventSource`** — a `EventSource` ganha o
+  3º parâmetro `options` (o objeto no fim da tupla de `on: {}` vira **opções da fonte**, não
+  `AddEventListenerOptions`; tipado por evento via `MQCustomEventOptions`, extendable por declaration
+  merging). Fallback de eventos arbitrários passa a `never` nas opções (sem objeto na tupla — opções
+  exigem estender o mapa). **`hover` reescrito com Pointer Events** (emite `PointerEvent`): mouse/caneta
+  via `pointerenter`/`pointerleave` com `delayIn`/`delayOut`; touch (`touchable`) vira **hold-to-hover**
+  (`pointerdown` + `holdDelay`, `pointerup`/`pointercancel`/scroll → sai; suprime `contextmenu`/
+  `selectstart` durante o hold). 9 testes novos (custom/apply/on + type-test `on.types.ts`),
+  **167 verdes**, typecheck ok.
 
 ---
 
@@ -200,11 +209,12 @@ Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` a
   a pipeline de `on:{}` já resolve. `$on` reusa **o mesmo `applyEvents`** (roteamento nativo vs custom +
   `handle` + cleanup no escopo) → behavior vira "composable com elemento" de verdade e ganha o mesmo
   vocabulário do builder. É o substrato p/ reescrever os custom events ricos abaixo **como behaviors**.
-- **Runtime rico de custom events (P2)** — ✅ FEITO (2026-09-09, item 5 (a)+(b)): modelo **enter↔leave
+- **Runtime rico de custom events (P2)** — ✅ FEITO (2026-09-09, item 5 (a)+(b)+(c)): modelo **enter↔leave
   pareado** com cleanup retornado pelo handler (era o `cleanupHover`). `hover` pareado, `interactOutside`
-  (novo) e `focusOutside` via `relatedTarget`. **Falta (etapa própria, item 5c):** `hover` hold-to-hover
-  (`delayIn`/`delayOut` + Pointer Events p/ mobile) — o canal de opções do `EventSource` (para `touchable`/
-  delays) entra lá.
+  (novo) e `focusOutside` via `relatedTarget`. **Item 5c (2026-09-09):** canal de opções do `EventSource`
+  (objeto no fim da tupla = opções da fonte, tipado por `MQCustomEventOptions`) + `hover` hold-to-hover
+  (Pointer Events, `delayIn`/`delayOut`, `touchable`/`holdDelay`, cancela no scroll, suprime
+  contextmenu/seleção).
 - **Delegation** de eventos (havia no antigo) — **adiada/em dúvida**. Numa lib de escopo por-componente com
   cleanup por escopo, delegação global é aposta grande de payoff incerto (acopla o `DOMHandlerStore`).
   Segurar até ter um caso real que doa (lista gigante). P3
@@ -212,11 +222,11 @@ Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` a
 - Mais modificadores e o açúcar de token (`'.enter'`) sobre os composables. P3
 
 ### hover com touch (P2)
-`hover` já é **pareado** (enter devolve o un-hover, `mouseleave` roda) — mas segue **sem delay e sem
-touch**. Queremos **hold-to-hover** (segurar o dedo = hover, soltar = sair), como sites de vídeo:
-Pointer Events unificados, `holdDelay`, cancelar no scroll, suprimir contextmenu/seleção,
-`delayIn`/`delayOut`. O canal de opções do `EventSource` (para `touchable`/delays) entra nessa etapa
-(item 5c).
+✅ **FEITO (2026-09-09, item 5c)** — `hover` é **pareado** (enter devolve o un-hover, `pointerleave`
+roda) e agora é **hold-to-hover** com Pointer Events: mouse/caneta via `pointerenter`/`pointerleave`
+com `delayIn`/`delayOut`; touch (`touchable`) segura o dedo por `holdDelay` = hover, soltar = sair;
+cancela no scroll; suprime `contextmenu`/seleção durante o hold. O canal de opções do `EventSource`
+(objeto no fim da tupla, tipado por `MQCustomEventOptions`) entrou junto.
 
 ---
 
@@ -295,9 +305,10 @@ após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a m
 2. ~~Migrar `examples/auth` p/ a nova API de estilo~~ ✅ feito (todos os call sites migrados).
 3. ~~**`$on(ctx, name, onValue)`** — primitivo de evento p/ behaviors~~ ✅ feito (2026-09-08; ver §Progresso).
 4. ~~**`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter**~~ ✅ feito (2026-09-08; ver §Progresso).
-5. ~~**Runtime rico de eventos** (enter↔leave pareado)~~ ✅ (a)+(b) feito (2026-09-09): `interactOutside` +
-   `focusOutside` por `relatedTarget` + `hover` pareado. **Falta (c):** `hover` hold-to-hover (mobile) —
-   canal de opções do `EventSource` (`touchable`/delays). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
+5. ~~**Runtime rico de eventos** (enter↔leave pareado)~~ ✅ (a)+(b)+(c) feito (2026-09-09):
+   `interactOutside` + `focusOutside` por `relatedTarget` + `hover` pareado; **(c)** `hover`
+   hold-to-hover (Pointer Events, `delayIn`/`delayOut`, `touchable`/`holdDelay`) + canal de opções do
+   `EventSource` (`MQCustomEventOptions`). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
 6. ~~`$.each` tipado~~ ✅ feito (2026-09-08; ver §Progresso) + ~~`$.when` com cache de ramo~~ ✅ **RECUSADO** (2026-09-08; preservação é `$show`).
 7. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
 8. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)

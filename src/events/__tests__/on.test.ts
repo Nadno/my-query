@@ -9,6 +9,17 @@ import {
 import { createScope, runInScope, disposeScope, type Scope } from '../../lifecycle';
 import type { MQ } from '../../types';
 
+// Estende os mapas de custom events p/ testar o canal de opções via `on()` — o mesmo
+// padrão de declaration merging documentado p/ usuários.
+declare module '../types' {
+  interface MQCustomEventMap {
+    fakeOpts: Event;
+  }
+  interface MQCustomEventOptions {
+    fakeOpts: { touchable?: boolean };
+  }
+}
+
 /** Roda `on` num escopo real e devolve o cleanup retornado + o disposeScope. */
 function bind<E extends Element>(
   el: E,
@@ -88,6 +99,20 @@ describe('on — roteamento de custom event', () => {
     dispose();
     expect(cleanupSpy).toHaveBeenCalledOnce();
   });
+
+  it('opções da tupla chegam à fonte (canal de opções)', () => {
+    const el = document.createElement('div');
+    let received: unknown;
+    const source: EventSource = (_target, _emit, opts) => {
+      received = opts;
+      return () => {};
+    };
+    registerCustomEvent('fakeOpts', source);
+    registered.push('fakeOpts');
+
+    bind(el, (c) => on(c, 'fakeOpts', [vi.fn(), { touchable: true }]));
+    expect(received).toEqual({ touchable: true });
+  });
 });
 
 describe('on — cleanup', () => {
@@ -141,6 +166,8 @@ describe('on — inferência de tipo do evento pelo nome', () => {
     on(ctx, 'click', (e) => void e.button);
     // custom registrado → PointerEvent (e.pointerId existe)
     on(ctx, 'clickOutside', (e) => void e.pointerId);
+    // hover → PointerEvent (Pointer Events unificados; e.pointerType existe)
+    on(ctx, 'hover', (e) => void e.pointerType);
     // custom arbitrário → fallback Event, sem erro de tipo
     on(ctx, 'whatever', (e) => void e.type);
     expect(true).toBe(true);

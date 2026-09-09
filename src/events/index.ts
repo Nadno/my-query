@@ -11,7 +11,9 @@ export type {
   Modifier,
   DebounceOptions,
   ThrottleOptions,
+  HoverOptions,
   OnValue,
   OnMap,
   MQCustomEventMap,
+  MQCustomEventOptions,
 } from './types';

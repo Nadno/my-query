@@ -86,4 +86,16 @@ export type {
   TagElement,
   Child,
 } from './types';
-export type { Handler, Modifier, OnValue, OnMap, MQCustomEventMap, EventSource } from './events';
+export type {
+  Handler,
+  PairedHandler,
+  Modifier,
+  DebounceOptions,
+  ThrottleOptions,
+  HoverOptions,
+  OnValue,
+  OnMap,
+  MQCustomEventMap,
+  MQCustomEventOptions,
+  EventSource,
+} from './events';

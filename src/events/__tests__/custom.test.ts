@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   registerCustomEvent,
   getCustomEvent,
@@ -18,6 +18,10 @@ function scene() {
   document.body.append(target, outside);
   return { target, inside, outside };
 }
+
+/** PointerEvent de touch (jsdom não expõe `PointerEvent` global). */
+const touchPointer = (type: string) =>
+  Object.assign(new Event(type), { pointerType: 'touch' });
 
 describe('registro', () => {
   it('registerCustomEvent / getCustomEvent guardam e recuperam a fonte', () => {
@@ -130,18 +134,20 @@ describe('interactOutside', () => {
   });
 });
 
-describe('hover (enter↔leave pareado)', () => {
-  it('enter devolve o cleanup do un-hover; mouseleave o roda', () => {
+describe('hover (enter↔leave pareado, Pointer Events)', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('pointerenter devolve o cleanup do un-hover; pointerleave o roda', () => {
     const { target } = scene();
     const leave = vi.fn();
     const emit = vi.fn(() => leave);
     const cleanup = getCustomEvent('hover')!(target, emit);
 
-    target.dispatchEvent(new Event('mouseenter'));
+    target.dispatchEvent(new Event('pointerenter'));
     expect(emit).toHaveBeenCalledOnce();
     expect(leave).not.toHaveBeenCalled();
 
-    target.dispatchEvent(new Event('mouseleave'));
+    target.dispatchEvent(new Event('pointerleave'));
     expect(leave).toHaveBeenCalledOnce();
 
     cleanup();
@@ -157,12 +163,12 @@ describe('hover (enter↔leave pareado)', () => {
       .mockReturnValueOnce(leave2);
     const cleanup = getCustomEvent('hover')!(target, emit);
 
-    target.dispatchEvent(new Event('mouseenter'));
-    target.dispatchEvent(new Event('mouseenter')); // re-enter sem leave
+    target.dispatchEvent(new Event('pointerenter'));
+    target.dispatchEvent(new Event('pointerenter')); // re-enter sem leave
     expect(leave1).toHaveBeenCalledOnce();
     expect(emit).toHaveBeenCalledTimes(2);
 
-    target.dispatchEvent(new Event('mouseleave'));
+    target.dispatchEvent(new Event('pointerleave'));
     expect(leave2).toHaveBeenCalledOnce();
 
     cleanup();
@@ -175,13 +181,124 @@ describe('hover (enter↔leave pareado)', () => {
     const remove = vi.spyOn(target, 'removeEventListener');
     const cleanup = getCustomEvent('hover')!(target, emit);
 
-    target.dispatchEvent(new Event('mouseenter'));
+    target.dispatchEvent(new Event('pointerenter'));
     cleanup();
-    expect(remove).toHaveBeenCalledWith('mouseenter', expect.any(Function));
-    expect(remove).toHaveBeenCalledWith('mouseleave', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('pointerenter', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('pointerleave', expect.any(Function));
     expect(leave).toHaveBeenCalledOnce();
 
-    target.dispatchEvent(new Event('mouseenter'));
+    target.dispatchEvent(new Event('pointerenter'));
     expect(emit).toHaveBeenCalledOnce();
+  });
+
+  it('delayIn atrasa o enter; pointerleave antes cancela', () => {
+    vi.useFakeTimers();
+    const { target } = scene();
+    const emit = vi.fn();
+    const cleanup = getCustomEvent('hover')!(target, emit, { delayIn: 100 });
+
+    target.dispatchEvent(new Event('pointerenter'));
+    expect(emit).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(emit).toHaveBeenCalledOnce();
+
+    cleanup();
+  });
+
+  it('delayOut atrasa o leave', () => {
+    vi.useFakeTimers();
+    const { target } = scene();
+    const leave = vi.fn();
+    const emit = vi.fn(() => leave);
+    const cleanup = getCustomEvent('hover')!(target, emit, { delayOut: 100 });
+
+    target.dispatchEvent(new Event('pointerenter'));
+    target.dispatchEvent(new Event('pointerleave'));
+    expect(leave).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(leave).toHaveBeenCalledOnce();
+
+    cleanup();
+  });
+
+  it('touchable: segurar o dedo (holdDelay) vira hover; soltar sai', () => {
+    vi.useFakeTimers();
+    const { target } = scene();
+    const leave = vi.fn();
+    const emit = vi.fn(() => leave);
+    const cleanup = getCustomEvent('hover')!(target, emit, {
+      touchable: true,
+      holdDelay: 500,
+    });
+
+    target.dispatchEvent(touchPointer('pointerdown'));
+    expect(emit).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(500);
+    expect(emit).toHaveBeenCalledOnce();
+
+    target.dispatchEvent(touchPointer('pointerup'));
+    expect(leave).toHaveBeenCalledOnce();
+
+    cleanup();
+  });
+
+  it('touchable: soltar antes do holdDelay não vira hover', () => {
+    vi.useFakeTimers();
+    const { target } = scene();
+    const emit = vi.fn();
+    const cleanup = getCustomEvent('hover')!(target, emit, {
+      touchable: true,
+      holdDelay: 500,
+    });
+
+    target.dispatchEvent(touchPointer('pointerdown'));
+    target.dispatchEvent(touchPointer('pointerup'));
+    vi.advanceTimersByTime(500);
+    expect(emit).not.toHaveBeenCalled();
+
+    cleanup();
+  });
+
+  it('touchable: scroll cancela o hold', () => {
+    vi.useFakeTimers();
+    const { target } = scene();
+    const emit = vi.fn();
+    const cleanup = getCustomEvent('hover')!(target, emit, {
+      touchable: true,
+      holdDelay: 500,
+    });
+
+    target.dispatchEvent(touchPointer('pointerdown'));
+    document.dispatchEvent(new Event('scroll'));
+    vi.advanceTimersByTime(500);
+    expect(emit).not.toHaveBeenCalled();
+
+    cleanup();
+  });
+
+  it('touchable: contextmenu durante o hold é suprimido', () => {
+    const { target } = scene();
+    const emit = vi.fn();
+    const cleanup = getCustomEvent('hover')!(target, emit, { touchable: true });
+
+    const prevented = vi.fn();
+    target.dispatchEvent(touchPointer('pointerdown'));
+    target.dispatchEvent(
+      Object.assign(new Event('contextmenu'), { preventDefault: prevented }),
+    );
+    expect(prevented).toHaveBeenCalledOnce();
+
+    cleanup();
+  });
+
+  it('sem touchable, touch não vira hover', () => {
+    const { target } = scene();
+    const emit = vi.fn();
+    const cleanup = getCustomEvent('hover')!(target, emit);
+
+    target.dispatchEvent(touchPointer('pointerdown'));
+    expect(emit).not.toHaveBeenCalled();
+
+    cleanup();
   });
 });

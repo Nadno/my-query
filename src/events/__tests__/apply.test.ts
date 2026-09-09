@@ -89,7 +89,7 @@ describe('applyEvents — roteamento custom', () => {
     const fn = vi.fn();
     const { ctx, dispose } = mountEvents(el, { [NAME]: fn });
 
-    expect(source).toHaveBeenCalledWith(el, expect.any(Function));
+    expect(source).toHaveBeenCalledWith(el, expect.any(Function), undefined);
     expect(add).not.toHaveBeenCalled();
 
     const ev = new Event(NAME);
@@ -99,20 +99,34 @@ describe('applyEvents — roteamento custom', () => {
     dispose();
     expect(cleanup).toHaveBeenCalledOnce();
   });
+
+  it('opções da tupla chegam à EventSource (canal de opções)', () => {
+    let received: unknown;
+    const optsSource = vi.fn<EventSource>((_target, _emit, opts) => {
+      received = opts;
+      return () => {};
+    });
+    registerCustomEvent(NAME, optsSource as unknown as EventSource);
+    expect(getCustomEvent(NAME)).toBe(optsSource);
+
+    const el = document.createElement('div');
+    mountEvents(el, { [NAME]: [vi.fn(), { touchable: true, delayIn: 100 }] });
+    expect(received).toEqual({ touchable: true, delayIn: 100 });
+  });
 });
 
 describe('applyEvents — fluxo pareado via on: {}', () => {
-  it('on: { hover: handler } — handler devolve cleanup; mouseleave o roda', () => {
+  it('on: { hover: handler } — handler devolve cleanup; pointerleave o roda', () => {
     const el = document.createElement('div');
     const leave = vi.fn();
     const fn = vi.fn(() => leave);
     const { dispose } = mountEvents(el, { hover: fn });
 
-    el.dispatchEvent(new Event('mouseenter'));
+    el.dispatchEvent(new Event('pointerenter'));
     expect(fn).toHaveBeenCalledOnce();
     expect(leave).not.toHaveBeenCalled();
 
-    el.dispatchEvent(new Event('mouseleave'));
+    el.dispatchEvent(new Event('pointerleave'));
     expect(leave).toHaveBeenCalledOnce();
 
     dispose();

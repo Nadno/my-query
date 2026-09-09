@@ -8,6 +8,7 @@ import type {
   Handler,
   Modifier,
   MQCustomEventMap,
+  MQCustomEventOptions,
   OnValue,
   PairedHandler,
 } from './types';
@@ -48,7 +49,11 @@ function bindEvent(ctx: MQ, name: string, value: OnValue): Cleanup {
   const { handler, options } = resolve(value);
   const source = getCustomEvent(name);
 
-  if (source) return once(source(ctx.element, (event) => handler(event, ctx)));
+  // Custom event: o objeto da tupla são as **opções da fonte** (não
+  // AddEventListenerOptions) — quem decide os listeners DOM é a fonte.
+  if (source) {
+    return once(source(ctx.element, (event) => handler(event, ctx), options));
+  }
 
   const listener = (event: Event) => handler(event, ctx);
   ctx.element.addEventListener(name, listener, options);
@@ -81,13 +86,18 @@ export function on<K extends keyof HTMLElementEventMap, E extends Element>(
 export function on<K extends keyof MQCustomEventMap, E extends Element>(
   ctx: MQ<E>,
   name: K,
-  value: OnValue<MQCustomEventMap[K], E, PairedHandler<MQCustomEventMap[K], E>>,
+  value: OnValue<
+    MQCustomEventMap[K],
+    E,
+    PairedHandler<MQCustomEventMap[K], E>,
+    MQCustomEventOptions[K]
+  >,
 ): Cleanup;
 export function on<E extends Element>(
   ctx: MQ<E>,
   name: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: OnValue<any, E>,
+  value: OnValue<any, E, Handler<any, E>, never>,
 ): Cleanup;
 export function on(ctx: MQ, name: string, value: OnValue): Cleanup {
   const cleanup = bindEvent(ctx, name, value);

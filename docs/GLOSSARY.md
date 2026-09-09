@@ -42,7 +42,7 @@ recursos são **exports nomeados com prefixo `$`** (`$mount`, `$when`, `$handle`
 - **Modificador** — transformador de handler composável. · `$handle.keys('Enter')`, `.prevent`, `.debounce(300, { leading })`
 - **Invocação síncrona vs assíncrona** — modificadores que atrasam (`debounce`/`throttle`) invocam o handler de forma **assíncrona** no trailing/`maxWait` (o retorno morre no `setTimeout`); só invocações **síncronas** (leading) propagam o retorno do handler (cleanup do "un-enter").
 - **`$handle` (namespace)** — combina handler + modificadores; `$handlers({...})` nomeia/reusa. · `$handle(fn, ...mods)`
-- **Custom event** — evento que **dispara** e é escutado no `on` (fonte registrada via `$registerCustomEvent`). · `clickOutside`, `hover`
+- **Custom event** — evento que **dispara** e é escutado no `on` (fonte registrada via `$registerCustomEvent`). O objeto no fim da tupla são as **opções da fonte** (canal de opções, tipado por evento via `MQCustomEventOptions`; quem decide os listeners DOM é a fonte). · `clickOutside`, `hover`
 - **Custom event pareado (enter↔leave)** — custom event com **entrada e saída**: o handler devolve o **cleanup do "un-enter"** e a fonte o roda na saída (mesmo idioma do `$onMounted(() => () => cleanup)`). · `hover`, `focusOutside`, `interactOutside`
 - **Fronteira on/use** — regra: *dispara e chama handler* → `on`; *só se comporta* → `use`.
 
