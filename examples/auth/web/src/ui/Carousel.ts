@@ -1,10 +1,24 @@
 import $ from 'mini-q';
+import { $each } from 'mini-q';
 import { signal } from '@preact/signals-core';
-import type { Child, Behavior } from 'mini-q';
+import type { Child, Behavior, Component } from 'mini-q';
 import EmblaCarousel from 'embla-carousel';
 import { sCarousel } from './Carousel.style';
 
 type EmblaApi = ReturnType<typeof EmblaCarousel>;
+
+type SlideProps<T> = {
+  item: T;
+  index: number;
+  renderSlide: (item: T, index: number) => Child;
+};
+
+function CarouselSlide<T>(p: SlideProps<T>) {
+  return $.div(
+    { class: sCarousel.slide },
+    p.renderSlide(p.item, p.index),
+  );
+}
 
 export function Carousel<T>(p: {
   items: readonly T[];
@@ -41,15 +55,20 @@ export function Carousel<T>(p: {
     if (apiRef) fn(apiRef);
   };
 
+  const slides = () =>
+    p.items.map((item, index) => ({
+      item,
+      index,
+      renderSlide: p.renderSlide,
+    }));
+
   return $.div(
     { class: sCarousel },
     $.div(
       { class: sCarousel.viewport, use: useCarousel },
       $.div(
         { class: sCarousel.container },
-        ...p.items.map((item, i) =>
-          $.div({ class: sCarousel.slide }, p.renderSlide(item, i)),
-        ),
+        $each(slides, CarouselSlide as Component<SlideProps<T>>, (t) => String(t.index)),
       ),
     ),
     $.div(
@@ -60,19 +79,23 @@ export function Carousel<T>(p: {
           type: 'button',
           $disabled: () => !canPrev.value && !(p.loop ?? true),
           on: { click: () => withApi((api) => api.scrollPrev()) },
+          aria: { label: 'Slide anterior' },
         },
         '‹',
       ),
-      ...p.items.map((_, i) =>
-        $.button(
-          {
-            $class: () => sCarousel.dot({ active: selected.value === i }),
-            type: 'button',
-            on: { click: () => withApi((api) => api.scrollTo(i)) },
-            aria: { label: `Ir para o slide ${i + 1}` },
-          },
-          '',
-        ),
+      $each(
+        () => p.items.map((_, i) => ({ index: i })),
+        (dot: { index: number }) =>
+          $.button(
+            {
+              $class: () => sCarousel.dot({ active: selected.value === dot.index }),
+              type: 'button',
+              on: { click: () => withApi((api) => api.scrollTo(dot.index)) },
+              aria: { label: `Ir para o slide ${dot.index + 1}` },
+            },
+            '',
+          ),
+        (dot) => String(dot.index),
       ),
       $.button(
         {
@@ -80,6 +103,7 @@ export function Carousel<T>(p: {
           type: 'button',
           $disabled: () => !canNext.value && !(p.loop ?? true),
           on: { click: () => withApi((api) => api.scrollNext()) },
+          aria: { label: 'Próximo slide' },
         },
         '›',
       ),
