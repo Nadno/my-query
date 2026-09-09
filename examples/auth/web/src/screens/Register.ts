@@ -148,7 +148,8 @@ export function Register() {
             Button({
               type: 'submit',
               label: 'Criar conta',
-              disabled: () => submitting.value || !canAdvance(),
+              disabled: () => !canAdvance(),
+              loading: () => submitting.value,
             }),
         ),
       ),

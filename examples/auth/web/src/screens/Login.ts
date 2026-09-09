@@ -54,7 +54,7 @@ export function Login() {
       Button({
         type: 'submit',
         label: 'Entrar',
-        disabled: () => submitting.value,
+        loading: () => submitting.value,
       }),
     ),
     $.p(

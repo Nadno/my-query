@@ -3,6 +3,7 @@ import $ from 'mini-q';
 import { $handle } from 'mini-q';
 import { ApiError } from '../api';
 import { useAuth } from '../composables/useAuth';
+import { Spinner } from '../ui/Spinner';
 import { useAsyncValidator } from '../composables/useAsyncValidator';
 import { useForm } from '../composables/useForm';
 import $usePopover from '../composables/$usePopover';
@@ -25,7 +26,14 @@ export function Dashboard() {
   const toast = useToast();
   const pop = $usePopover();
   const current = auth.user.value;
-  if (!current) return $.div({}, 'Carregando…');
+  if (!current)
+    return $.div(
+      { class: sCard },
+      $.p({ style: { display: 'flex', alignItems: 'center', gap: 'var(--space-md)' } },
+        [Spinner, {}],
+        'Carregando…',
+      ),
+    );
 
   const formApi = useForm<CompanyFormValues>(
     {
@@ -124,10 +132,10 @@ export function Dashboard() {
             type: 'submit',
             label: 'Salvar alterações',
             disabled: () =>
-              saving.value ||
               !formApi.isValid.value ||
               emailAsync.loading.value ||
               !!emailAsync.error.value,
+            loading: () => saving.value,
           }),
         ),
       ),

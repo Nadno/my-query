@@ -105,10 +105,11 @@ Decidido em 2026-09-09, aplicado na Etapa 2:
 |-------|--------|--------|
 | 0 — Fundação | Doc + decisões (domínio, carousel, começo) | feita |
 | 1 — Task/TimeSpan | `useAsyncValidator` (debounce), `useAuth` (wait/cancel), `useToast` (TimeSpan) | feita |
-| 2 — Visual | Estrutura (`.style.ts`, `$use*`) — feita. Theme tokens, breakpoints (`config`/`media`), estados loading/empty/error — pendente |
+| 2 — Visual | Estrutura, tokens CSS, breakpoints (`config`/`media`), estados loading/empty/error | feita |
 | 3 — Carousel | Testemunhos no login com lib de terceiros (Embla) — padrão de coexistência | pendente |
 | 4 — A11y | Modal (`FocusScope`) para termos/confirmar, gestão de foco | pendente |
 | 5 — Dados | Lista de membros (`HttpQuery`/`Cache`), lembrar e-mail (`Storage`), settings | pendente |
+| — | Persistência de sessão no reload (`Storage`) | na fila |
 
 Notas:
 - **Alias `@/`** configurado na Etapa 1 (tsconfig `paths` + vite `resolve.alias`) — pré-requisito para as std libs resolverem (`Storage.ts` já usava `@/$stdlib/...`).

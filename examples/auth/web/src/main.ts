@@ -3,6 +3,7 @@ import { preact } from 'mini-q/adapters/preact';
 import { App } from './App';
 import './ui/global.style';
 import './ui/shell.style';
+import './ui/media';
 
 $useSignal(preact);
 $mount('#app', App);
