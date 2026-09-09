@@ -54,6 +54,7 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 ### Acessibilidade (P3)
 
+- **`aria`/`$aria` como objeto** — implementado: camelCase → `aria-*`, booleanos viram string, reativo por chave. (feito 2026-09-09)
 - Behaviors ausentes (do código antigo): `trap-focus`, `roving-index`, `inert`, `overlay` — reescrever
   como `use` (ex.: modal do exemplo auth).
 
