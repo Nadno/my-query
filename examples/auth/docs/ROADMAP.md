@@ -107,10 +107,17 @@ Decidido em 2026-09-09, aplicado na Etapa 2:
 | 1 — Task/TimeSpan | `useAsyncValidator` (debounce), `useAuth` (wait/cancel), `useToast` (TimeSpan) | feita |
 | 2 — Visual | Estrutura, tokens CSS, breakpoints (`config`/`media`), estados loading/empty/error | feita |
 | 3 — Carousel | Testemunhos no login com lib de terceiros (Embla) — padrão de coexistência | feita |
-| 4 — A11y | Modal (`FocusScope`) + Accordion + Tabs (portados de vue-accessible-components) | pendente |
-| 5 — Dados | Lista de membros (`HttpQuery`/`Cache`), lembrar e-mail (`Storage`), settings | pendente |
-| — | Persistência de sessão no reload (`Storage`) | na fila |
+| 4 — A11y | Modal (`FocusScope`) + Accordion + Tabs (portados de vue-accessible-components) | feita |
+| 5 — Dados | Lista de membros (`HttpQuery`/`Cache`), lembrar e-mail (`Storage`), settings | parcial |
+| — | Persistência de sessão no reload (refresh automático via cookie HTTP-only) | feita |
+| — | Componente `Teleport` para modais/toasts escaparem da árvore do pai | feita |
+| — | Açúcar sintático `>name` no `style()` para filhos de `parts` | na fila |
 
 Notas:
+- **Etapa 4 aplicada em:** Modal de confirmação de logout no `Dashboard`, Tabs separando "Empresa", "Editar perfil" e "Configurações" no dashboard (com navegação por setas via `RovingIndex`), Accordion para expandir sócios na aba "Empresa".
+- **Etapa 5 parcial:** tela de Settings com `Storage.local` para persistir notificações, segurança e tema.
+- **Persistência de sessão no reload:** `App.ts` faz `await initSession()` no startup, que chama `/api/refresh` usando o cookie HTTP-only; se válido, vai direto pro dashboard.
+- **Teleport:** `ui/Teleport.ts` renderiza filhos num alvo arbitrário (`body` por padrão no Modal) usando `$mount` interno e devolve um comentário placeholder no local original. O Modal agora é teleportado para `document.body`.
+- **Popover teleportado:** o panel do popover é teleportado para `body` quando aberto e usa `PopoverPanel.style.ts` como estilo standalone (solução paliativa até a engine suportar estilos para elementos fora do pai). Aceita `triggerId` opcional para posicionar o panel relativamente a um trigger externo.
 - **Alias `@/`** configurado na Etapa 1 (tsconfig `paths` + vite `resolve.alias`) — pré-requisito para as std libs resolverem (`Storage.ts` já usava `@/$stdlib/...`).
 - **`**/*.test.ts` excluídos** do tsconfig do exemplo — os testes das std libs usam `vitest`, que não é dependência do exemplo.

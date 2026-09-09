@@ -61,6 +61,10 @@ export function Login() {
       { class: sCard },
       $.h2({ class: sCard.title }, 'Entrar'),
       $.p({ class: sCard.muted }, 'Sessão JWT com refresh em cookie.'),
+      $.p(
+        { class: sCard.muted, style: 'font-size:var(--text-sm);margin-top:0' },
+        'Login demo: demo@miniq.io / 12345678',
+      ),
       $.form(
         { class: sForm, on: { submit: [submit, $handle.prevent] } },
         Field({

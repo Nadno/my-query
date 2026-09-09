@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import { registerRoutes } from './routes';
+import { seedDefaultUser } from './fixtures';
 
 const port = Number(process.env.PORT ?? 3001);
 
@@ -14,6 +15,7 @@ app.setErrorHandler((err: unknown, request, reply) => {
 });
 
 await app.register(cookie);
+await seedDefaultUser();
 await registerRoutes(app);
 
 await app.listen({ port, host: '127.0.0.1' });

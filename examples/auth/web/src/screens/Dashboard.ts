@@ -7,6 +7,8 @@ import { Spinner } from '../ui/Spinner';
 import { useAsyncValidator } from '../composables/useAsyncValidator';
 import { useForm } from '../composables/useForm';
 import $usePopover from '../composables/$usePopover';
+import { $useModal } from '../composables/$useModal';
+import { Modal } from '../ui/Modal';
 import { useToast } from '../composables/useToast';
 import { checkEmail } from '../forms/checkEmail';
 import { CompanyFields } from '../forms/CompanyFields';
@@ -19,17 +21,22 @@ import { PartnersFields } from '../forms/PartnersFields';
 import { validateCompany } from '../forms/validate';
 import { Button } from '../ui/Button';
 import { Popover } from '../ui/Popover';
+import { Tabs } from '../ui/Tabs';
+import { Accordion } from '../ui/Accordion';
+import { Settings } from './Settings';
 import { sCard, sForm, sHeader } from '../ui/shell.style';
 
 export function Dashboard() {
   const auth = useAuth();
   const toast = useToast();
   const pop = $usePopover();
+  const confirmLogout = $useModal();
   const current = auth.user.value;
   if (!current)
     return $.div(
       { class: sCard },
-      $.p({ style: { display: 'flex', alignItems: 'center', gap: 'var(--space-md)' } },
+      $.p(
+        { style: 'display:flex;align-items:center;gap:var(--space-md)' },
         [Spinner, {}],
         'Carregando…',
       ),
@@ -67,6 +74,12 @@ export function Dashboard() {
     }
   });
 
+  const companySummary = () =>
+    `${current.companyType} · ${current.cnpj} · ${current.email}`;
+  const admin = current.partners.find((p) => p.isAdmin);
+  const partnerCount = () =>
+    `${current.partners.length} sócio(s)${admin ? ` · admin: ${admin.name}` : ''}`;
+
   return $.div(
     { class: sForm },
     $.header(
@@ -80,6 +93,8 @@ export function Dashboard() {
         hostOn: pop.on,
         hostUse: pop.use,
         open: () => pop.open.value,
+        onClose: pop.close,
+        triggerId: 'user-menu-trigger',
         trigger: Button({
           variant: 'ghost',
           size: 'sm',
@@ -90,55 +105,96 @@ export function Dashboard() {
           Button({
             variant: 'danger',
             size: 'sm',
-            onClick: () => void auth.logout(),
+            onClick: () => confirmLogout.show(),
             label: 'Sair',
           }),
       }),
     ),
-    $.section(
-      { class: sCard },
-      $.h2({ class: sCard.title }, 'Empresa'),
-      $.p(
-        { class: sCard.muted },
-        () =>
-          `${auth.user.value?.companyType ?? ''} · ${auth.user.value?.cnpj ?? ''} · ${auth.user.value?.email ?? ''}`,
-      ),
-      $.p(
-        { class: sCard.muted },
-        () => {
-          const partners = auth.user.value?.partners ?? [];
-          const admin = partners.find((p) => p.isAdmin);
-          return `${partners.length} sócio(s)${admin ? ` · admin: ${admin.name}` : ''}`;
+    Tabs({
+      initial: 'company',
+      items: [
+        {
+          id: 'company',
+          label: 'Empresa',
+          content: $.div(
+            {},
+            $.section(
+              { class: sCard },
+              $.h2({ class: sCard.title }, 'Dados cadastrais'),
+              $.p({ class: sCard.muted }, companySummary),
+              $.p({ class: sCard.muted }, partnerCount),
+            ),
+            Accordion({
+              single: true,
+              initial: [],
+              items: current.partners.map((p, i) => ({
+                id: `partner-${i}`,
+                title: `${p.name}${p.isAdmin ? ' (admin)' : ''}`,
+                content: $.div(
+                  {},
+                  $.p({}, `CPF: ${p.cpf}`),
+                  $.p({}, `Participação: ${p.share}%`),
+                ),
+              })),
+            }),
+          ),
         },
-      ),
-    ),
-    $.section(
-      { class: sCard },
-      $.h2({ class: sCard.title }, 'Editar perfil'),
-      $.p({ class: sCard.muted }, 'Reusa os mesmos campos do cadastro.'),
-      $.form(
-        { class: sForm, on: { submit: [save, $handle.prevent] } },
-        CompanyFields({ form: formApi, emailAsync }),
-        PartnersFields({
-          partners: formApi.fields.partners,
-          companyType: formApi.fields.companyType,
-          errors: formApi.errors,
-          touched: formApi.touched,
-          touch: formApi.touch,
+        {
+          id: 'profile',
+          label: 'Editar perfil',
+          content: $.section(
+            { class: sCard },
+            $.h2({ class: sCard.title }, 'Editar perfil'),
+            $.p({ class: sCard.muted }, 'Reusa os mesmos campos do cadastro.'),
+            $.form(
+              { class: sForm, on: { submit: [save, $handle.prevent] } },
+              CompanyFields({ form: formApi, emailAsync }),
+              PartnersFields({
+                partners: formApi.fields.partners,
+                companyType: formApi.fields.companyType,
+                errors: formApi.errors,
+                touched: formApi.touched,
+                touch: formApi.touch,
+              }),
+              $.div(
+                { class: sForm.actions },
+                Button({
+                  type: 'submit',
+                  label: 'Salvar alterações',
+                  disabled: () =>
+                    !formApi.isValid.value ||
+                    emailAsync.loading.value ||
+                    !!emailAsync.error.value,
+                  loading: () => saving.value,
+                }),
+              ),
+            ),
+          ),
+        },
+        {
+          id: 'settings',
+          label: 'Configurações',
+          content: Settings(),
+        },
+      ],
+    }),
+    Modal({
+      open: confirmLogout.open,
+      title: 'Sair da conta',
+      onClose: () => confirmLogout.hide(),
+      children: $.p({ style: 'margin:0' }, 'Tem certeza que deseja sair?'),
+      actions: [
+        Button({
+          variant: 'ghost',
+          label: 'Cancelar',
+          onClick: () => confirmLogout.hide(),
         }),
-        $.div(
-          { class: sForm.actions },
-          Button({
-            type: 'submit',
-            label: 'Salvar alterações',
-            disabled: () =>
-              !formApi.isValid.value ||
-              emailAsync.loading.value ||
-              !!emailAsync.error.value,
-            loading: () => saving.value,
-          }),
-        ),
-      ),
-    ),
+        Button({
+          variant: 'danger',
+          label: 'Sair',
+          onClick: () => void auth.logout(),
+        }),
+      ],
+    }),
   );
 }

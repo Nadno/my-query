@@ -15,6 +15,8 @@ export const session = computed(() =>
 );
 export const isAuthenticated = computed(() => !!accessToken.value);
 
+export const sessionLoading = signal<boolean>(true);
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 function applyAuth(res: AuthResponse) {
@@ -61,6 +63,17 @@ export async function refresh(): Promise<boolean> {
     }
   })();
   return refreshInFlight;
+}
+
+export async function initSession(): Promise<boolean> {
+  sessionLoading.value = true;
+  try {
+    const ok = await refresh();
+    if (ok) screen.value = 'app';
+    return ok;
+  } finally {
+    sessionLoading.value = false;
+  }
 }
 
 async function authed<T>(path: string, init: RequestInit = {}, retry = true): Promise<T> {
@@ -122,6 +135,7 @@ export function useAuth() {
     user,
     isAuthenticated,
     screen,
+    sessionLoading,
     login,
     register,
     logout,
