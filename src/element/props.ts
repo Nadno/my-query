@@ -6,7 +6,7 @@
 import { bind, type Bindable } from '../reactive';
 import { resolveClass } from '../dom/nodes';
 import { applyEvents } from '../events/apply';
-import type { ClassValue, MQ } from '../types';
+import type { AriaProps, AriaReactiveProps, ClassValue, MQ } from '../types';
 
 function applyClass(el: Element, value: ClassValue): void {
   const className = resolveClass(value);
@@ -35,6 +35,39 @@ function setAttr(el: Element, key: string, value: unknown): void {
     return;
   }
   el.setAttribute(key, String(value));
+}
+
+/**
+ * Converte camelCase de chave ARIA para o atributo correspondente.
+ * ARIAs oficiais são sempre `aria-` + nome minúsculo sem hífen (ex.: `labelledBy` → `aria-labelledby`).
+ */
+function ariaKeyToAttr(key: string): string {
+  return `aria-${key.toLowerCase()}`;
+}
+
+/** Aplica/remove um atributo `aria-*`. Diferente do `setAttr` genérico: `false` vira `"false"`. */
+function setAriaAttr(el: Element, key: string, value: unknown): void {
+  if (value === null || value === undefined) {
+    el.removeAttribute(key);
+    return;
+  }
+  el.setAttribute(key, String(value));
+}
+
+function applyAria(el: Element, aria: AriaProps): void {
+  for (const key in aria) {
+    const value = aria[key];
+    setAriaAttr(el, ariaKeyToAttr(key), value);
+  }
+}
+
+function applyAriaReactive(el: Element, aria: AriaReactiveProps): void {
+  for (const key in aria) {
+    const value = aria[key] as Bindable<unknown> | undefined;
+    if (value === undefined) continue;
+    const attr = ariaKeyToAttr(key);
+    bind(value, (v) => setAriaAttr(el, attr, v));
+  }
 }
 
 /**
@@ -79,6 +112,12 @@ export function applyProps(
             (el as HTMLElement).dataset[k] = String(v);
           });
         }
+        continue;
+      case 'aria':
+        applyAria(el, value as AriaProps);
+        continue;
+      case '$aria':
+        applyAriaReactive(el, value as AriaReactiveProps);
         continue;
       case 'on':
         applyEvents(ctx, value as Parameters<typeof applyEvents>[1]);

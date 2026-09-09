@@ -71,3 +71,53 @@ describe('props — $class que resolve vazio', () => {
     expect(el.hasAttribute('class')).toBe(false);
   });
 });
+
+describe('props — aria objeto', () => {
+  it('aplica atributos aria a partir de camelCase', () => {
+    const el = $.div({ aria: { expanded: true, labelledBy: 'title', colIndex: 3 } });
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+    expect(el.getAttribute('aria-labelledby')).toBe('title');
+    expect(el.getAttribute('aria-colindex')).toBe('3');
+  });
+
+  it('booleano false vira string "false", nao remove', () => {
+    const el = $.div({ aria: { expanded: false, hidden: false } });
+    expect(el.getAttribute('aria-expanded')).toBe('false');
+    expect(el.getAttribute('aria-hidden')).toBe('false');
+  });
+
+  it('null/undefined removem o atributo aria', () => {
+    const el = $.div({ aria: { expanded: null, labelledBy: undefined as string | undefined } });
+    expect(el.hasAttribute('aria-expanded')).toBe(false);
+    expect(el.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
+  it('$aria reativo atualiza no change (signal e funcao)', () => {
+    const expanded = signal(false);
+    const selected = signal('a');
+    const el = $.div({
+      $aria: {
+        expanded: expanded,
+        selected: () => selected.value === 'a',
+        controls: 'panel',
+      },
+    });
+    expect(el.getAttribute('aria-expanded')).toBe('false');
+    expect(el.getAttribute('aria-selected')).toBe('true');
+    expect(el.getAttribute('aria-controls')).toBe('panel');
+
+    expanded.value = true;
+    expect(el.getAttribute('aria-expanded')).toBe('true');
+
+    selected.value = 'b';
+    expect(el.getAttribute('aria-selected')).toBe('false');
+  });
+
+  it('$aria com null/undefined remove no change', () => {
+    const id = signal<string | null>('x');
+    const el = $.div({ $aria: { describedBy: id } });
+    expect(el.getAttribute('aria-describedby')).toBe('x');
+    id.value = null;
+    expect(el.hasAttribute('aria-describedby')).toBe(false);
+  });
+});

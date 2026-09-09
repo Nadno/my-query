@@ -42,6 +42,15 @@ export type ClassValue =
 /** Behavior de `use` — roda pós-criação, retorna cleanup opcional. */
 export type Behavior<E extends Element = Element> = (ctx: MQ<E>) => Cleanup | void;
 
+/** Valor estático aceito numa propriedade ARIA (`false` vira `"false"`; `null`/`undefined` removem). */
+export type AriaValue = string | number | boolean | null | undefined;
+
+/** Objeto `aria` estático: `{ expanded: true, labelledBy: 'id' }`. */
+export type AriaProps = Record<string, AriaValue>;
+
+/** Objeto `$aria` reativo: valores podem ser signal/função. */
+export type AriaReactiveProps = Record<string, Bindable<AriaValue>>;
+
 type AttributesOf<T extends TagName> = HTMLElementAttributeMap[T];
 
 /**
@@ -66,6 +75,8 @@ export type Props<T extends TagName> = StaticAttrs<T> &
     $style?: Bindable<string | Partial<CSSStyleDeclaration>>;
     data?: Record<string, string | number | boolean>;
     $data?: Record<string, Bindable<string | number | boolean>>;
+    aria?: AriaProps;
+    $aria?: AriaReactiveProps;
     on?: OnMap<TagElement<T>>;
     use?: Behavior<TagElement<T>> | Behavior<TagElement<T>>[];
     /** Chave para reconciliação em listas keyed. */
