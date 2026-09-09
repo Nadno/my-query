@@ -1,9 +1,8 @@
-import { $mount, $useSignal } from 'mini-q';
-import { preact } from 'mini-q/adapters/preact';
-import { App } from './App';
+import './setup';
 import './ui/global.style';
 import './ui/shell.style';
 import './ui/media';
+import { $mount } from 'mini-q';
+import { App } from './App';
 
-$useSignal(preact);
 $mount('#app', App);
