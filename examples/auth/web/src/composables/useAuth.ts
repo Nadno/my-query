@@ -3,6 +3,7 @@ import type { AuthResponse, ProfilePayload, RegisterPayload, UserPublic } from '
 import { ApiError, send } from '../api';
 import { useToast } from './useToast';
 import { $match } from 'mini-q';
+import { Task } from '@/$stdlib/task';
 
 export type Screen = 'login' | 'register' | 'app';
 
@@ -14,7 +15,6 @@ export const session = computed(() =>
 );
 export const isAuthenticated = computed(() => !!accessToken.value);
 
-let refreshTimer: number | undefined;
 let refreshInFlight: Promise<boolean> | null = null;
 
 function applyAuth(res: AuthResponse) {
@@ -30,19 +30,19 @@ function applyAuth(res: AuthResponse) {
 }
 
 function scheduleRefresh(expiresIn: number) {
-  window.clearTimeout(refreshTimer);
   const wait = Math.max(1000, (expiresIn - 30) * 1000);
-  refreshTimer = window.setTimeout(() => {
+  // `Task.wait` com o mesmo id cancela o timer anterior automaticamente.
+  Task.wait('refresh', wait, () => {
     void refresh().then((ok) => {
       if (!ok) expireSession();
     });
-  }, wait);
+  });
 }
 
 export function expireSession(message = 'Sessão expirada. Faça login novamente.') {
   accessToken.value = null;
   user.value = null;
-  window.clearTimeout(refreshTimer);
+  Task.cancel('refresh');
   screen.value = 'login';
   useToast().error(message);
 }
@@ -99,7 +99,7 @@ export async function logout() {
   }
   accessToken.value = null;
   user.value = null;
-  window.clearTimeout(refreshTimer);
+  Task.cancel('refresh');
   screen.value = 'login';
 }
 
