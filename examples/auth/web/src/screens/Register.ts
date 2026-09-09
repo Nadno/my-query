@@ -18,7 +18,7 @@ import { PartnersFields } from '../forms/PartnersFields';
 import { validateStep } from '../forms/validate';
 import { Button } from '../ui/Button';
 import { Stepper } from '../ui/Stepper';
-import { authGate, card, form } from '../ui/theme';
+import { sAuthGate, sCard, sForm } from '../ui/shell.style';
 
 export function Register() {
   const auth = useAuth();
@@ -92,10 +92,10 @@ export function Register() {
   });
 
   return $.div(
-    { class: card },
-    $.h1({ class: card.title }, 'Cadastrar empresa'),
+    { class: sCard },
+    $.h1({ class: sCard.title }, 'Cadastrar empresa'),
     $.p(
-      { class: card.muted },
+      { class: sCard.muted },
       'PJ multi-step — os mesmos campos são reusados na área interna.',
     ),
     Stepper({
@@ -103,7 +103,7 @@ export function Register() {
       labels: ['Empresa', 'Sócios', 'Acesso'],
     }),
     $.form(
-      { class: form, on: { submit: [submit, $handle.prevent] } },
+      { class: sForm, on: { submit: [submit, $handle.prevent] } },
       $when(
         () => step.value === 0,
         () => CompanyFields({ form: formApi, emailAsync }),
@@ -124,7 +124,7 @@ export function Register() {
         () => AccessFields({ form: formApi }),
       ),
       $.div(
-        { class: form.actions },
+        { class: sForm.actions },
         $when(
           () => step.value > 0,
           () =>
@@ -154,11 +154,11 @@ export function Register() {
       ),
     ),
     $.p(
-      { class: authGate.self },
+      { class: sAuthGate.self },
       'Já tem conta? ',
       $.button(
         {
-          class: authGate.link,
+          class: sAuthGate.link,
           type: 'button',
           on: { click: () => (screen.value = 'login') },
         },

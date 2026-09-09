@@ -7,7 +7,7 @@ import { useToast } from '../composables/useToast';
 import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import { TextInput } from '../ui/TextInput';
-import { authGate, card, form } from '../ui/theme';
+import { sAuthGate, sCard, sForm } from '../ui/shell.style';
 
 export function Login() {
   const auth = useAuth();
@@ -29,11 +29,11 @@ export function Login() {
   };
 
   return $.div(
-    { class: card },
-    $.h1({ class: card.title }, 'Entrar'),
-    $.p({ class: card.muted }, 'Sessão JWT com refresh em cookie.'),
+    { class: sCard },
+    $.h1({ class: sCard.title }, 'Entrar'),
+    $.p({ class: sCard.muted }, 'Sessão JWT com refresh em cookie.'),
     $.form(
-      { class: form, on: { submit: [submit, $handle.prevent] } },
+      { class: sForm, on: { submit: [submit, $handle.prevent] } },
       Field({
         label: 'E-mail',
         control: TextInput({
@@ -58,11 +58,11 @@ export function Login() {
       }),
     ),
     $.p(
-      { class: authGate.self },
+      { class: sAuthGate.self },
       'Não tem conta? ',
       $.button(
         {
-          class: authGate.link,
+          class: sAuthGate.link,
           type: 'button',
           on: { click: () => (screen.value = 'register') },
         },

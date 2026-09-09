@@ -1,34 +1,6 @@
 import $ from 'mini-q';
-import { style } from 'mini-q/style';
 import type { Bindable } from 'mini-q';
-
-export const btnClass = style('btn', {
-  border: 'none',
-  cursor: 'pointer',
-  fontWeight: 500,
-  color: '#fff',
-  transition: 'all .2s ease',
-  '&:hover': { transform: 'translateY(-2px)' },
-  '&:disabled': { opacity: 0.5, cursor: 'not-allowed', transform: 'none' },
-  variants: {
-    variant: {
-      primary: {
-        background: 'linear-gradient(135deg, var(--accent), var(--accent-2))',
-      },
-      ghost: { background: 'none', opacity: 0.8, color: 'inherit' },
-      danger: {
-        background: 'rgba(239,68,68,.2)',
-        color: 'var(--danger)',
-        border: '1px solid rgba(239,68,68,.3)',
-      },
-    },
-    size: {
-      sm: { padding: '.5rem 1rem', fontSize: '.85rem', borderRadius: 8 },
-      md: { padding: '1rem', fontSize: '1rem', borderRadius: 10 },
-    },
-  },
-  defaults: { variant: 'primary', size: 'md' },
-});
+import sButton from './Button.style';
 
 export function Button(p: {
   type?: 'button' | 'submit';
@@ -40,7 +12,7 @@ export function Button(p: {
 }) {
   return $.button(
     {
-      class: btnClass({ variant: p.variant ?? 'primary', size: p.size ?? 'md' }),
+      class: sButton({ variant: p.variant ?? 'primary', size: p.size ?? 'md' }),
       type: p.type ?? 'button',
       $disabled: p.disabled,
       on: p.onClick ? { click: p.onClick } : undefined,

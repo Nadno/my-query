@@ -2,7 +2,7 @@ import { effect, signal } from '@preact/signals-core';
 import $, { type Behavior } from 'mini-q';
 import { $handle } from 'mini-q';
 
-export function usePopover() {
+export default function $usePopover() {
   const open = signal(false);
   const close = () => {
     open.value = false;

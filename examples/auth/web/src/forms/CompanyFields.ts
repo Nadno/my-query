@@ -2,11 +2,11 @@ import $ from 'mini-q';
 import type { FormApi } from '../composables/useForm';
 import { useField } from '../composables/useForm';
 import type { useAsyncValidator } from '../composables/useAsyncValidator';
-import { maskCnpj } from '../composables/useMask';
+import $useMask, { maskCnpj } from '../composables/$useMask';
 import { Field } from '../ui/Field';
 import { TextInput } from '../ui/TextInput';
 import { Select } from '../ui/Select';
-import { form } from '../ui/theme';
+import { sForm } from '../ui/shell.style';
 import { applyMeiConstraint, type CompanyFormValues } from './model';
 
 type EmailAsync = ReturnType<typeof useAsyncValidator>;
@@ -25,7 +25,7 @@ export function CompanyFields<T extends CompanyFormValues>(p: {
   };
 
   return $.div(
-    { class: form, use: p.emailAsync.use },
+    { class: sForm, use: p.emailAsync.use },
     Field({
       label: 'Razão social',
       error: () => (p.form.touched.value.companyName ? companyName.error() : ''),

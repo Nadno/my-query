@@ -1,7 +1,7 @@
 import $ from 'mini-q';
 import { $model } from 'mini-q';
 import type { Signal } from '@preact/signals-core';
-import { inputClass } from './Field';
+import { sInput } from './Field.style';
 
 export function Select<T extends string>(p: {
   value: Signal<T>;
@@ -10,7 +10,7 @@ export function Select<T extends string>(p: {
 }) {
   return $.select(
     {
-      class: inputClass,
+      class: sInput,
       use: $model(p.value as unknown as { value: string }),
       on: p.onChange ? { change: p.onChange } : undefined,
     },

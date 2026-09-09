@@ -1,27 +1,6 @@
 import $ from 'mini-q';
 import { $when, type Child } from 'mini-q';
-import { style } from 'mini-q/style';
-
-export const popoverStyle = style('popover', {
-  position: 'relative',
-  parts: {
-    panel: {
-      position: 'absolute',
-      right: 0,
-      top: 'calc(100% + .5rem)',
-      minWidth: 180,
-      padding: '.5rem',
-      background: '#2a2a2a',
-      border: '1px solid var(--line)',
-      borderRadius: 12,
-      boxShadow: '0 12px 32px rgba(0,0,0,.4)',
-      zIndex: 20,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '.25rem',
-    },
-  },
-});
+import sPopover from './Popover.style';
 
 export function Popover(p: {
   hostOn: Record<string, unknown>;
@@ -32,14 +11,14 @@ export function Popover(p: {
 }) {
   return $.div(
     {
-      class: popoverStyle,
+      class: sPopover,
       on: p.hostOn as never,
       use: p.hostUse as never,
     },
     p.trigger,
     $when(
       () => p.open(),
-      () => $.div({ class: popoverStyle.panel }, p.panel()),
+      () => $.div({ class: sPopover.panel }, p.panel()),
     ),
   );
 }

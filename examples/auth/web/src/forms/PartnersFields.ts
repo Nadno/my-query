@@ -1,45 +1,15 @@
 import $ from 'mini-q';
 import { $when } from 'mini-q';
-import { style } from 'mini-q/style';
 import type { Signal } from '@preact/signals-core';
-import { maskCpf, maskPercent } from '../composables/useMask';
+import { maskCpf, maskPercent } from '../composables/$useMask';
 import { Field } from '../ui/Field';
 import { TextInput } from '../ui/TextInput';
 import { Button } from '../ui/Button';
-import { form } from '../ui/theme';
-import { fieldStyle } from '../ui/Field';
+import { sForm } from '../ui/shell.style';
+import sField from '../ui/Field.style';
+import { sPartnerRow } from './PartnersFields.style';
 import { createPartner, type PartnerFields } from './model';
 import type { CompanyType } from '../../../shared/types';
-
-const row = style('partner-row', {
-  display: 'grid',
-  gridTemplateColumns: '1fr 1fr auto auto',
-  gap: '.75rem',
-  alignItems: 'end',
-  padding: '1rem',
-  background: 'rgba(255,255,255,.03)',
-  borderRadius: 12,
-  border: '1px solid var(--line)',
-  '@media (max-width: 720px)': { gridTemplateColumns: '1fr' },
-  parts: {
-    admin: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '.4rem',
-      fontSize: '.85rem',
-      padding: '.5rem .75rem',
-      whiteSpace: 'nowrap',
-      background: 'transparent',
-      color: 'inherit',
-      border: '1px solid var(--line)',
-      borderRadius: 8,
-      cursor: 'pointer',
-      flags: {
-        on: { borderColor: 'rgba(102,126,234,.6)', background: 'rgba(102,126,234,.15)' },
-      },
-    },
-  },
-});
 
 export function PartnerRow(p: {
   partner: PartnerFields;
@@ -69,7 +39,7 @@ export function PartnerRow(p: {
   };
 
   return $.div(
-    { class: row },
+    { class: sPartnerRow },
     Field({
       label: 'Nome',
       error: () => err('name'),
@@ -106,7 +76,7 @@ export function PartnerRow(p: {
     $.button(
       {
         type: 'button',
-        $class: () => row.admin({ on: p.partner.isAdmin.value }),
+        $class: () => sPartnerRow.admin({ on: p.partner.isAdmin.value }),
         on: { click: setAdmin },
       },
       () => (p.partner.isAdmin.value ? 'Administrador' : 'Tornar admin'),
@@ -137,8 +107,8 @@ export function PartnersFields(p: {
   };
 
   return $.div(
-    { class: form },
-    $.ul({ class: form, style: { listStyle: 'none', margin: '0', padding: '0' } }, () =>
+    { class: sForm },
+    $.ul({ class: sForm, style: { listStyle: 'none', margin: '0', padding: '0' } }, () =>
       p.partners.value.map(
         (partner) =>
           [
@@ -171,10 +141,11 @@ export function PartnersFields(p: {
       () => Button({ variant: 'ghost', size: 'sm', onClick: add, label: '+ Sócio' }),
     ),
     $when(
-      () => !!(p.errors.value.partners || p.errors.value.partnersShare || p.errors.value.partnersAdmin),
+      () =>
+        !!(p.errors.value.partners || p.errors.value.partnersShare || p.errors.value.partnersAdmin),
       () =>
         $.p(
-          { class: fieldStyle.error },
+          { class: sField.error },
           () =>
             p.errors.value.partnersShare ??
             p.errors.value.partnersAdmin ??

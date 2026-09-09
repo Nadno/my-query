@@ -9,8 +9,12 @@ export function maskCnpj(value: string): string {
   if (v.length <= 2) return v;
   if (v.length <= 5) return `${v.slice(0, 2)}.${v.slice(2)}`;
   if (v.length <= 8) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5)}`;
-  if (v.length <= 12) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8)}`;
-  return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8, 12)}-${v.slice(12)}`;
+  if (v.length <= 12)
+    return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8)}`;
+  return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(
+    8,
+    12,
+  )}-${v.slice(12)}`;
 }
 
 export function maskCpf(value: string): string {
@@ -31,7 +35,7 @@ export function maskPercent(value: string): string {
   return v;
 }
 
-export function useMask(
+export default function $useMask(
   sig: WritableSignal<string>,
   mask: (raw: string) => string,
 ): Behavior<HTMLInputElement> {

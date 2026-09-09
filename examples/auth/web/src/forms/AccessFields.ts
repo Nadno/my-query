@@ -2,14 +2,14 @@ import $ from 'mini-q';
 import { useField, type FormApi } from '../composables/useForm';
 import { Field } from '../ui/Field';
 import { TextInput } from '../ui/TextInput';
-import { form } from '../ui/theme';
+import { sForm } from '../ui/shell.style';
 import type { RegisterFormValues } from './model';
 
 export function AccessFields(p: { form: FormApi<RegisterFormValues> }) {
   const password = useField(p.form, 'password');
   const confirm = useField(p.form, 'confirmPassword');
   return $.div(
-    { class: form },
+    { class: sForm },
     Field({
       label: 'Senha',
       hint: () => 'Mínimo 8 caracteres, com letra e número',

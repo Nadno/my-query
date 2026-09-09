@@ -2,14 +2,14 @@ import $ from 'mini-q';
 import { $when, $match, $else } from 'mini-q';
 import { isAuthenticated, screen } from './composables/useAuth';
 import { ToastHost } from './ui/ToastHost';
-import { app } from './ui/theme';
+import { sApp } from './ui/shell.style';
 import { Login } from './screens/Login';
 import { Register } from './screens/Register';
 import { Dashboard } from './screens/Dashboard';
 
 export function App() {
   return $.div(
-    { class: app },
+    { class: sApp },
     ToastHost(),
     // Condicional flat: cada condição é rastreada; cada view é construída
     // destrastreada (como no `$when`). 1ª condição verdadeira vence.

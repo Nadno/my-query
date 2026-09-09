@@ -5,7 +5,7 @@ import { ApiError } from '../api';
 import { useAuth } from '../composables/useAuth';
 import { useAsyncValidator } from '../composables/useAsyncValidator';
 import { useForm } from '../composables/useForm';
-import { usePopover } from '../composables/usePopover';
+import $usePopover from '../composables/$usePopover';
 import { useToast } from '../composables/useToast';
 import { checkEmail } from '../forms/checkEmail';
 import { CompanyFields } from '../forms/CompanyFields';
@@ -18,12 +18,12 @@ import { PartnersFields } from '../forms/PartnersFields';
 import { validateCompany } from '../forms/validate';
 import { Button } from '../ui/Button';
 import { Popover } from '../ui/Popover';
-import { card, form, header } from '../ui/theme';
+import { sCard, sForm, sHeader } from '../ui/shell.style';
 
 export function Dashboard() {
   const auth = useAuth();
   const toast = useToast();
-  const pop = usePopover();
+  const pop = $usePopover();
   const current = auth.user.value;
   if (!current) return $.div({}, 'Carregando…');
 
@@ -60,13 +60,13 @@ export function Dashboard() {
   });
 
   return $.div(
-    { class: form },
+    { class: sForm },
     $.header(
-      { class: header },
+      { class: sHeader },
       $.div(
         {},
-        $.h1({ class: header.title }, () => auth.user.value?.companyName ?? ''),
-        $.p({ class: header.subtitle }, 'Área interna'),
+        $.h1({ class: sHeader.title }, () => auth.user.value?.companyName ?? ''),
+        $.p({ class: sHeader.subtitle }, 'Área interna'),
       ),
       Popover({
         hostOn: pop.on,
@@ -88,15 +88,15 @@ export function Dashboard() {
       }),
     ),
     $.section(
-      { class: card },
-      $.h2({ class: card.title }, 'Empresa'),
+      { class: sCard },
+      $.h2({ class: sCard.title }, 'Empresa'),
       $.p(
-        { class: card.muted },
+        { class: sCard.muted },
         () =>
           `${auth.user.value?.companyType ?? ''} · ${auth.user.value?.cnpj ?? ''} · ${auth.user.value?.email ?? ''}`,
       ),
       $.p(
-        { class: card.muted },
+        { class: sCard.muted },
         () => {
           const partners = auth.user.value?.partners ?? [];
           const admin = partners.find((p) => p.isAdmin);
@@ -105,11 +105,11 @@ export function Dashboard() {
       ),
     ),
     $.section(
-      { class: card },
-      $.h2({ class: card.title }, 'Editar perfil'),
-      $.p({ class: card.muted }, 'Reusa os mesmos campos do cadastro.'),
+      { class: sCard },
+      $.h2({ class: sCard.title }, 'Editar perfil'),
+      $.p({ class: sCard.muted }, 'Reusa os mesmos campos do cadastro.'),
       $.form(
-        { class: form, on: { submit: [save, $handle.prevent] } },
+        { class: sForm, on: { submit: [save, $handle.prevent] } },
         CompanyFields({ form: formApi, emailAsync }),
         PartnersFields({
           partners: formApi.fields.partners,
@@ -119,7 +119,7 @@ export function Dashboard() {
           touch: formApi.touch,
         }),
         $.div(
-          { class: form.actions },
+          { class: sForm.actions },
           Button({
             type: 'submit',
             label: 'Salvar alterações',
