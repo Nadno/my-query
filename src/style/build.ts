@@ -9,7 +9,7 @@
  */
 
 import { STYLE_HANDLE } from '../types';
-import { toKebab, compileKeyframes, inject, pushRule, css } from './emit';
+import { toKebab, compileKeyframes, inject, pushRule, css, type PartRefs } from './emit';
 import type { CSSObject, FlagBody, SlotRef, StyleApi, StyleConfig, StyleHandle } from './types';
 
 const RESERVED = new Set(['parts', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
@@ -110,6 +110,15 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
   const { decls: rawDecls, parts: shortcutParts } = splitShortcutParts(config);
   const mergedParts = mergeParts(shortcutParts, rawDecls.parts as Record<string, StyleConfig> | undefined);
 
+  // Nomes de parte do nó atual → classe, para o resolver `[nome]` nos seletores.
+  const partRefs: PartRefs = {};
+  if (mergedParts) {
+    for (const key in mergedParts) {
+      if (RESERVED_PART_NAMES.has(key)) continue;
+      partRefs[key] = partClass(block, key);
+    }
+  }
+
   // Slots resolvidos primeiro (flags/variants podem mirá-los).
   const slots: Record<string, string> = {};
   if (rawDecls.slots) {
@@ -138,7 +147,7 @@ function buildNode(config: StyleConfig, block: string, path: string[]): StyleHan
       `[mini-q] chave "${key}" ignorada em "${block}" — partes vão sob "parts", flags sob "flags", variantes sob "variants".`,
     );
   }
-  if (Object.keys(decls).length) inject(selfSel, decls);
+  if (Object.keys(decls).length) inject(selfSel, decls, partRefs);
 
   const flags: Record<string, string> = {};
   if (config.flags) {

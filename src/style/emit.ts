@@ -22,6 +22,23 @@ export function toKebab(prop: string): string {
   return prop.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 }
 
+/** Mapa nome de parte → classe (`title` → `-block-title`) usado no resolver de seletores. */
+export type PartRefs = Record<string, string>;
+
+/**
+ * Resolve referências a partes em um seletor: um token `$nome` vira a classe da parte, **só se**
+ * o nome corresponder a uma parte declarada no nó atual (senão fica como está). O `$` é
+ * inequívoco — nunca é seletor de atributo CSS — então não conflita com `[type="text"]` etc.
+ * Ex.: `'& > $title'` → `.card .-card-card > .-card-title`.
+ */
+export function resolvePartRefs(selector: string, parts?: PartRefs): string {
+  if (!parts) return selector;
+  return selector.replace(/\$([A-Za-z0-9_-]+)/g, (full, name: string) => {
+    const cls = parts[name];
+    return cls ? `.${cls}` : full;
+  });
+}
+
 function toDecl(key: string, value: string | number | boolean): string | null {
   if (value === false || value === null || value === undefined) return null;
   if (typeof value === 'number') {
@@ -31,8 +48,12 @@ function toDecl(key: string, value: string | number | boolean): string | null {
   return `${toKebab(key)}: ${value}`;
 }
 
-/** Compila um objeto de estilo em regras CSS (selector { decls } + aninhados). */
-export function compile(selector: string, obj: CSSObject): string[] {
+/**
+ * Compila um objeto de estilo em regras CSS (selector { decls } + aninhados).
+ * `parts` opcional resolve nomes de parte declarados do nó atual dentro de seletores
+ * (`'& > title'`, `'> title'`) para suas classes reais.
+ */
+export function compile(selector: string, obj: CSSObject, parts?: PartRefs): string[] {
   const decls: string[] = [];
   const nested: string[] = [];
 
@@ -43,11 +64,11 @@ export function compile(selector: string, obj: CSSObject): string[] {
       if (key.startsWith('@')) {
         // `@media (...)`/`@supports (...)` (com espaço) = crus; `@md`/`@768` = breakpoint
         const atRule = key.includes(' ') ? key : `@media ${resolveMedia(key.slice(1))}`;
-        const inner = compile(selector, value);
+        const inner = compile(selector, value, parts);
         if (inner.length) nested.push(`${atRule} { ${inner.join(' ')} }`);
       } else {
-        const next = key.includes('&') ? key.replaceAll('&', selector) : `${selector} ${key}`;
-        nested.push(...compile(next, value));
+        const next = key.includes('&') ? resolvePartRefs(key.replaceAll('&', selector), parts) : resolvePartRefs(`${selector} ${key}`, parts);
+        nested.push(...compile(next, value, parts));
       }
     } else {
       const d = toDecl(key, value);
@@ -100,8 +121,8 @@ export function pushRule(rule: string): void {
 }
 
 /** Injeta regras para `selector` a partir de um objeto JS. */
-export function inject(selector: string, obj: CSSObject): void {
-  for (const rule of compile(selector, obj)) pushRule(rule);
+export function inject(selector: string, obj: CSSObject, parts?: PartRefs): void {
+  for (const rule of compile(selector, obj, parts)) pushRule(rule);
 }
 
 /** Estilo global / escape hatch (ex.: `$.style.css('body', { margin: 0 })`). */

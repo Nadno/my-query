@@ -127,4 +127,36 @@ describe('style — CSS gerado', () => {
     expect(card.header.self).toBe('-emit-card-mixed-header');
     expect(card.footer.self).toBe('-emit-card-mixed-footer');
   });
+
+  it('combinador filho-direto \u0026 \u003e $nome mirado por dentro de uma parte', () => {
+    style('emit-direct', {
+      display: 'block',
+      parts: {
+        card: {
+          '& > $heading': { color: '#333' },
+          '& > $icon': { width: 16 },
+          parts: { heading: {}, icon: {} },
+        },
+      },
+    });
+
+    const css = sheet();
+    expect(css).toContain('.emit-direct .-emit-direct-card > .-emit-direct-heading { color: #333; }');
+    expect(css).toContain('.emit-direct .-emit-direct-card > .-emit-direct-icon { width: 16px; }');
+  });
+
+  it('seletor de atributo real \u0026\u003e [type] não é tocado (só $nome resolve)', () => {
+    style('emit-attr', {
+      parts: {
+        input: {
+          '& > [type="text"]': { color: 'blue' },
+          '& > [data-x]': { margin: 0 },
+        },
+      },
+    });
+
+    const css = sheet();
+    expect(css).toContain('.emit-attr .-emit-attr-input > [type="text"] { color: blue; }');
+    expect(css).toContain('.emit-attr .-emit-attr-input > [data-x] { margin: 0px; }');
+  });
 });
