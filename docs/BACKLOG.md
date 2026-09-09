@@ -47,7 +47,7 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 - Prefixo/namespace configurável (evitar colisão em monolito).
 - GC de regras (`injected` só cresce).
-- Compound variants; combinador filho-direto opt-in por parte (`'>parte': {}`).
+- Compound variants; combinador filho-direto opt-in por parte (`'>parte': {}`) — atalho para declarar partes filhas dentro do bloco pai, refletindo o namespace local (`style('card', { '>title': { ... } })` → `sCard.title`).
 - Extração em build-time (plugin Vite).
 - Tokens/variáveis de design — **deferida** (native-first: custom properties/`@scope`); ver
   [proposals/style-tokens.md](proposals/style-tokens.md).
