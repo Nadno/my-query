@@ -5,6 +5,7 @@
 **completa e atual** — se algo não está aqui, não existe ainda (veja [Ainda não implementado](#ainda-não-implementado)).
 
 > Para gerar código correto, siga as **[Regras de ouro](#regras-de-ouro)**. Elas evitam os erros comuns.
+> Para entender *por que* a API é assim, veja o **[Manifesto de DX](DX-MANIFESTO.md)**.
 
 ---
 
@@ -173,17 +174,17 @@ const meuBehavior = (ctx) => {
 
 ---
 
-## 7. Componentes (duas formas equivalentes)
+## 7. Componentes
 
-**Closure** — uma função que retorna um elemento:
+**Closure (canônica)** — uma função que retorna um elemento:
 
 ```ts
 const Row = (t: { title: string }) => $.li({ class: 'row' }, t.title);
 Row({ title: 'abc' }); // → <li>
 ```
 
-**Setup** — `$.tag(setupFn)` devolve um componente cuja **raiz é a tag**; o setup recebe `(props, ctx)`
-e retorna os filhos:
+**Setup (açúcar)** — `$.tag(setupFn)` devolve um componente cuja **raiz é a tag**; o setup recebe `(props, ctx)`
+e retorna os filhos. Use quando a raiz é a tag **e** você precisa de `ctx`:
 
 ```ts
 const Counter = $.div<{ count: Signal<number> }>(({ count }) => [
@@ -194,22 +195,38 @@ Counter({ count: signal(0) }); // → <div> com os filhos
 ```
 
 Estado local vive no closure do componente (ou do setup). Ambas as formas produzem `(props) => Element`.
+**Prefira a closure** — é mais simples e geral (pode retornar qualquer nó); o setup é açúcar para o caso
+"raiz é a tag + preciso de `ctx`". (Decisão travada no [Manifesto de DX](DX-MANIFESTO.md).)
 
 ---
 
 ## 8. Listas keyed
 
-Filho reativo que devolve um array de **`[Component, props]`**. Passe `key` no props para reuso/reordenação:
+Canônico: **`$.each`** — fonte reativa (signal, função ou array), componente e `key`:
 
 ```ts
-$.ul({ class: 'list' }, () =>
-  itens.value.map((t) => [Row, { ...t, key: t.id }]),
+$.ul({ class: 'list' }, $.each(itens, Row, (t) => t.id));
+```
+
+- `$.each(fonte, Comp, keyFn)` devolve um filho reativo; `Comp` recebe o **próprio item** como props
+  (o tipo erra se o item não tiver o que `Comp` espera). `keyFn(item)` é a `key` — **obrigatória**
+  (reuso/reordenação sem recriar). Fonte aceita signal, função derivada, array cru ou `readonly`.
+- **`key` é reservada** — como em React, não é um dado: `keyFn` prevalece sobre um `key` que o item
+  já carregue (não leia `key` dentro da `Comp`; o tipo também não deixa).
+- Para **filtrar**, passe uma fonte derivada: `$.each(() => itens.value.filter(t => t.on), Row, t => t.id)`.
+- Para **props derivadas ou branching por item**, use a tupla crua — filho reativo que devolve
+  `[Component, props]`:
+
+```ts
+$.ul({}, () =>
+  itens.value.map((t) => [t.avulso ? RowSolto : Row, { ...t, key: t.id }]),
 );
 ```
 
-- `key` (número/string) identifica o item; sem `key`, cai na identidade do objeto props.
+- **Cuidado**: a tupla crua **não confere as props em tipo** (`[Comp, props]` é `any` — a checagem
+  do `$.each` não existe aqui); o contrato é da própria `Comp`. Para listas simples, prefira `$.each`.
 - Nós com a mesma `key` são **reutilizados e reordenados** (não recriados) entre atualizações; os removidos rodam cleanup.
-- `Component(props)` chamado direto também funciona, mas **não cacheia** — prefira a tupla em listas.
+- `Component(props)` chamado direto também funciona, mas **não cacheia** — prefira `$.each` ou a tupla em listas.
 
 ---
 
@@ -354,7 +371,7 @@ $.mount('#app', App);
 3. **1º argumento função = componente** (`$.div(fn)`). Filho reativo sem props → `$.span({}, () => x)`.
 4. **Eventos em `on: {}`**; handler é `(event, ctx)`; modificadores via `$.handle`; options = objeto no fim do array.
 5. **Custom events** (que disparam) vão em `on`; **behaviors** (que só se comportam) vão em `use`.
-6. **Listas**: `() => arr.map(x => [Component, { ...x, key: x.id }])` — sempre com `key`.
+6. **Listas**: `$.each(fonte, Comp, t => t.id)` — sempre com `key`; tupla crua só para branching/props derivadas.
 7. **`$.mount` recebe um builder/componente**, não árvore pronta.
 8. **`$.style(name, config)` devolve um StyleHandle** callable (partes promovidas: `field.input`) e injeta o CSS; `class`/`cx` aceitam o handle; globais com `$.style.css`.
 
@@ -369,6 +386,7 @@ $.mount('#app', App);
 | `$.tag(setup)` | `(props, ctx) => children` → `Component` | 1º arg função |
 | `$.mount(target, App, props?)` | → `unmount()` | builder, não árvore pronta |
 | `$.when(cond, then, else?)` | → filho reativo | monta/desmonta |
+| `$.each(fonte, Comp, keyFn)` | fonte(signal·fn·array) + Comp + key → filho reativo | lista keyed; tupla crua p/ branching |
 | `$.handle` | `.keys/.alt/.ctrl/.shift/.meta/.prevent/.stop/.self/.debounce(ms)/.throttle(ms)` | + callable `handle(fn, ...mods)` |
 | `$.handlers(map)` | `{ nome: [fn, ...mods] }` → `{ nome: Handler }` | reuso |
 | `$.model(signal)` | behavior | two-way (input/select/textarea) |

@@ -14,15 +14,16 @@ recursos são **exports nomeados com prefixo `$`** (`$mount`, `$when`, `$handle`
 - **`$` (namespace de tags)** — dicionário de factories de tag (sem seletor, sem helpers). · `import $ from 'mini-q'`
 - **Factory de tag** — função que cria um elemento de uma tag. · `$.div(props?, ...children)`
 - **Forma elemento** — chamada que devolve um `Element` agora. · `$.button({ type:'button' }, 'ok')`
-- **Forma setup (componente)** — 1º arg função ⇒ define um componente cuja raiz é a tag; recebe `(props, ctx)`, retorna filhos. · `$.div<P>((props, ctx) => [...])`
-- **Componente closure** — função comum que retorna um elemento. · `const Row = (t) => $.li({}, t.title)`
+- **Forma setup (componente)** — 1º arg função ⇒ define um componente cuja raiz é a tag; recebe `(props, ctx)`, retorna filhos. **Açúcar** — a forma canônica é a closure. · `$.div<P>((props, ctx) => [...])`
+- **Componente closure** — função comum que retorna um elemento. **Canônica.** · `const Row = (t) => $.li({}, t.title)`
 - **Prop reativa (`$`-prop)** — chave prefixada com `$` liga a prop a um signal/derivação. · `{ $disabled: sig }`
 - **Derivação inline** — `() => expr` como valor reativo (funciona com qualquer adapter). · `{ $class: () => on.value ? 'a':'b' }`
 - **Filho reativo** — signal/função na posição de filho; vira uma **região reativa**. · `$.span({}, () => n.value)`
 - **Região reativa** — trecho de filhos governado por uma fonte reativa, delimitado por uma **âncora** (comment node) e reconciliado a cada mudança.
 - **Âncora** — nó-marcador invisível que fixa a posição de uma região no DOM.
-- **Tupla de componente** — `[Component, props]`: renderização **lazy** e **cacheável** (ideal em listas). · `[Row, { ...t, key: t.id }]`
+- **Tupla de componente** — `[Component, props]`: renderização **lazy** e **cacheável** (ideal em listas). Props **não conferidas em tipo** (`ComponentTuple<P = any>`; o caminho tipado é `$.each`). · `[Row, { ...t, key: t.id }]`
 - **Reconciliação keyed** — reuso/reordenação de nós por `key` (move só o fora de posição; preserva foco). · `key`
+- **`$each` (lista keyed)** — açúcar de região para listas: fonte (signal·função·array, readonly ok) + componente + `keyFn`; cada item vira `[Comp, { ...item, key }]`. `key` é **reservada** (keyFn prevalece; Comp não lê `key` tipada). Tupla crua é a saída para branching/props derivadas. · `$.each(fonte, Row, t => t.id)`
 - **Escopo (owner)** — fronteira de lifecycle que coleta **cleanups**; aberta por `$mount` e por cada região/componente aninhado. `unmount` roda os cleanups do escopo.
 - **Cleanup** — função de desmontagem (para effects, listeners, custom events, behaviors).
 - **untrack** — leitura que **não** cria dependência (constrói a subárvore de uma região/`$when` sem virar dep dela).

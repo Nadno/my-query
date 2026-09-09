@@ -69,6 +69,21 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   região `when` dentro de item keyed (reage e some em cascata ao remover), `onMounted` com teardown
   por item. Os demais cenários da etapa já estavam cobertos por E1–E4 + demo (não re-testados).
   **124 testes.**
+- **2026-09-08** — **`$.each` (açúcar de lista keyed)** — item 6 da §Ordem. `$.each(fonte, Comp, keyFn)`
+  mata o `as [...]` da tupla e **tipa a key** implícita: `Comp` recebe o **próprio item** como props (o
+  tipo erra se o item não tiver o que `Comp` espera); `keyFn(item)` vira a `key`. Fonte aceita signal,
+  função derivada (`() => arr.filter(...)`) ou array estático. Devolve uma `View` (região) — sem cast no
+  código do usuário, demo PocketFin migrado (`$each(transactions, TransactionItem, t => t.id)`). Docs
+  USAGE §8/Regras de ouro/referência + GLOSSARY atualizados. 4 testes novos (`region.test.ts`) +
+  **type-test** (`element/__tests__/each.types.ts`: Comp=item aceita subconjunto, erra campo
+  ausente no call site, `key` reservada — keyFn vence, readonly ok, nullish recusado),
+  **142 verdes**, typecheck+build ok.
+- **2026-09-08** — **Type-test do control-flow** (`element/__tests__/control.types.ts`): contrato de
+  `$when`/`$match`/`$switch`/`$else` travado — ramos são thunks `() => unknown` (aceitam região
+  aninhada/`null`/qualquer filho), cond aceita signal·função·cru, retorno é `Child`; `ELSE` só vale
+  em tupla (solto erra). **Furo mapeado e documentado como costura intencional**: tupla crua em
+  view/Child (`[Comp, props]` crua) NÃO confere props em tipo (`ComponentTuple<P = any>`) — o caminho
+  tipado é `$.each`; nota em USAGE §8 + GLOSSARY. 142 verdes (type-tests são compile-only).
 
 ---
 
@@ -187,8 +202,8 @@ suprimir contextmenu/seleção, `delayIn`/`delayOut`. API preferida: **handler r
 ## Componentes / render (P2–P3)
 
 - **`$.when` sem cache de ramo**: recria a subárvore ao alternar (perde estado interno). Adicionar cache por ramo. P2
-- **Açúcar de lista tipada `$.each`**: hoje a tupla `[Comp, {...t, key}]` exige `as [...]` (feio). Um
-  `$.each(items, Comp, t => t.id)` mataria o cast e tiparia a key. P2
+- ~~**Açúcar de lista tipada `$.each`**~~ ✅ FEITO (2026-09-08): `$.each(items, Comp, t => t.id)` —
+  a tupla `[Comp, {...t, key}]` exige `as [...]`; o açúcar mata o cast e tipa a key (Comp = item). Ver §Progresso.
 - **`$.tag(...children)` sem `{}` vazio**: permitir omitir props quando o 1º arg é claramente filho
   (string/number/Node/array/função). Reduz o ruído de `$.div({}, …)`. P3
 
@@ -259,6 +274,6 @@ após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a m
 4. ~~**`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter**~~ ✅ feito (2026-09-08; ver §Progresso).
 5. **Runtime rico de eventos** (enter↔leave pareado): `interactOutside` + `focusOutside` por `relatedTarget`
    + `hover` hold-to-hover (mobile). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
-6. `$.each` tipado + `$.when` com cache de ramo (ganho de DX barato). (P2)
+6. ~~`$.each` tipado~~ ✅ feito (2026-09-08; ver §Progresso) + `$.when` com cache de ramo (ganho de DX barato). (P2)
 7. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
 8. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)

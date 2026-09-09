@@ -54,6 +54,7 @@ export {
   switchOn as $switch,
   ELSE as $else,
   appendChild as $append,
+  each as $each,
 } from './element';
 export { onMounted as $onMounted, onUnmounted as $onUnmounted } from './lifecycle';
 export { useSignal as $useSignal } from './reactive';

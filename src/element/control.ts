@@ -9,9 +9,11 @@
  * - `when(cond, then, else?)` — açúcar de 2 casos sobre `match`.
  * - `switchOn(selector, cases, fallback?)` — despacho por chave (enum-like).
  * - `ELSE` — sentinela truthy p/ escrever o catch-all em forma de tupla.
+ * - `each(items, Comp, keyFn)` — lista keyed a partir de fonte reativa (açúcar de região).
  */
 
 import { read, untrack, type Bindable } from '../reactive';
+import type { Component } from '../types';
 
 /** Sentinela de catch-all: `[$.else, view]` — sempre "verdadeiro". */
 export const ELSE: unique symbol = Symbol('mq.else');
@@ -48,4 +50,24 @@ export function switchOn<T>(
     const view = cases[key];
     return view ? untrack(view) : fallback ? untrack(fallback) : null;
   };
+}
+
+/**
+ * Lista keyed a partir de uma fonte (signal, função ou array — readonly ok). Devolve
+ * uma View (região): cada item vira `[Comp, { ...item, key: keyFn(item) }]`.
+ * `Comp` recebe o **próprio item** como props (o tipo erra se o item não tiver o
+ * que `Comp` precisa). **`key` é reservada**: o `keyFn` prevalece sobre um `key`
+ * que o item já tenha (não carregue dado sob `key`; a `Comp` não lê `key` tipada —
+ * igual React). Para filtrar, passe a fonte derivada (`() => arr.filter(...)`);
+ * para props derivadas ou branching, use a tupla crua.
+ */
+export function each<T>(
+  items: Bindable<readonly T[]>,
+  Comp: Component<T>,
+  key: (item: T) => string | number,
+): View {
+  return () =>
+    (read(items) ?? []).map(
+      (t): [Component<T>, T] => [Comp, { ...t, key: key(t) }],
+    );
 }

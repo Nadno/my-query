@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@preact/signals-core';
 import $ from '../../index';
-import { $mount, $when, $match, $useSignal } from '../../index';
+import { $mount, $when, $match, $each, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 
 $useSignal(preact);
@@ -227,5 +227,86 @@ describe('escopos aninhados: cleanup dispara ao remover item da região', () => 
     items.value = [{ id: 1 }]; // remove item 2 → seu cleanup de use roda uma vez
     expect(spies[2]).toHaveBeenCalledTimes(1);
     expect(spies[1]).not.toHaveBeenCalled(); // item 1 continua montado
+  });
+});
+
+describe('$.each: açúcar de lista keyed', () => {
+  it('renderiza a lista reativa e reusa itens por key (não recria ao reordenar)', () => {
+    const rows = signal([{ id: 1 }, { id: 2 }]);
+    let builds = 0;
+    const Row = (p: { id: number }) => {
+      builds++;
+      return $.li({ id: `r${p.id}` }, p.id);
+    };
+    const App = () => $.ul({}, $each(rows, Row, (t) => t.id));
+    $mount(document.body, App);
+
+    expect(builds).toBe(2);
+    expect([...document.querySelectorAll('li')].map((n) => n.id)).toEqual(['r1', 'r2']);
+
+    rows.value = [{ id: 2 }, { id: 1 }]; // reordena — reusa, não recria
+    expect(builds).toBe(2);
+    expect([...document.querySelectorAll('li')].map((n) => n.id)).toEqual(['r2', 'r1']);
+  });
+
+  it('remove do meio limpa o nó e dispara cleanup do item', () => {
+    const spy = vi.fn();
+    const items = signal([{ id: 1 }, { id: 2 }, { id: 3 }]);
+    const Row = (p: { id: number }) => $.div({ id: `u${p.id}`, use: () => spy });
+    const App = () => $.div({}, $each(items, Row, (t) => t.id));
+    $mount(document.body, App);
+
+    expect(spy).not.toHaveBeenCalled();
+    items.value = [{ id: 1 }, { id: 3 }];
+    expect(document.getElementById('u2')).toBeNull();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('aceita fonte função (filtro derivado) e array estático', () => {
+    const rows = signal([
+      { id: 1, on: true },
+      { id: 2, on: false },
+      { id: 3, on: true },
+    ]);
+    const Row = (p: { id: number }) => $.li({ id: `r${p.id}` }, p.id);
+    const App = () =>
+      $.div(
+        {},
+        $.ul({}, $each(() => rows.value.filter((t) => t.on), Row, (t) => t.id)),
+        $.ul({}, $each([{ id: 9 }], Row, (t) => t.id)),
+      );
+    $mount(document.body, App);
+
+    expect([...document.querySelectorAll('li')].map((n) => n.id)).toEqual([
+      'r1',
+      'r3',
+      'r9',
+    ]);
+
+    rows.value = [
+      { id: 1, on: true },
+      { id: 2, on: true },
+    ]; // filtro reage
+    expect([...document.querySelectorAll('li')].map((n) => n.id)).toEqual([
+      'r1',
+      'r2',
+      'r9',
+    ]);
+  });
+
+  it('preserva foco do nó reusado ao reordenar (mesma garantia da região)', () => {
+    const rows = signal([{ id: 1 }, { id: 2 }]);
+    const Row = (p: { id: number }) => $.li({}, $.input({ id: `inp-${p.id}` }));
+    const App = () => $.ul({}, $each(rows, Row, (t) => t.id));
+    $mount(document.body, App);
+
+    const first = document.getElementById('inp-1') as HTMLInputElement;
+    first.focus();
+    rows.value = [{ id: 2 }, { id: 1 }];
+    expect([...document.querySelectorAll('li input')].map((n) => n.id)).toEqual([
+      'inp-2',
+      'inp-1',
+    ]);
+    expect(document.activeElement).toBe(first);
   });
 });

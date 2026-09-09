@@ -6,7 +6,7 @@
 
 import { signal, computed, type Signal } from '@preact/signals-core';
 import $ from '../index';
-import { $when, $model } from '../index';
+import { $when, $model, $each } from '../index';
 
 export type Kind = 'income' | 'expense';
 export interface Tx {
@@ -147,15 +147,7 @@ export const App = () =>
     $.section(
       { class: 'transactions' },
       $.h2({ class: 'transactions-title' }, 'Transações'),
-      $.ul({ class: 'transactions-list' }, () =>
-        transactions.value.map(
-          (t) =>
-            [TransactionItem, { ...t, key: t.id }] as [
-              typeof TransactionItem,
-              Tx & { key: number },
-            ],
-        ),
-      ),
+      $.ul({ class: 'transactions-list' }, $each(transactions, TransactionItem, (t) => t.id)),
     ),
     $.button(
       {
