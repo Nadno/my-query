@@ -11,7 +11,10 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": { "@/*": ["web/src/*"] }
   },
-  "include": ["server", "web", "shared"]
+  "include": ["server", "web", "shared"],
+  "exclude": ["**/*.test.ts"]
 }

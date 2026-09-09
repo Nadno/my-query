@@ -7,6 +7,9 @@ const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 
 export default defineConfig({
   root: webDir,
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   optimizeDeps: { exclude: ['mini-q'] },
   server: {
     port: 5174,

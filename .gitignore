@@ -2,5 +2,8 @@ node_modules/
 dist/
 *.log
 
+# VitePress build cache (docs das std libs do exemplo)
+.vitepress/
+
 # Windows/WSL metadata cruft
 *Zone.Identifier
