@@ -172,13 +172,13 @@ describe('lifecycle / mount → unmount', () => {
 describe('onMounted / onUnmounted', () => {
   it('setup: onMounted roda no build; onUnmounted roda no unmount da raiz', () => {
     const order: string[] = [];
-    const App = $.div(() => {
+    const App = () => {
       $onMounted(() => {
         order.push('mounted');
       });
       $onUnmounted(() => order.push('unmounted'));
-      return 'x';
-    });
+      return $.div({}, 'x');
+    };
     const unmount = $mount(document.body, App);
     expect(order).toEqual(['mounted']);
     unmount();
@@ -187,15 +187,15 @@ describe('onMounted / onUnmounted', () => {
 
   it('onMounted que retorna teardown: monta o recurso e limpa no unmount ("depende de ambos")', () => {
     let active = false;
-    const App = $.div(() => {
+    const App = () => {
       $onMounted(() => {
         active = true;
         return () => {
           active = false;
         };
       });
-      return 'x';
-    });
+      return $.div({}, 'x');
+    };
     const unmount = $mount(document.body, App);
     expect(active).toBe(true);
     unmount();

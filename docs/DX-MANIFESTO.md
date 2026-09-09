@@ -107,6 +107,7 @@ Escolhas canônicas registradas (não reabrir sem motivo):
 | Decisão | Escolha | Por quê |
 |---|---|---|
 | Forma de componente | **Closure** (canônica); setup = açúcar | closure é mais simples e geral; setup só quando precisa de `ctx` + raiz fixa |
+| 1º arg função | **Arity**: 0-param = filho reativo; ≥1 param = setup | única distinção prática em runtime; setup que ignora props → closure |
 | `$` | tags + exports nomeados `$`-prefixados | `$` = superfície do mini-q (princípio 3) |
 | Reatividade | `$`-prefixo em props; `() => expr` com qualquer adapter | reativo visível (princípio 4) |
 | Eventos | `on` (dispara) vs `use` (se comporta) | fronteira explícita (princípio 5) |

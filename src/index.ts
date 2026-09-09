@@ -7,7 +7,7 @@
 
 import { createTag } from './element';
 import { handle } from './events/handle';
-import type { Child, MQ, Props, TagElement, TagName } from './types';
+import type { Child, NonEmptyFn, Props, SetupFn, TagElement, TagName } from './types';
 
 const TAGS: TagName[] = [
   'a', 'abbr', 'address', 'article', 'aside', 'audio', 'b', 'bdi', 'bdo',
@@ -25,11 +25,15 @@ const TAGS: TagName[] = [
 ];
 // 'style' fica de fora dos factories (elemento raro; sem conflito de nome).
 
-/** Factory de uma tag: componente (setup) ou elemento (props+children). */
+/**
+ * Factory de uma tag: componente (setup, ≥1 param) | filho reativo (0-param) |
+ * elemento (props+children). A aridade desambigua o 1º arg função.
+ */
 export interface TagFactory<T extends TagName> {
-  <P = Record<string, unknown>>(
-    setup: (props: P, ctx: MQ<TagElement<T>>) => unknown,
+  <P = Record<string, unknown>, F extends SetupFn<T, P> = SetupFn<T, P>>(
+    setup: NonEmptyFn<F>,
   ): (props: P) => TagElement<T>;
+  (child: () => unknown): TagElement<T>;
   (props?: Props<T>, ...children: Child[]): TagElement<T>;
   (...children: Child[]): TagElement<T>;
 }

@@ -40,3 +40,35 @@ describe('children — normalização', () => {
     expect(el.hasAttributes()).toBe(false);
   });
 });
+
+describe('children — açúcar sem `{}` (1º arg claramente filho)', () => {
+  it('função 0-param como 1º arg vira filho reativo (sem props vazias)', () => {
+    const n = signal(0);
+    const el = $.span(() => n.value);
+    expect(el.textContent).toBe('0');
+    n.value = 42;
+    expect(el.textContent).toBe('42');
+  });
+
+  it('função 0-param devolve Element (não Component)', () => {
+    const el = $.div(() => 'x');
+    expect(el).toBeInstanceOf(HTMLDivElement);
+    expect(el.textContent).toBe('x');
+  });
+
+  it('função com ≥1 param continua sendo componente setup', () => {
+    const Comp = $.div((props, ctx) => {
+      void ctx;
+      return $.b({}, String(props.label));
+    });
+    const el = Comp({ label: 'ok' });
+    expect(el.tagName).toBe('DIV');
+    expect(el.querySelector('b')?.textContent).toBe('ok');
+  });
+
+  it('função 1-param (só props) continua sendo setup', () => {
+    const Comp = $.div((props) => $.b({}, String(props.label)));
+    const el = Comp({ label: 'x' });
+    expect(el.querySelector('b')?.textContent).toBe('x');
+  });
+});

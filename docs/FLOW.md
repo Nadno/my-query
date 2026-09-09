@@ -48,8 +48,9 @@ flowchart TD
 
 [`createTag`](../src/element/create.ts) tem assinatura dupla:
 
-- **Forma setup** — 1º arg é função: devolve um **componente** `(props) => Element`; a closure só
-  roda no build (é aí que os effects nascem sob o escopo certo).
+- **Forma setup** — 1º arg é função com **≥1 param**: devolve um **componente** `(props) => Element`;
+  a closure só roda no build (é aí que os effects nascem sob o escopo certo). Função **0-param** é
+  **filho reativo** (açúcar sem `{}` — a aridade desambigua).
 - **Forma elemento** — `createTag(tag, props?, ...children)`: aplica props e anexa filhos agora.
 
 [`applyProps`](../src/element/props.ts) percorre as props uma vez. Chaves especiais têm caminho

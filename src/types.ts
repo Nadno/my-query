@@ -84,6 +84,23 @@ export type PropsOf<T extends TagName, Extra = {}> = Props<T> & Extra;
 /** Componente: recebe props e devolve o(s) nó(s) da sua raiz. */
 export type Component<P = Record<string, unknown>> = (props: P) => Node | Node[];
 
+/** Função de setup de `createTag`/`TagFactory` (a raiz é a tag). */
+export type SetupFn<T extends TagName, P = Record<string, unknown>> = (
+  props: P,
+  ctx: MQ<TagElement<T>>,
+) => unknown;
+
+/**
+ * Rejeita funções **0-param** (filho reativo) — desambigua o 1º arg função de
+ * `createTag` por **aridade**: `() => valor` é filho reativo; `(props, ctx) => filhos`
+ * (≥1 param) é setup. `never` para 0-param faz o overload de setup não engolir o filho.
+ */
+export type NonEmptyFn<F> = F extends (...args: infer A) => unknown
+  ? A extends readonly []
+    ? never
+    : F
+  : never;
+
 /** Filho renderizável. */
 export type Child =
   | Node

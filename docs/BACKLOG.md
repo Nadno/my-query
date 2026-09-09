@@ -113,6 +113,13 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   (`pointerdown` + `holdDelay`, `pointerup`/`pointercancel`/scroll → sai; suprime `contextmenu`/
   `selectstart` durante o hold). 9 testes novos (custom/apply/on + type-test `on.types.ts`),
   **167 verdes**, typecheck ok.
+- **2026-09-09** — **Açúcar `$.tag(...children)` sem `{}`** — o 1º arg claramente filho dispensa o `{}`
+  vazio (`$.div('texto')`, `$.div([...])`, `$.span(() => count.value)`). A **aridade** desambigua o 1º
+  arg função: `() => valor` (0 params) = **filho reativo**; `(props, ctx) => filhos` (≥1 param) = **setup**
+  (componente). O overload de setup rejeita 0-param em tipo (`NonEmptyFn` — params tuple não-vazio) e em
+  runtime (`fn.length > 0`). **Quebra intencional pré-1.0**: setup que ignora props (`$.div(() => {...})`)
+  vira filho reativo — migrar para a closure (canônica); 2 usos migrados em `index.test.ts`. 4 testes
+  novos (children) + type-test (`sugar.types.ts`), **171 verdes**, typecheck+build ok.
 
 ---
 
@@ -237,8 +244,9 @@ cancela no scroll; suprime `contextmenu`/seleção durante o hold. O canal de op
   monta/desmonta, **estado fresco por design** (princípio 5/8 do manifesto). Ver §Progresso.
 - ~~**Açúcar de lista tipada `$.each`**~~ ✅ FEITO (2026-09-08): `$.each(items, Comp, t => t.id)` —
   a tupla `[Comp, {...t, key}]` exige `as [...]`; o açúcar mata o cast e tipa a key (Comp = item). Ver §Progresso.
-- **`$.tag(...children)` sem `{}` vazio**: permitir omitir props quando o 1º arg é claramente filho
-  (string/number/Node/array/função). Reduz o ruído de `$.div({}, …)`. P3
+- ~~**`$.tag(...children)` sem `{}` vazio**~~ ✅ FEITO (2026-09-09): o 1º arg claramente filho dispensa o
+  `{}` vazio (string/number/Node/array/função). A **aridade** desambigua a função: 0-param = filho
+  reativo, ≥1 param = setup. Ver §Progresso.
 
 ---
 

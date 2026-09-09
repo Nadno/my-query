@@ -44,13 +44,16 @@ $.button({ type: 'button' }, 'Clique');
 $.ul({}, $.li({}, 'a'), $.li({}, 'b'));
 ```
 
-- `props` é opcional; se o 1º argumento não for um objeto de props, é tratado como filho.
+- `props` é opcional; se o 1º argumento não for um objeto de props, é tratado como filho. **Açúcar**:
+  quando o 1º arg é claramente um filho, o `{}` vazio pode ser omitido — `$.div('texto')`,
+  `$.div([$.span('a')])`, `$.span(() => count.value)`.
 - Atributos são chaves normais (`id`, `type`, `disabled`, `placeholder`, `href`, `value`…), tipados por tag.
 - Children aceitam: `string`, `number`, `Node`, arrays, `[Component, props]` (ver §7), e **fontes reativas** (função ou signal — ver §3).
 - `boolean`, `null`, `undefined` como filho são ignorados (útil para condicional inline).
 
-> ⚠️ **1º argumento função = definição de componente**, não elemento (ver §7). Para um filho reativo
-> sem props, passe props vazias: `$.span({}, () => texto)`.
+> **1º argumento função** — a **aridade** desambigua: `() => valor` (0 params) é **filho reativo**
+> (o açúcar acima); `(props, ctx) => filhos` (≥1 param) é **definição de componente** (ver §7).
+> Setup que ignora props → use a closure (forma canônica).
 
 ---
 
@@ -75,7 +78,7 @@ $.button({ disabled: true }, 'x'); // estático
 **Filhos reativos** (texto/valor que muda) — passe uma função ou signal na posição de filho:
 
 ```ts
-$.span({}, () => `Total: ${total.value}`);
+$.span(() => `Total: ${total.value}`);
 $.p({}, count); // signal como filho também funciona
 ```
 
@@ -243,11 +246,12 @@ Row({ title: 'abc' }); // → <li>
 ```
 
 **Setup (açúcar)** — `$.tag(setupFn)` devolve um componente cuja **raiz é a tag**; o setup recebe `(props, ctx)`
-e retorna os filhos. Use quando a raiz é a tag **e** você precisa de `ctx`:
+e retorna os filhos. Use quando a raiz é a tag **e** você precisa de `ctx`. O setup precisa de **≥1 param**
+(`(props, ctx)` ou `(props)`) — uma função **0-param** é interpretada como **filho reativo** (§2):
 
 ```ts
 const Counter = $.div<{ count: Signal<number> }>(({ count }) => [
-  $.span({}, () => `count: ${count.value}`),
+  $.span(() => `count: ${count.value}`),
   $.button({ on: { click: () => count.value++ } }, '+'),
 ]);
 Counter({ count: signal(0) }); // → <div> com os filhos
@@ -277,7 +281,7 @@ $.ul({ class: 'list' }, $.each(itens, Row, (t) => t.id));
   `[Component, props]`:
 
 ```ts
-$.ul({}, () =>
+$.ul(() =>
   itens.value.map((t) => [t.avulso ? RowSolto : Row, { ...t, key: t.id }]),
 );
 ```
@@ -415,8 +419,8 @@ const App = () =>
   $.div({},
     $.input({ use: $.model(draft), on: { keydown: [add, $.handle.keys('Enter')] } }),
     $.button({ $disabled: () => !draft.value.trim(), on: { click: add } }, 'Add'),
-    $.p({}, () => `${items.value.length} itens`),
-    $.ul({}, () => items.value.map((t) => [Item, { ...t, key: t.id }])),
+    $.p(() => `${items.value.length} itens`),
+    $.ul(() => items.value.map((t) => [Item, { ...t, key: t.id }])),
   );
 
 $.mount('#app', App);
@@ -428,7 +432,7 @@ $.mount('#app', App);
 
 1. **Instale o adapter** com `$.useSignal(...)` antes de qualquer `$.mount`.
 2. **Reativo = `$`-prefixo** na chave da prop (`$disabled`, `$class`, `$data`) **ou** função/`signal` como filho.
-3. **1º argumento função = componente** (`$.div(fn)`). Filho reativo sem props → `$.span({}, () => x)`.
+3. **1º argumento função**: `() => valor` (0 params) = filho reativo (`$.span(() => x)`); `(props, ctx) => filhos` (≥1 param) = componente (`$.div(fn)`).
 4. **Eventos em `on: {}`**; handler é `(event, ctx)`; modificadores via `$.handle`; options = objeto no fim do array.
 5. **Custom events** (que disparam) vão em `on`; **behaviors** (que só se comportam) vão em `use`.
 6. **Listas**: `$.each(fonte, Comp, t => t.id)` — sempre com `key`; tupla crua só para branching/props derivadas.
@@ -443,7 +447,7 @@ $.mount('#app', App);
 |---|---|---|
 | `$.useSignal(adapter)` | `{ isSignal, getValue, effect }` | uma vez, no bootstrap |
 | `$.tag(props?, ...children)` | → `Element` | tag ∈ HTML (menos `style`) |
-| `$.tag(setup)` | `(props, ctx) => children` → `Component` | 1º arg função |
+| `$.tag(setup)` | `(props, ctx) => children` → `Component` | 1º arg função com ≥1 param; 0-param = filho reativo |
 | `$.mount(target, App, props?)` | → `unmount()` | builder, não árvore pronta |
 | `$.when(cond, then, else?)` | → filho reativo | monta/desmonta |
 | `$.each(fonte, Comp, keyFn)` | fonte(signal·fn·array) + Comp + key → filho reativo | lista keyed; tupla crua p/ branching |

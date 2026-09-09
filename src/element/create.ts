@@ -1,7 +1,12 @@
 /**
  * `createTag` — fábrica de tag com assinatura dupla:
+ *  - `$.tag(() => valor)` → Element (filho reativo — açúcar sem `{}`);
  *  - `$.tag(setupFn)` → Componente `(props) => Element` (a closure roda no build);
  *  - `$.tag(props?, ...children)` → Element (props aplicadas, children anexados).
+ *
+ * A desambiguação do 1º arg função é por **aridade**: `() => valor` (0 params) é filho
+ * reativo; `(props, ctx) => filhos` (≥1 param) é setup. Setup que ignora props → use a
+ * closure (forma canônica).
  */
 
 import { isSignal } from '../reactive';
@@ -9,12 +14,16 @@ import { applyProps } from './props';
 import { applyUse } from '../behaviors';
 import { appendChild } from './children';
 import { isProps } from './guards';
-import type { Component, MQ, Props, TagElement, TagName } from '../types';
+import type { Component, MQ, NonEmptyFn, Props, SetupFn, TagElement, TagName } from '../types';
 
+export function createTag<T extends TagName, F extends SetupFn<T> = SetupFn<T>>(
+  tag: T,
+  setup: NonEmptyFn<F>,
+): Component;
 export function createTag<T extends TagName>(
   tag: T,
-  setup: (props: Record<string, unknown>, ctx: MQ<TagElement<T>>) => unknown,
-): Component;
+  child: () => unknown,
+): TagElement<T>;
 export function createTag<T extends TagName>(
   tag: T,
   props?: Props<T>,
@@ -26,8 +35,9 @@ export function createTag<T extends TagName>(
 ): TagElement<T> | Component {
   const first = args[0];
 
-  // Forma componente: primeiro arg é função (setup)
-  if (typeof first === 'function' && !isSignal(first)) {
+  // Forma componente: função com ≥1 param (setup). Função 0-param = filho reativo
+  // (cai na forma elemento abaixo — `appendChild` vira região reativa).
+  if (typeof first === 'function' && !isSignal(first) && first.length > 0) {
     const setup = first as (props: Record<string, unknown>, ctx: MQ) => unknown;
     return ((props: Record<string, unknown> = {}) => {
       const el = document.createElement(tag);
