@@ -100,3 +100,21 @@ describe('applyEvents — roteamento custom', () => {
     expect(cleanup).toHaveBeenCalledOnce();
   });
 });
+
+describe('applyEvents — fluxo pareado via on: {}', () => {
+  it('on: { hover: handler } — handler devolve cleanup; mouseleave o roda', () => {
+    const el = document.createElement('div');
+    const leave = vi.fn();
+    const fn = vi.fn(() => leave);
+    const { dispose } = mountEvents(el, { hover: fn });
+
+    el.dispatchEvent(new Event('mouseenter'));
+    expect(fn).toHaveBeenCalledOnce();
+    expect(leave).not.toHaveBeenCalled();
+
+    el.dispatchEvent(new Event('mouseleave'));
+    expect(leave).toHaveBeenCalledOnce();
+
+    dispose();
+  });
+});

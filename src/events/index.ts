@@ -5,4 +5,13 @@ export {
   getCustomEvent,
   type EventSource,
 } from './custom';
-export type { Handler, Modifier, OnValue, OnMap, MQCustomEventMap } from './types';
+export type {
+  Handler,
+  PairedHandler,
+  Modifier,
+  DebounceOptions,
+  ThrottleOptions,
+  OnValue,
+  OnMap,
+  MQCustomEventMap,
+} from './types';

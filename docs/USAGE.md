@@ -127,6 +127,29 @@ $.input({
 });
 ```
 
+`debounce`/`throttle` aceitam opções estilo lodash:
+
+```ts
+$.input({
+  on: {
+    input: [aoDigitar, debounce(300, { leading: true })],       // 1ª imediata + última após 300ms
+    scroll: [aoRolar, throttle(100, { trailing: false })],      // só leading (comportamento antigo)
+    resize: [aoRedimensionar, debounce(200, { maxWait: 500 })], // no mínimo 1 a cada 500ms
+  },
+});
+```
+
+- **`debounce(ms, { leading?, trailing?, maxWait? })`** — `leading` dispara na 1ª chamada da rajada;
+  `trailing` (default `true`) dispara a última após `ms`; `maxWait` limita o atraso máximo (no mínimo
+  1 a cada `maxWait`).
+- **`throttle(ms, { leading?, trailing? })`** — default `{ leading: true, trailing: true }` (como lodash);
+  `{ trailing: false }` = só leading (comportamento antigo).
+
+> ⚠️ **Retorno do handler**: invocações **síncronas** (leading) propagam o retorno do handler;
+> invocações **assíncronas** (trailing/`maxWait`) não — o retorno morre no `setTimeout`. Num custom
+> event pareado (`hover`…), o cleanup do "un-enter" só atravessa se a invocação for leading. Prefira
+> `debounce`/`throttle` em handlers fire-and-forget.
+
 Forma explícita e handlers nomeados/reusáveis:
 
 ```ts
@@ -137,11 +160,32 @@ $.form({ on: { keydown: h.enviar } });
 
 ### Custom events
 
-Disparam como eventos normais, no mesmo `on`. Já vêm: **`clickOutside`**, **`focusOutside`**, **`hover`**.
+Disparam como eventos normais, no mesmo `on`. Já vêm: **`clickOutside`**, **`focusOutside`**,
+**`interactOutside`**, **`hover`**.
 
 ```ts
 $.div({ on: { clickOutside: () => (aberto.value = false) } }, ...);
 ```
+
+**Eventos pareados (enter↔leave)** — `hover`, `focusOutside` e `interactOutside` têm **entrada e saída**.
+O handler devolve o **cleanup do "un-enter"** (mesmo idioma do `$onMounted(() => () => cleanup)`); a fonte
+o guarda e o roda quando a saída acontece:
+
+```ts
+$.div({
+  on: {
+    hover: () => {
+      // enter: monta o tooltip…
+      return () => tooltip.remove(); // un-hover: roda no mouseleave
+    },
+    interactOutside: () => (aberto.value = false), // sem cleanup → nada no leave
+  },
+}, ...);
+```
+
+- **`hover`** — `mouseenter` → handler (devolve o un-hover); `mouseleave` → roda o cleanup. Sem delay/touch (etapa própria).
+- **`focusOutside`** — enter quando o foco **sai** do alvo (via `relatedTarget`), leave quando volta.
+- **`interactOutside`** — enter no 1º `pointerdown` **fora** do alvo, leave num `pointerdown` **dentro** (backdrop de popover/modal).
 
 Registrar o seu:
 
@@ -388,7 +432,7 @@ $.mount('#app', App);
 | `$.mount(target, App, props?)` | → `unmount()` | builder, não árvore pronta |
 | `$.when(cond, then, else?)` | → filho reativo | monta/desmonta |
 | `$.each(fonte, Comp, keyFn)` | fonte(signal·fn·array) + Comp + key → filho reativo | lista keyed; tupla crua p/ branching |
-| `$.handle` | `.keys/.alt/.ctrl/.shift/.meta/.prevent/.stop/.self/.debounce(ms)/.throttle(ms)` | + callable `handle(fn, ...mods)` |
+| `$.handle` | `.keys/.alt/.ctrl/.shift/.meta/.prevent/.stop/.self/.debounce(ms, opts)/.throttle(ms, opts)` | + callable `handle(fn, ...mods)`; `debounce`/`throttle` estilo lodash (`leading`/`trailing`/`maxWait`) |
 | `$.handlers(map)` | `{ nome: [fn, ...mods] }` → `{ nome: Handler }` | reuso |
 | `$.model(signal)` | behavior | two-way (input/select/textarea) |
 | `$.show(cond)` | behavior | alterna `hidden` |
@@ -396,7 +440,7 @@ $.mount('#app', App);
 | `$.style(name, config)` | → `StyleHandle` | callable + partes promovidas + `self`/`flags`/`variants`/`keyframes`/`slots`; injeta CSS |
 | `$.style.css(selector, obj)` | → void | estilo global / escape hatch (seletor cru) |
 | `$.parts` / `$.css` | *deprecados* | alias p/ `$.style(…, {parts})` / `$.style.css` |
-| `$.registerCustomEvent(name, source)` | `(target, emit) => cleanup` | novo custom event |
+| `$.registerCustomEvent(name, source)` | `(target, emit) => cleanup` | novo custom event; `emit` devolve o retorno do handler (pareado: cleanup do un-enter) |
 
 Props especiais: `class`/`$class`, `style`/`$style`, `data`/`$data`, `on`, `use`, `key`. Qualquer outra chave = atributo (com `$` = reativo).
 

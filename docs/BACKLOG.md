@@ -88,6 +88,22 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
   `$show` (caminho canônico de "preservar estado sem desmontar", USAGE §6/§9) e manteria effects
   vivos em subárvore fora do DOM. `$when` = monta/desmonta, **estado fresco por design** — travado
   por teste novo (`control.test.ts`) + linha na tabela "Decisões travadas" do manifesto. 143 verdes.
+- **2026-09-09** — **Runtime rico de eventos (item 5, (a)+(b))** — modelo **enter↔leave pareado**:
+  o handler de custom event devolve o **cleanup do "un-enter"** (mesmo idioma do
+  `$onMounted(() => () => cleanup)`). `Handler` (nativo, retorno `void`) vs `PairedHandler` (custom,
+  `void | Cleanup`); `OnMap` roteia custom keys para `PairedHandler`. Modificadores **propagam o
+  retorno** (`return next(e, ctx)`; `debounce` não — o retorno morre no `setTimeout`). Built-ins em
+  `custom.ts`: `hover` pareado (enter devolve o un-hover, `mouseleave` roda), `interactOutside`
+  (novo: `pointerdown` fora → enter, dentro → leave), `focusOutside` via `relatedTarget` (sai do alvo
+  → enter, volta → leave; substitui o `focusin` global). 9 testes novos (handle/custom/apply),
+  **152 verdes**, typecheck ok. **hover-touch (delay/touch) fica como etapa própria (c)** — o canal
+  de opções do `EventSource` (para `touchable`/delays) entra lá.
+- **2026-09-09** — **`debounce`/`throttle` estilo lodash** — opções `{ leading, trailing, maxWait? }`
+  no `debounce` e `{ leading, trailing }` no `throttle` (default vira `{ leading: true, trailing: true }`,
+  como lodash; `{ trailing: false }` = comportamento antigo). `debounce` agora **propaga o retorno** do
+  handler em invocações **leading** (síncronas); trailing/`maxWait` seguem sem propagar (o retorno morre
+  no `setTimeout`) — problema documentado em USAGE §5 + GLOSSARY. 6 testes novos (`handle.test.ts`),
+  **158 verdes**, typecheck ok.
 
 ---
 
@@ -95,7 +111,7 @@ Registro corrido do que foi entregue (o histórico git tem o detalhe por commit)
 
 - Núcleo: `reactive` (adapter agnóstico: `isSignal`/`getValue`/`effect`/`untrack?`/`signal?`), `lifecycle` (escopos + `mount → unmount`).
 - `element`: `createTag` dual (setup/elemento), props `$`-reativas, children, **lista keyed** com reuso, `$.when`.
-- `events`: `on:{}` + `handle` (modificadores) + custom events (`clickOutside`/`focusOutside`/`hover`).
+- `events`: `on:{}` + `handle` (modificadores) + custom events (`clickOutside`/`focusOutside`/`interactOutside`/`hover`, pareados enter↔leave).
 - `behaviors`: `use` + `model`/`show`.
 - `style`: **modelo de entidade** (`style`/`parts`/`css`/`compile`/`inject`) — `base`/`modifiers`/`keyframes` + filhos.
 - `config`/`media`: breakpoints compartilhados (CSS `@nome` + `$.media` reativo).
@@ -184,10 +200,11 @@ Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` a
   a pipeline de `on:{}` já resolve. `$on` reusa **o mesmo `applyEvents`** (roteamento nativo vs custom +
   `handle` + cleanup no escopo) → behavior vira "composable com elemento" de verdade e ganha o mesmo
   vocabulário do builder. É o substrato p/ reescrever os custom events ricos abaixo **como behaviors**.
-- **Runtime rico de custom events (P2)**: hoje `emit` é fire-and-forget; falta o modelo de **enter↔leave
-  pareado** com cleanup retornado pelo handler (era o `cleanupHover`). É o que destrava, sobre a mesma base:
-  `interactOutside` (**hoje não existe**), `focusOutside` via `relatedTarget` (mais correto que o `focusin`
-  global atual) e `hover` hold-to-hover (`delayIn`/`delayOut` + Pointer Events p/ mobile).
+- **Runtime rico de custom events (P2)** — ✅ FEITO (2026-09-09, item 5 (a)+(b)): modelo **enter↔leave
+  pareado** com cleanup retornado pelo handler (era o `cleanupHover`). `hover` pareado, `interactOutside`
+  (novo) e `focusOutside` via `relatedTarget`. **Falta (etapa própria, item 5c):** `hover` hold-to-hover
+  (`delayIn`/`delayOut` + Pointer Events p/ mobile) — o canal de opções do `EventSource` (para `touchable`/
+  delays) entra lá.
 - **Delegation** de eventos (havia no antigo) — **adiada/em dúvida**. Numa lib de escopo por-componente com
   cleanup por escopo, delegação global é aposta grande de payoff incerto (acopla o `DOMHandlerStore`).
   Segurar até ter um caso real que doa (lista gigante). P3
@@ -195,11 +212,11 @@ Foi feita uma camada **lean in-house** em vez de portar o runtime `dom-events` a
 - Mais modificadores e o açúcar de token (`'.enter'`) sobre os composables. P3
 
 ### hover com touch (P2)
-`hover` atual é mínimo (enter-only, sem delay, sem touch). Queremos **hold-to-hover** (segurar o dedo =
-hover, soltar = sair), como sites de vídeo: Pointer Events unificados, `holdDelay`, cancelar no scroll,
-suprimir contextmenu/seleção, `delayIn`/`delayOut`. API preferida: **handler retorna o cleanup do
-"un-hover"** — depende do runtime rico acima. Alternativa barata sem tocar no runtime: um behavior
-`$.hover(onEnter, opts)` (retorna cleanup nativamente).
+`hover` já é **pareado** (enter devolve o un-hover, `mouseleave` roda) — mas segue **sem delay e sem
+touch**. Queremos **hold-to-hover** (segurar o dedo = hover, soltar = sair), como sites de vídeo:
+Pointer Events unificados, `holdDelay`, cancelar no scroll, suprimir contextmenu/seleção,
+`delayIn`/`delayOut`. O canal de opções do `EventSource` (para `touchable`/delays) entra nessa etapa
+(item 5c).
 
 ---
 
@@ -278,8 +295,9 @@ após o Q&A das 4 ideias (2026-09-08): as três primeiras se reforçam sobre a m
 2. ~~Migrar `examples/auth` p/ a nova API de estilo~~ ✅ feito (todos os call sites migrados).
 3. ~~**`$on(ctx, name, onValue)`** — primitivo de evento p/ behaviors~~ ✅ feito (2026-09-08; ver §Progresso).
 4. ~~**`$model` completo** (checkbox/radio/checkbox-group/`select multiple`) **+ `setValue?` no adapter**~~ ✅ feito (2026-09-08; ver §Progresso).
-5. **Runtime rico de eventos** (enter↔leave pareado): `interactOutside` + `focusOutside` por `relatedTarget`
-   + `hover` hold-to-hover (mobile). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
+5. ~~**Runtime rico de eventos** (enter↔leave pareado)~~ ✅ (a)+(b) feito (2026-09-09): `interactOutside` +
+   `focusOutside` por `relatedTarget` + `hover` pareado. **Falta (c):** `hover` hold-to-hover (mobile) —
+   canal de opções do `EventSource` (`touchable`/delays). **Delegation fica de fora** (adiada, ver §Eventos). (P2)
 6. ~~`$.each` tipado~~ ✅ feito (2026-09-08; ver §Progresso) + ~~`$.when` com cache de ramo~~ ✅ **RECUSADO** (2026-09-08; preservação é `$show`).
 7. `useForm`/`useField` schema-agnóstico + a11y behaviors (`trap-focus`…) no `examples/auth`. (P2)
 8. Organização modular do `src/` (refactor de estrutura, quando estabilizar). (P3)

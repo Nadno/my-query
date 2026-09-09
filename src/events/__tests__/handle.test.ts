@@ -115,10 +115,27 @@ describe('modificadores', () => {
   });
 });
 
+describe('propagação de retorno', () => {
+  it('modificadores propagam o retorno do handler (cleanup do un-enter)', () => {
+    const cleanup = vi.fn();
+    const composed = compose(() => cleanup, [handle.prevent]);
+    const ret = composed(new Event('x'), ctxFor());
+    expect(ret).toBe(cleanup);
+  });
+
+  it('self filtrado devolve undefined (sem chamar o handler)', () => {
+    const el = document.createElement('div');
+    const child = document.createElement('span');
+    const composed = compose(() => vi.fn(), [handle.self]);
+    const ret = composed({ target: child } as unknown as Event, ctxFor(el));
+    expect(ret).toBeUndefined();
+  });
+});
+
 describe('debounce / throttle', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('debounce só dispara a última chamada após ms', () => {
+  it('debounce só dispara a última chamada após ms (trailing default)', () => {
     vi.useFakeTimers();
     const fn = vi.fn();
     const d = compose(fn, [handle.debounce(100)]);
@@ -130,11 +147,77 @@ describe('debounce / throttle', () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it('throttle passa a 1ª e barra dentro da janela', () => {
+  it('debounce com leading dispara a 1ª imediatamente e a última após ms', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(1000); // base não-zero: throttle inicia com last=0
+    vi.setSystemTime(1000); // base não-zero: leading precisa de lastInvoke no passado
+    const fn = vi.fn();
+    const d = compose(fn, [handle.debounce(100, { leading: true })]);
+    d(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledOnce(); // leading
+    d(new Event('x'), ctxFor());
+    d(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledOnce(); // trailing ainda não
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(2); // trailing
+  });
+
+  it('debounce com leading e sem trailing só dispara a 1ª', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const fn = vi.fn();
+    const d = compose(fn, [handle.debounce(100, { leading: true, trailing: false })]);
+    d(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledOnce();
+    d(new Event('x'), ctxFor());
+    d(new Event('x'), ctxFor());
+    vi.advanceTimersByTime(200);
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('debounce com maxWait dispara no máximo a cada maxWait', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const fn = vi.fn();
+    const d = compose(fn, [handle.debounce(200, { maxWait: 100 })]);
+    d(new Event('x'), ctxFor());
+    d(new Event('x'), ctxFor());
+    expect(fn).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledOnce(); // maxWait
+    d(new Event('x'), ctxFor());
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(2); // maxWait de novo
+  });
+
+  it('debounce com leading propaga o retorno do handler (síncrono)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const cleanup = vi.fn();
+    const d = compose(() => cleanup, [handle.debounce(100, { leading: true })]);
+    const ret = d(new Event('x'), ctxFor());
+    expect(ret).toBe(cleanup);
+  });
+
+  it('throttle default: leading imediato + trailing no fim da janela', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
     const fn = vi.fn();
     const t = compose(fn, [handle.throttle(100)]);
+    t(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledOnce(); // leading
+    t(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledOnce(); // trailing ainda não
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledTimes(2); // trailing disparou
+    t(new Event('x'), ctxFor());
+    expect(fn).toHaveBeenCalledTimes(2); // nova janela, sem leading ainda
+  });
+
+  it('throttle com trailing:false só dispara a 1ª da janela (comportamento antigo)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const fn = vi.fn();
+    const t = compose(fn, [handle.throttle(100, { trailing: false })]);
     t(new Event('x'), ctxFor());
     expect(fn).toHaveBeenCalledOnce();
     t(new Event('x'), ctxFor());
@@ -142,6 +225,15 @@ describe('debounce / throttle', () => {
     vi.advanceTimersByTime(100);
     t(new Event('x'), ctxFor());
     expect(fn).toHaveBeenCalledTimes(2);
+  });
+
+  it('throttle propaga o retorno do handler na invocação leading', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const cleanup = vi.fn();
+    const t = compose(() => cleanup, [handle.throttle(100)]);
+    const ret = t(new Event('x'), ctxFor());
+    expect(ret).toBe(cleanup);
   });
 });
 

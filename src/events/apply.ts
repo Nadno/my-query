@@ -4,7 +4,13 @@ import { registerCleanup, type Cleanup } from '../lifecycle';
 import type { MQ } from '../types';
 import { compose } from './handle';
 import { getCustomEvent } from './custom';
-import type { Handler, Modifier, MQCustomEventMap, OnValue } from './types';
+import type {
+  Handler,
+  Modifier,
+  MQCustomEventMap,
+  OnValue,
+  PairedHandler,
+} from './types';
 
 function resolve(value: OnValue): {
   handler: Handler;
@@ -75,7 +81,7 @@ export function on<K extends keyof HTMLElementEventMap, E extends Element>(
 export function on<K extends keyof MQCustomEventMap, E extends Element>(
   ctx: MQ<E>,
   name: K,
-  value: OnValue<MQCustomEventMap[K], E>,
+  value: OnValue<MQCustomEventMap[K], E, PairedHandler<MQCustomEventMap[K], E>>,
 ): Cleanup;
 export function on<E extends Element>(
   ctx: MQ<E>,
