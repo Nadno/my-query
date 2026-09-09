@@ -1,11 +1,13 @@
-# mini-q — Fluxo fundamental
+# mini-q — Arquitetura (como funciona + onde mora)
 
-Como uma árvore ganha vida e morre no mini-q: o caminho de `$mount` até `unmount`, e onde
-reatividade e cleanup se encaixam. Para *nomes*, veja [GLOSSARY.md](GLOSSARY.md); para *onde o
-código mora*, [STRUCTURE.md](STRUCTURE.md); para *como usar*, [USAGE.md](USAGE.md). Esta doc é o
-**mapa mental** que liga tudo.
+> Para *usar*, veja [USAGE.md](USAGE.md) · para *os nomes*, [GLOSSARY.md](GLOSSARY.md) · para *por que
+> a API é assim*, [DX-MANIFESTO.md](DX-MANIFESTO.md). Este documento é o **mapa mental** que liga tudo:
+> como uma árvore ganha vida e morre (o fluxo de `$mount` até `unmount`, e onde reatividade e cleanup
+> se encaixam) e como o `src/` é organizado (o padrão que guia onde cada coisa mora).
 
 ---
+
+# Parte I — Como o runtime flui
 
 ## 1. Modelo mental
 
@@ -99,7 +101,8 @@ mudança da fonte, reconcilia:
 
 [`when(cond, then, else?)`](../src/element/control.ts) devolve uma função-região. Só a `cond` é
 rastreada; os ramos são construídos com `untrack`. Como é uma função, entra numa posição de filho
-e é governada pela mesma maquinaria de região da seção 5.
+e é governada pela mesma maquinaria de região da seção 5. (Os irmãos `match`/`switch`/`else`
+vivem no mesmo [control.ts](../src/element/control.ts).)
 
 ## 7. Como estilo e breakpoints se encaixam
 
@@ -116,7 +119,77 @@ seguem aceitando handles mesmo com o engine à parte.
   `media`, que é um signal booleano de `matchMedia` com cleanup no escopo — reatividade pela mesma
   via da seção 4.
 
-## 8. Onde mora cada peça
+---
+
+# Parte II — Como o `src/` é organizado
+
+## 8. O padrão: colocation + feature-sliced
+
+Duas ideias governam tudo:
+
+1. **Colocation** — o que muda junto, mora junto. **Tipos, utils, testes e afins vivem na
+   mesma pasta da feature**, não em árvores paralelas (`types/` global, `__tests__/` à parte).
+   Abrir a pasta de um assunto deve mostrar *tudo* dele.
+2. **Feature-sliced** — cada subsistema é uma **slice** (fatia) autocontida com uma **superfície
+   pública única** (o barril `index.ts`). O resto é interno à slice.
+
+O objeto raiz `$` (`src/index.ts`) só **compõe as slices** — não implementa regra de negócio.
+
+## 9. Anatomia de uma slice
+
+Uma slice é uma pasta cujo `index.ts` é a única porta de entrada. Dentro, os arquivos são
+nomeados pelo **papel**, não por tipo genérico:
+
+```
+src/style/
+  index.ts     ← barril: a superfície pública (o que o resto do app importa)
+  emit.ts      ← motor: objeto JS → CSS → injeção no DOM
+  build.ts     ← lógica de domínio: style(name, config) → StyleHandle
+  types.ts     ← contrato público da slice (colocado, não global)
+```
+
+Regras:
+
+- **Imports externos apontam para o barril** (`from './style'`), **nunca** para o interior
+  (`from './style/build'`). O interior pode ser refatorado à vontade sem quebrar ninguém.
+- **Dentro da slice**, os arquivos importam uns dos outros por caminho direto (`./emit`, `./types`).
+- **Tipos da slice** ficam em `types.ts` **dentro** dela. Só sobe para um lugar comum o que é
+  genuinamente compartilhado por várias slices.
+- **Utils** de uma slice ficam na slice. Um util só migra para um lugar comum quando um **segundo**
+  consumidor real aparece (evitar abstração especulativa).
+- **Testes colocados**: `x.test.ts` ao lado de `x.ts` (ou um `__tests__/` **dentro** da slice).
+
+## 10. Quando promover arquivo → pasta
+
+Comece simples. Um módulo nasce como **arquivo solto** (`reactive.ts`, `mount.ts`). Ele vira
+**pasta/slice** quando cruza qualquer um destes limiares:
+
+- passa a ter **mais de uma preocupação** separável (ex.: emissão vs. build vs. tipos);
+- ganha **tipos próprios não triviais** + **utils** + **testes** que se beneficiam de morar juntos;
+- o arquivo único fica grande o bastante para que "onde está X?" deixe de ser óbvio.
+
+Promover = criar a pasta, quebrar por papel, adicionar `index.ts` reexportando a superfície que
+já existia. Como o import externo era `./style`, ele **continua resolvendo** para `./style/index.ts`
+— a promoção é invisível para quem consome. Foi exatamente assim que `style.ts` virou `style/`.
+
+Não promova só por estética: um arquivo coeso de 80 linhas não precisa de pasta.
+
+## 11. O mapa atual
+
+| Slice / módulo | Forma | Papel |
+|---|---|---|
+| `element/` | slice (create/props/children/region/control/guards + barril) | construção de nós: `createTag` + props + children + região keyed + `when` |
+| `style/` | slice + entry `mini-q/style` (emit/build/config/media/types + barril) | CSS `style` namespace + breakpoints (`config`/`media`) — **fora do core** |
+| `events/` | slice (handle/apply/custom/types + barril) | eventos + custom events + `handle` |
+| `dom/` | pasta (só `nodes.ts`) | primitivas de nó/`cx` |
+| `adapters/` | pasta (só `preact.ts`) | adapters de signal |
+| `reactive.ts` | arquivo | contrato de reatividade (adapter) |
+| `mount.ts` / `lifecycle.ts` | arquivos | escopo de montagem/cleanup |
+| `behaviors.ts` | arquivo | `model`/`show` (`use`) |
+| `types.ts` | arquivo (global) | tipos de View compartilhados (`Props`, `Child`, …) |
+| `index.ts` | raiz | barril: `$` (tags) + os `$`-helpers nomeados |
+
+## 12. Navegação: etapa do fluxo → módulo → símbolos
 
 | Etapa do fluxo | Módulo | Símbolos |
 |---|---|---|
@@ -128,7 +201,7 @@ seguem aceitando handles mesmo com o engine à parte.
 | Aplicar props | [element/props.ts](../src/element/props.ts) | `applyProps` (+ `$`-prefixo) |
 | Anexar filhos | [element/children.ts](../src/element/children.ts) | `appendChild` |
 | Região keyed | [element/region.ts](../src/element/region.ts) | `mountReactiveRegion` |
-| Control-flow | [element/control.ts](../src/element/control.ts) | `when` |
+| Control-flow | [element/control.ts](../src/element/control.ts) | `when` (+ `match`/`switch`/`else`) |
 | Predicados locais | [element/guards.ts](../src/element/guards.ts) | `isComponentTuple`, `isProps` |
 | Nós & classes | [dom/nodes.ts](../src/dom/nodes.ts) | `isNode`, `toNodes`, `resolveClass`, `cx`, `getElement` |
 | Eventos | [events/](../src/events) | `handle`, `applyEvents`, custom events |
@@ -140,4 +213,20 @@ seguem aceitando handles mesmo com o engine à parte.
 > Regra de ouro para navegar: **entra pelo barril** ([index.ts](../src/index.ts) — `$` de tags +
 > os `$`-helpers) → o assunto é uma **slice** com barril (`element/`, `events/`, `style/`) ou um
 > **arquivo solto** coeso (`reactive`, `lifecycle`, `mount`, `behaviors`). O interior de uma slice
-> se importa por caminho direto; de fora, só o barril. Detalhes do padrão em [STRUCTURE.md](STRUCTURE.md).
+> se importa por caminho direto; de fora, só o barril.
+
+## 13. Débito conhecido (rumo à colocation plena)
+
+Onde a prática ainda não bateu com o princípio — corrigir aos poucos:
+
+- **~~`src/__tests__/` é uma árvore paralela.~~ Resolvido.** Os testes foram colocados: estilo em
+  `style/__tests__/`, região em `element/__tests__/`, aceite em `demo/pocketfin.test.ts`, e a suíte
+  de integração cross-slice do `$` composto em `src/index.test.ts` (colocada com `index.ts`).
+  `src/__tests__/` não existe mais.
+- **`src/types.ts` é global.** Parte é genuinamente compartilhada (View/`Props`); se algum tipo
+  ali pertence a uma slice só, ele deveria descer para a slice.
+- **`config.ts` + `media.ts`** são uma mesma preocupação (breakpoints) espalhada em dois arquivos
+  soltos — candidatos a uma slice `breakpoints/` (ou entrar em `style/`, dado o acoplamento via
+  `resolveMedia`). `src/media.test.ts` já está colocado no root e entraria na slice.
+- **`dom/` e `adapters/` são pastas-de-um sem barril.** Ok enquanto tiverem um arquivo; se
+  crescerem, ganham `index.ts` como as demais.
