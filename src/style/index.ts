@@ -14,6 +14,8 @@ export { style, parts } from './build';
 export { config } from './config';
 export type { MiniQConfig } from './config';
 export { media } from './media';
+export { hashScope, scopedId } from './scope';
+export type { ScopeConfig, ScopeStrategy } from './types';
 export type {
   CSSValue,
   CSSObject,

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { style } from '../index';
-import { hashScope } from '../build';
+import { hashScope } from '../scope';
 
 $useSignal(preact);
 
