@@ -3,6 +3,8 @@
 import { registerCleanup } from './lifecycle';
 import { bind, read, setValue, type Bindable } from './reactive';
 import { on } from './events';
+import { getElement } from './dom/nodes';
+import { TELEPORTED } from './types';
 import type { Behavior, MQ } from './types';
 
 export function applyUse(ctx: MQ, use: Behavior | Behavior[]): void {
@@ -199,6 +201,46 @@ export function show(cond: Bindable<boolean>): Behavior<HTMLElement> {
   return (ctx) => {
     bind(cond, (value) => {
       ctx.element.hidden = !value;
+    });
+  };
+}
+
+/** Alvo de `$useTeleport`: seletor, elemento, ou função que resolve um deles. */
+export type TeleportTarget = string | Element | (() => string | Element);
+
+/**
+ * Teleporta o **próprio elemento do contexto** (`ctx.element`) para outro lugar da DOM,
+ * fora da árvore do pai — útil para modais, toasts e overlays que precisam escapar de
+ * `overflow:hidden` ou de contextos de empilhamento (z-index) do pai.
+ *
+ * - **Só monta**: sem `open` interno — quem decide renderizar é o `$when` externo.
+ * - **Alvo reativo**: se `target` for função, um `effect` observa o alvo resolvido e
+ *   **move o nó vivo** para o novo alvo (sem desmontar/remontar). O `stop` do effect é
+ *   registrado no escopo, então para no unmount (cobre o caso de `$when`).
+ * - **Cleanup**: ao desmontar o escopo, o `disposeScope` do pai já remove os nós; o
+ *   behavior só precisa parar o effect do alvo reativo.
+ */
+export function useTeleport(target: TeleportTarget): Behavior<Element> {
+  return (ctx) => {
+    const el = ctx.element;
+
+    // Marca como teleportado: `appendChild` do pai não o anexa (vive no alvo).
+    (el as Element & { [TELEPORTED]?: boolean })[TELEPORTED] = true;
+
+    const move = (to: Element) => {
+      to.appendChild(el);
+    };
+
+    if (typeof target === 'function') {
+      bind(target, (to) => move(getElement(to)));
+    } else {
+      move(getElement(target));
+    }
+
+    // O elemento teleportado não vive na árvore do pai, então o `disposeScope` do
+    // pai não o remove — o behavior remove do alvo no unmount.
+    registerCleanup(() => {
+      el.remove();
     });
   };
 }

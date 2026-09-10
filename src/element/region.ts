@@ -7,8 +7,8 @@
  */
 
 import { createScope, disposeScope, registerCleanup, runInScope, type Scope } from '../lifecycle';
-import { bind, untrack, type Bindable } from '../reactive';
-import { toNodes } from '../dom/nodes';
+import { getAdapter, read, untrack, type Bindable } from '../reactive';
+import { toNodes, isTeleported } from '../dom/nodes';
 import { isComponentTuple } from './guards';
 import { appendChild } from './children';
 
@@ -32,12 +32,13 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
     volatile = [];
   };
 
-  const reconcile = (value: unknown) => {
+  const reconcile = (value: unknown, scope: Scope) => {
     disposeVolatile();
 
     const items = Array.isArray(value) ? value : [value];
     const used = new Set<unknown>();
     const ordered: RegionEntry[] = [];
+    let volatileCount = 0;
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -47,10 +48,10 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
         used.add(key);
         let entry = keyed.get(key);
         if (!entry) {
-          const scope = createScope();
+          const itemScope = createScope();
           // construir o item NÃO deve virar dependência da região
-          const nodes = runInScope(scope, () => untrack(() => toNodes(item[0](props))));
-          entry = { nodes, scope };
+          const nodes = runInScope(itemScope, () => untrack(() => toNodes(item[0](props))));
+          entry = { nodes, scope: itemScope };
           keyed.set(key, entry);
         }
         ordered.push(entry);
@@ -60,7 +61,6 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
         // real e captura os nós pelo intervalo de índices (o loop de reordenação
         // reposiciona depois) — anexar num fragment quebraria uma sub-região, que fecha
         // sobre `parent`. Construir NÃO deve virar dependência da região → `untrack`.
-        const scope = createScope();
         const before = parent.childNodes.length;
         runInScope(scope, () => untrack(() => appendChild(parent, item)));
         const nodes: Node[] = [];
@@ -70,6 +70,7 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
         }
         const entry: RegionEntry = { nodes, scope };
         volatile.push(entry);
+        volatileCount++;
         ordered.push(entry);
       }
     }
@@ -83,14 +84,19 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
       }
     }
 
+    // Sem itens voláteis, o escopo da construção não tem dono — descarta já.
+    if (volatileCount === 0) disposeScope(scope);
+
     // reordena de trás pra frente, movendo APENAS nós fora de posição
-    // (insertBefore de um nó já correto o removeria/reinseriria, perdendo foco)
+    // (insertBefore de um nó já correto o removeria/reinseriria, perdendo foco).
+    // Nós teleportados vivem no alvo, não no pai — não participam da reordenação.
     const active = document.activeElement as HTMLElement | null;
     let ref: Node = anchor;
     for (let i = ordered.length - 1; i >= 0; i--) {
       const nodes = ordered[i]!.nodes;
       for (let j = nodes.length - 1; j >= 0; j--) {
         const n = nodes[j]!;
+        if (isTeleported(n)) continue;
         if (n.nextSibling !== ref) parent.insertBefore(n, ref);
         ref = n;
       }
@@ -106,7 +112,11 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
     }
   };
 
-  bind(source, reconcile);
+  const stop = getAdapter().effect(() => {
+    const scope = createScope();
+    runInScope(scope, () => reconcile(read(source), scope));
+  });
+  registerCleanup(stop);
 
   registerCleanup(() => {
     disposeVolatile();

@@ -8,6 +8,7 @@ import { isReactive, type Bindable } from '../reactive';
 import { isNode } from '../dom/nodes';
 import { isComponentTuple } from './guards';
 import { mountReactiveRegion } from './region';
+import { TELEPORTED } from '../types';
 
 export function appendChild(parent: Node, child: unknown): void {
   if (child === null || child === undefined || child === false || child === true) return;
@@ -28,6 +29,8 @@ export function appendChild(parent: Node, child: unknown): void {
   }
 
   if (isNode(child)) {
+    // Elemento teleportado já vive no alvo — não anexa ao pai.
+    if ((child as Element & { [TELEPORTED]?: boolean })[TELEPORTED]) return;
     parent.appendChild(child);
     return;
   }

@@ -1,6 +1,6 @@
 /** Helpers de nó DOM e resolução de classe. */
 
-import { STYLE_HANDLE } from '../types';
+import { STYLE_HANDLE, TELEPORTED } from '../types';
 import type { ClassValue } from '../types';
 
 export function isNode(value: unknown): value is Node {
@@ -9,6 +9,11 @@ export function isNode(value: unknown): value is Node {
     value !== null &&
     'nodeType' in (value as Record<string, unknown>)
   );
+}
+
+/** `true` se o nó foi teleportado (`$useTeleport`) e não vive na árvore do pai. */
+export function isTeleported(node: Node): boolean {
+  return (node as Element & { [TELEPORTED]?: boolean })[TELEPORTED] === true;
 }
 
 /** Resolve `class` (string | array | record) para uma string única. */

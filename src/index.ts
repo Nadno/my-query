@@ -66,6 +66,7 @@ export { handle as $handle } from './events/handle';
 export { on as $on } from './events/apply';
 export { registerCustomEvent as $registerCustomEvent } from './events/custom';
 export { model as $model, show as $show } from './behaviors';
+export { useTeleport as $useTeleport } from './behaviors';
 export { cx as $cx } from './dom/nodes';
 export const $handlers = handle.handlers;
 

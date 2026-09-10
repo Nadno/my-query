@@ -47,7 +47,8 @@ export function useSignal(next: ReactiveAdapter): void {
   adapter = next;
 }
 
-function getAdapter(): ReactiveAdapter {
+/** O adapter instalado (para quem precisa do `effect` cru, ex.: regiões). */
+export function getAdapter(): ReactiveAdapter {
   if (!adapter) {
     throw new Error(
       '[mini-q] Nenhum adapter de reatividade instalado. Chame $.useSignal(adapter) antes.',

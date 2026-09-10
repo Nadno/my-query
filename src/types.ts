@@ -21,6 +21,9 @@ export interface MQ<E extends Element = Element> {
 /** Brand de um `StyleHandle` — `class`/`cx` só chamam a função se ela tiver esta marca. */
 export const STYLE_HANDLE: unique symbol = Symbol('mq.styleHandle');
 
+/** Marca um elemento como teleportado — `appendChild` não o anexa ao pai. */
+export const TELEPORTED: unique symbol = Symbol('mq.teleported');
+
 /** Callable que devolve uma string de classes (o `StyleHandle` de `$.style` satisfaz isto). */
 export interface ClassHandle {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
