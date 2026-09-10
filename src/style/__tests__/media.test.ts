@@ -3,6 +3,7 @@ import $ from '../../index';
 import { $mount, $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { config, media } from '../index';
+import { resolveMedia } from '../config';
 
 $useSignal(preact);
 
@@ -46,5 +47,30 @@ describe('media — sinal de breakpoint', () => {
     expect(listeners.size).toBe(0); // cleanup removeu o listener
 
     vi.unstubAllGlobals();
+  });
+});
+
+describe('media — resolveMedia / toQuery', () => {
+  it('nome registrado, número, string numérica e query crua', () => {
+    config({ breakpoints: { md: 768, lg: '1024px' } });
+    expect(resolveMedia('md')).toBe('(min-width: 768px)');
+    expect(resolveMedia('lg')).toBe('(min-width: 1024px)');
+    expect(resolveMedia('768')).toBe('(min-width: 768px)');
+    expect(resolveMedia('768px')).toBe('(min-width: 768px)');
+    expect(resolveMedia('(min-width: 900px)')).toBe('(min-width: 900px)');
+    expect(resolveMedia('screen and (color)')).toBe('screen and (color)');
+  });
+});
+
+describe('media — sem matchMedia (SSR)', () => {
+  it('devolve signal estático false sem lançar', () => {
+    const original = (globalThis as Record<string, unknown>).matchMedia;
+    (globalThis as Record<string, unknown>).matchMedia = undefined;
+    try {
+      const sig = media('md');
+      expect(sig.value).toBe(false);
+    } finally {
+      (globalThis as Record<string, unknown>).matchMedia = original;
+    }
   });
 });

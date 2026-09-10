@@ -198,6 +198,71 @@ describe('debounce / throttle', () => {
     expect(ret).toBe(cleanup);
   });
 
+  it('debounce trailing NÃO propaga o retorno (morre no setTimeout)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const cleanup = vi.fn();
+    const d = compose(() => cleanup, [handle.debounce(100)]);
+    const ret = d(new Event('x'), ctxFor());
+    expect(ret).toBeUndefined(); // invocação adiada: ninguém captura o retorno
+    vi.advanceTimersByTime(100);
+    expect(cleanup).not.toHaveBeenCalled(); // o retorno morreu no setTimeout
+  });
+
+  it('debounce maxWait NÃO propaga o retorno', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const cleanup = vi.fn();
+    const d = compose(() => cleanup, [handle.debounce(200, { maxWait: 100 })]);
+    const ret = d(new Event('x'), ctxFor());
+    expect(ret).toBeUndefined();
+    vi.advanceTimersByTime(100);
+    expect(cleanup).not.toHaveBeenCalled();
+  });
+
+  it('throttle trailing NÃO propaga o retorno', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const cleanup = vi.fn();
+    const t = compose(() => cleanup, [handle.throttle(100)]);
+    t(new Event('x'), ctxFor()); // leading: propaga
+    const ret = t(new Event('x'), ctxFor()); // dentro da janela → trailing
+    expect(ret).toBeUndefined();
+    vi.advanceTimersByTime(100);
+    expect(cleanup).not.toHaveBeenCalled();
+  });
+
+  it('EVT.3.4 — prevent ANTES de debounce age na hora (em todo evento)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const prevented = vi.fn();
+    const fn = vi.fn();
+    const d = compose(fn, [handle.prevent, handle.debounce(100)]);
+    const e = Object.assign(new Event('x'), { preventDefault: prevented });
+
+    d(e, ctxFor());
+    expect(prevented).toHaveBeenCalledOnce(); // prevent é o mais externo: roda já
+    expect(fn).not.toHaveBeenCalled(); // handler ainda adiado
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledOnce();
+  });
+
+  it('EVT.3.4 — prevent DEPOIS de debounce só age na invocação adiada', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const prevented = vi.fn();
+    const fn = vi.fn();
+    const d = compose(fn, [handle.debounce(100), handle.prevent]);
+    const e = Object.assign(new Event('x'), { preventDefault: prevented });
+
+    d(e, ctxFor());
+    expect(prevented).not.toHaveBeenCalled(); // prevent está "dentro" do adiamento
+    expect(fn).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(fn).toHaveBeenCalledOnce();
+    expect(prevented).toHaveBeenCalledOnce(); // só quando o handler invoca
+  });
+
   it('throttle default: leading imediato + trailing no fim da janela', () => {
     vi.useFakeTimers();
     vi.setSystemTime(1000);

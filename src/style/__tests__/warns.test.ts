@@ -29,4 +29,11 @@ describe('style — warns', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('reservado'));
     warn.mockRestore();
   });
+
+  it('avisa atalho >parte com valor não-objeto', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    style('warn-shortcut', { '>title': 'não-objeto' } as never);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('">title"'));
+    warn.mockRestore();
+  });
 });

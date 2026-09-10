@@ -8,6 +8,7 @@ import {
   createSignal,
   read,
   bind,
+  setValue,
   type ReactiveAdapter,
 } from './reactive';
 import { preact } from './adapters/preact';
@@ -120,5 +121,31 @@ describe('reactive — createSignal', () => {
       effect: () => () => {},
     });
     expect(() => createSignal(0)).toThrow(/signal/);
+  });
+});
+
+describe('reactive — setValue', () => {
+  it('usa adapter.setValue quando presente', () => {
+    const setValueSpy = vi.fn();
+    useSignal({
+      isSignal: () => true,
+      getValue: <T>(s: unknown) => (s as { value: T }).value,
+      effect: () => () => {},
+      setValue: setValueSpy,
+    });
+    const sig = { value: 1 };
+    setValue(sig, 2);
+    expect(setValueSpy).toHaveBeenCalledWith(sig, 2);
+  });
+
+  it('fallback para signal.value = value quando o adapter não tem setValue', () => {
+    useSignal({
+      isSignal: () => true,
+      getValue: <T>(s: unknown) => (s as { value: T }).value,
+      effect: () => () => {},
+    });
+    const sig = { value: 1 };
+    setValue(sig, 2);
+    expect(sig.value).toBe(2);
   });
 });

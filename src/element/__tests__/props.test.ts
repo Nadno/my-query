@@ -29,6 +29,14 @@ describe('props — style', () => {
     s.value = { color: 'green' };
     expect(el.style.color).toBe('green');
   });
+
+  it('$style reativo com string vai para o atributo cru', () => {
+    const s = signal('color: red; margin: 0');
+    const el = $.div({ $style: s });
+    expect(el.getAttribute('style')).toBe('color: red; margin: 0');
+    s.value = 'color: blue';
+    expect(el.getAttribute('style')).toBe('color: blue');
+  });
 });
 
 describe('props — data estático', () => {
@@ -45,6 +53,12 @@ describe('props — setAttr', () => {
     expect(el.getAttribute('foo')).toBe('bar');
   });
 
+  it('key é ignorada (não vira atributo)', () => {
+    const el = $.div({ key: 'abc' });
+    expect(el.hasAttribute('key')).toBe(false);
+    expect(el.getAttribute('key')).toBeNull();
+  });
+
   it('false/null removem o atributo (estático)', () => {
     const el = $.div({ id: false, foo: null });
     expect(el.id).toBe('');
@@ -58,6 +72,26 @@ describe('props — setAttr', () => {
     expect(el.getAttribute('title')).toBe('hi');
     title.value = false;
     expect(el.hasAttribute('title')).toBe(false);
+  });
+});
+
+describe('props — valor cru é estático (ELM.2.7)', () => {
+  it('prop sem $ não reage a mudanças posteriores', () => {
+    const btn = $.button({ disabled: true }, 'x');
+    expect(btn.disabled).toBe(true);
+    // "mudança externa" não existe para uma prop cru — o atributo foi aplicado 1x
+    btn.removeAttribute('disabled');
+    expect(btn.disabled).toBe(false);
+    // e nada re-aplica: o valor cru não é uma fonte rastreada
+    expect(btn.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('prop cru não vira dependência de effect (aplicada uma vez)', () => {
+    const n = signal(0);
+    const el = $.div({ id: 'x', 'data-n': n.value });
+    expect(el.dataset.n).toBe('0');
+    n.value = 5;
+    expect(el.dataset.n).toBe('0'); // estático: não atualiza
   });
 });
 

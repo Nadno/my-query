@@ -221,3 +221,53 @@ describe('$model — <select multiple> (array)', () => {
     expect(sel.value).toEqual([1]);
   });
 });
+
+describe('$model — branches defensivos', () => {
+  it('bindText não reescreve el.value quando já é igual (evita cursor jump)', () => {
+    const text = signal('hi');
+    const input = $.input({ use: $model(text) });
+    const setter = vi.spyOn(input, 'value', 'set');
+    text.value = 'hi'; // mesmo valor → não reescreve
+    expect(setter).not.toHaveBeenCalled();
+    text.value = 'yo';
+    expect(setter).toHaveBeenCalledWith('yo');
+  });
+
+  it('bindText trata null/undefined como string vazia', () => {
+    const text = signal<string | null>('x');
+    const input = $.input({ use: $model(text as never) });
+    text.value = null;
+    expect(input.value).toBe('');
+  });
+
+  it('radio: signal null/undefined não marca nenhum', () => {
+    const picked = signal<string | null>('a');
+    const a = $.input({ type: 'radio', name: 'g3', value: 'a', use: $model(picked as never) });
+    expect(a.checked).toBe(true);
+    picked.value = null;
+    expect(a.checked).toBe(false);
+  });
+
+  it('checkbox-group: signal não-array é tratado como vazio', () => {
+    const tags = signal<string[]>(['x']);
+    const x = $.input({ type: 'checkbox', value: 'x', use: $model(tags) });
+    expect(x.checked).toBe(true);
+    // força um valor não-array por baixo dos tipos
+    (tags as unknown as { value: unknown }).value = 'não-array';
+    expect(x.checked).toBe(false);
+  });
+
+  it('select multiple: signal não-array desmarca tudo', () => {
+    const sel = signal<string[]>(['b']);
+    const select = $.select(
+      { multiple: true, use: $model(sel) },
+      $.option({ value: 'a' }, 'A'),
+      $.option({ value: 'b' }, 'B'),
+    );
+    const [a, b] = Array.from(select.options);
+    expect(b!.selected).toBe(true);
+    (sel as unknown as { value: unknown }).value = 'não-array';
+    expect(a!.selected).toBe(false);
+    expect(b!.selected).toBe(false);
+  });
+});

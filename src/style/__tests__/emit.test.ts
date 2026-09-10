@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
-import { style, config } from '../index';
+import { style, config, parts, css } from '../index';
 
 $useSignal(preact);
 
@@ -82,6 +82,17 @@ describe('style — CSS gerado', () => {
   it('style.css injeta seletor cru (escape hatch global)', () => {
     style.css('.emit-global-hatch', { margin: 0, boxSizing: 'border-box' });
     expect(sheet()).toContain('.emit-global-hatch { margin: 0px; box-sizing: border-box; }');
+  });
+
+  it('css() injeta seletor cru (alias exportado)', () => {
+    css('.emit-css-alias', { color: 'teal' });
+    expect(sheet()).toContain('.emit-css-alias { color: teal; }');
+  });
+
+  it('parts() (deprecated) delega para style com parts', () => {
+    const card = parts('emit-parts-alias', { title: { fontWeight: 700 } });
+    expect(card.title!.self).toBe('-emit-parts-alias-title');
+    expect(sheet()).toContain('.emit-parts-alias .-emit-parts-alias-title { font-weight: 700; }');
   });
 
   it('regra idêntica não é injetada duas vezes (dedup por string)', () => {

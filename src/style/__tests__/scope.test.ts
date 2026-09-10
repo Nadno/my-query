@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { $useSignal } from '../../index';
 import { preact } from '../../adapters/preact';
 import { style } from '../index';
-import { hashScope } from '../scope';
+import { hashScope, rootOf, partClass, scopedId, resolveScope } from '../scope';
 
 $useSignal(preact);
 
@@ -85,5 +85,35 @@ describe('style — motor native (@scope)', () => {
       color: 'black',
     });
     expect(sheet()).toContain('@scope (.scp-herit) to (.outside) { :scope { color: black; } }');
+  });
+});
+
+describe('style — helpers de escopo (rootOf/partClass/scopedId/resolveScope)', () => {
+  it('rootOf: prefixed com nome → prefixo-bloco; sem nome/native → bloco', () => {
+    expect(rootOf({ strategy: 'prefixed', name: 'acme' }, 'card')).toBe('acme-card');
+    expect(rootOf({ strategy: 'prefixed' }, 'card')).toBe('card');
+    expect(rootOf({ strategy: 'prefixed', name: 'hashed' }, 'card')).toBe('card');
+    expect(rootOf({ strategy: 'native' }, 'card')).toBe('card');
+  });
+
+  it('partClass: prefixo do nome do escopo ou do bloco', () => {
+    expect(partClass({ strategy: 'prefixed', name: 'acme' }, 'card', 'title')).toBe('-acme-title');
+    expect(partClass({ strategy: 'prefixed' }, 'card', 'title')).toBe('-card-title');
+    expect(partClass({ strategy: 'prefixed', name: 'hashed' }, 'card', 'title')).toBe('-card-title');
+  });
+
+  it('scopedId: base com prefixo do escopo ou só o bloco', () => {
+    expect(scopedId({ strategy: 'prefixed', name: 'acme' }, 'card', 'x')).toBe('acme-card-x');
+    expect(scopedId({ strategy: 'prefixed' }, 'card', 'x')).toBe('card-x');
+    expect(scopedId({ strategy: 'prefixed', name: 'hashed' }, 'card', 'x')).toBe('card-x');
+  });
+
+  it('resolveScope: mescla global com local, hashed vira hash, default strategy prefixed', () => {
+    const merged = resolveScope({ strategy: 'native', to: '.modal' }, 'bloco');
+    expect(merged).toMatchObject({ strategy: 'native', to: '.modal' });
+    const hashed = resolveScope({ name: 'hashed' }, 'bloco');
+    expect(hashed.name).toBe(hashScope('bloco'));
+    const plain = resolveScope(undefined, 'bloco');
+    expect(plain.strategy).toBe('prefixed');
   });
 });
