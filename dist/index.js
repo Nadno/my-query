@@ -1,13 +1,13 @@
-import { applyEvents as K, on as k, handle as J } from "./events.js";
-import { registerCustomEvent as Te, compose as we, getCustomEvent as xe } from "./events.js";
-import { r as N, a as E, d as v, c as M } from "./lifecycle.js";
-import { o as Me, b as Re } from "./lifecycle.js";
-import { r as Q, T as U, g as R, i as V, t as W, a as X } from "./nodes.js";
-import { c as je } from "./nodes.js";
-import { bind as f, read as A, setValue as $, isSignal as j, getAdapter as Y, untrack as b, isReactive as Z } from "./reactive.js";
-import { useSignal as Oe } from "./reactive.js";
+import { applyEvents as J, on as k, handle as Q } from "./events.js";
+import { registerCustomEvent as we, compose as xe, getCustomEvent as Me } from "./events.js";
+import { r as N, a as E, f as U, d as v, c as L } from "./lifecycle.js";
+import { o as Re, b as Ve } from "./lifecycle.js";
+import { r as W, T as z, g as R, i as V, t as X, a as Y } from "./nodes.js";
+import { c as qe } from "./nodes.js";
+import { bind as f, read as A, setValue as $, isSignal as j, getAdapter as Z, untrack as b, isReactive as _ } from "./reactive.js";
+import { useSignal as He } from "./reactive.js";
 function H(e, t) {
-  const n = Q(t);
+  const n = W(t);
   n ? e.className = n : e.className && e.removeAttribute("class");
 }
 function I(e, t) {
@@ -31,31 +31,31 @@ function P(e, t, n) {
   }
   e.setAttribute(t, String(n));
 }
-function z(e) {
+function B(e) {
   return `aria-${e.toLowerCase()}`;
 }
-function B(e, t, n) {
+function D(e, t, n) {
   if (n == null) {
     e.removeAttribute(t);
     return;
   }
   e.setAttribute(t, String(n));
 }
-function _(e, t) {
-  for (const n in t) {
-    const o = t[n];
-    B(e, z(n), o);
-  }
-}
 function F(e, t) {
   for (const n in t) {
     const o = t[n];
-    if (o === void 0) continue;
-    const r = z(n);
-    f(o, (s) => B(e, r, s));
+    D(e, B(n), o);
   }
 }
-function ee(e, t, n) {
+function ee(e, t) {
+  for (const n in t) {
+    const o = t[n];
+    if (o === void 0) continue;
+    const r = B(n);
+    f(o, (s) => D(e, r, s));
+  }
+}
+function te(e, t, n) {
   let o;
   for (const r in n) {
     const s = n[r];
@@ -88,13 +88,13 @@ function ee(e, t, n) {
           });
         continue;
       case "aria":
-        _(e, s);
-        continue;
-      case "$aria":
         F(e, s);
         continue;
+      case "$aria":
+        ee(e, s);
+        continue;
       case "on":
-        K(t, s);
+        J(t, s);
         continue;
       case "use":
         o = s;
@@ -109,29 +109,29 @@ function ee(e, t, n) {
   }
   return o;
 }
-function te(e, t) {
+function ne(e, t) {
   const n = Array.isArray(t) ? t : [t];
   for (const o of n) {
     const r = o(e);
     typeof r == "function" && N(r);
   }
 }
-function be(e, t) {
+function ge(e, t) {
   return (n) => {
     const o = n.element;
     if (o instanceof HTMLInputElement && o.type === "checkbox") {
-      Array.isArray(A(e)) ? se(n, e, t) : oe(n, e, t);
+      Array.isArray(A(e)) ? ce(n, e, t) : re(n, e, t);
       return;
     }
     if (o instanceof HTMLInputElement && o.type === "radio") {
-      re(n, e, t);
+      se(n, e, t);
       return;
     }
     if (o instanceof HTMLSelectElement && o.multiple) {
-      ce(n, e, t);
+      ie(n, e, t);
       return;
     }
-    ne(n, e, t);
+    oe(n, e, t);
   };
 }
 function T(e, t) {
@@ -142,20 +142,20 @@ function T(e, t) {
   }
   return n;
 }
-function ne(e, t, n) {
+function oe(e, t, n) {
   const o = e.element;
   f(t, (r) => {
     const s = r == null ? "" : String(r);
     o.value !== s && (o.value = s);
   }), k(e, n != null && n.lazy ? "change" : "input", () => $(t, T(o.value, n)));
 }
-function oe(e, t, n) {
+function re(e, t, n) {
   const o = e.element, r = (n == null ? void 0 : n.trueValue) ?? !0, s = (n == null ? void 0 : n.falseValue) ?? !1;
   f(t, (c) => {
     o.checked = c === r;
   }), k(e, "change", () => $(t, o.checked ? r : s));
 }
-function re(e, t, n) {
+function se(e, t, n) {
   const o = e.element;
   f(t, (r) => {
     o.checked = o.value === (r == null ? "" : String(r));
@@ -163,7 +163,7 @@ function re(e, t, n) {
     o.checked && $(t, T(o.value, n));
   });
 }
-function se(e, t, n) {
+function ce(e, t, n) {
   const o = e.element;
   f(t, (r) => {
     const s = Array.isArray(r) ? r : [];
@@ -173,7 +173,7 @@ function se(e, t, n) {
     o.checked && a === -1 ? s.push(i) : !o.checked && a !== -1 && s.splice(a, 1), $(t, s);
   });
 }
-function ce(e, t, n) {
+function ie(e, t, n) {
   const o = e.element;
   f(t, (r) => {
     const s = Array.isArray(r) ? r.map((c) => String(c)) : [];
@@ -185,17 +185,17 @@ function ce(e, t, n) {
     );
   });
 }
-function ge(e) {
+function Ae(e) {
   return (t) => {
     f(e, (n) => {
       t.element.hidden = !n;
     });
   };
 }
-function Ae(e) {
+function Se(e) {
   return (t) => {
     const n = t.element;
-    n[U] = !0;
+    n[z] = !0;
     const o = (r) => {
       r.appendChild(n);
     };
@@ -204,13 +204,13 @@ function Ae(e) {
     });
   };
 }
-function D(e) {
+function K(e) {
   return Array.isArray(e) && e.length === 2 && typeof e[0] == "function" && !j(e[0]) && (e[1] == null || typeof e[1] == "object" && !V(e[1]) && !Array.isArray(e[1]));
 }
-function ie(e) {
+function ae(e) {
   return typeof e == "object" && e !== null && !V(e) && !Array.isArray(e) && !j(e);
 }
-function ae(e, t) {
+function ue(e, t) {
   const n = document.createComment("mq");
   e.appendChild(n);
   const o = /* @__PURE__ */ new Map();
@@ -227,13 +227,13 @@ function ae(e, t) {
     let O = 0;
     for (let m = 0; m < w.length; m++) {
       const p = w[m];
-      if (D(p)) {
+      if (K(p)) {
         const l = p[1] ?? {}, d = l.key ?? l;
         q.add(d);
         let y = o.get(d);
         if (!y) {
-          const h = M();
-          y = { nodes: E(h, () => b(() => W(p[0](l)))), scope: h }, o.set(d, y);
+          const h = L();
+          y = { nodes: E(h, () => b(() => X(p[0](l)))), scope: h }, o.set(d, y);
         }
         C.push(y);
       } else {
@@ -241,8 +241,8 @@ function ae(e, t) {
         E(u, () => b(() => g(e, p)));
         const d = [];
         for (let h = l; h < e.childNodes.length; h++) {
-          const L = e.childNodes[h];
-          L && d.push(L);
+          const M = e.childNodes[h];
+          M && d.push(M);
         }
         const y = { nodes: d, scope: u };
         r.push(y), O++, C.push(y);
@@ -261,13 +261,13 @@ function ae(e, t) {
       const p = C[m].nodes;
       for (let l = p.length - 1; l >= 0; l--) {
         const d = p[l];
-        X(d) || (d.nextSibling !== x && e.insertBefore(d, x), x = d);
+        Y(d) || (d.nextSibling !== x && e.insertBefore(d, x), x = d);
       }
     }
     S && S !== document.activeElement && S.isConnected && typeof S.focus == "function" && S.focus({ preventScroll: !0 });
-  }, a = Y().effect(() => {
-    const i = M();
-    E(i, () => c(A(t), i));
+  }, a = Z().effect(() => {
+    const i = L();
+    E(i, () => c(A(t), i)), U();
   });
   N(a), N(() => {
     s();
@@ -280,7 +280,7 @@ function ae(e, t) {
 }
 function g(e, t) {
   if (!(t == null || t === !1 || t === !0)) {
-    if (D(t)) {
+    if (K(t)) {
       g(e, t[0](t[1] ?? {}));
       return;
     }
@@ -288,19 +288,19 @@ function g(e, t) {
       for (let n = 0; n < t.length; n++) g(e, t[n]);
       return;
     }
-    if (Z(t)) {
-      ae(e, t);
+    if (_(t)) {
+      ue(e, t);
       return;
     }
     if (V(t)) {
-      if (t[U]) return;
+      if (t[z]) return;
       e.appendChild(t);
       return;
     }
     e.appendChild(document.createTextNode(String(t)));
   }
 }
-function ue(e, ...t) {
+function fe(e, ...t) {
   const n = t[0];
   if (typeof n == "function" && !j(n) && n.length > 0) {
     const a = n;
@@ -311,37 +311,37 @@ function ue(e, ...t) {
   }
   const o = document.createElement(e), r = { element: o };
   let s = 0, c;
-  ie(n) && (c = ee(o, r, n), s = 1);
+  ae(n) && (c = te(o, r, n), s = 1);
   for (let a = s; a < t.length; a++) g(o, t[a]);
-  return c != null && te(r, c), o;
+  return c != null && ne(r, c), o;
 }
-const fe = Symbol("mq.else");
+const le = Symbol("mq.else");
 function G(...e) {
   return () => {
     for (const t of e) {
       if (typeof t == "function") return b(t);
       const [n, o] = t;
-      if (n === fe || A(n)) return b(o);
+      if (n === le || A(n)) return b(o);
     }
     return null;
   };
 }
-function Se(e, t, n) {
+function ve(e, t, n) {
   return n ? G([e, t], n) : G([e, t]);
 }
-function ve(e, t, n) {
+function ke(e, t, n) {
   return () => {
     const o = String(A(e)), r = t[o];
     return r ? b(r) : n ? b(n) : null;
   };
 }
-function ke(e, t, n) {
+function $e(e, t, n) {
   return () => (A(e) ?? []).map(
     (o) => [t, { ...o, key: n(o) }]
   );
 }
-function $e(e, t, n) {
-  const o = R(e), r = M(null), s = [];
+function Ce(e, t, n) {
+  const o = R(e), r = L(null), s = [];
   return E(r, () => {
     const c = typeof t == "function" ? t(n ?? {}) : t, a = o.childNodes.length;
     g(o, c);
@@ -349,12 +349,12 @@ function $e(e, t, n) {
       const u = o.childNodes[i];
       u && s.push(u);
     }
-  }), () => {
+  }), U(), () => {
     v(r);
     for (const c of s) c.remove();
   };
 }
-const le = [
+const de = [
   "a",
   "abbr",
   "address",
@@ -456,36 +456,36 @@ const le = [
   "var",
   "video",
   "wbr"
-], de = {};
-for (const e of le)
-  de[e] = (...t) => ue(e, ...t);
-const Ce = J.handlers;
+], me = {};
+for (const e of de)
+  me[e] = (...t) => fe(e, ...t);
+const Ee = Q.handlers;
 export {
   g as $append,
-  je as $cx,
-  ke as $each,
-  fe as $else,
-  J as $handle,
-  Ce as $handlers,
+  qe as $cx,
+  $e as $each,
+  le as $else,
+  Q as $handle,
+  Ee as $handlers,
   G as $match,
-  be as $model,
-  $e as $mount,
+  ge as $model,
+  Ce as $mount,
   k as $on,
-  Me as $onMounted,
-  Re as $onUnmounted,
-  Te as $registerCustomEvent,
-  ge as $show,
-  ve as $switch,
-  Oe as $useSignal,
-  Ae as $useTeleport,
-  Se as $when,
-  te as applyUse,
+  Re as $onMounted,
+  Ve as $onUnmounted,
+  we as $registerCustomEvent,
+  Ae as $show,
+  ke as $switch,
+  He as $useSignal,
+  Se as $useTeleport,
+  ve as $when,
+  ne as applyUse,
   f as bind,
-  we as compose,
-  ue as createTag,
-  de as default,
-  xe as getCustomEvent,
-  Z as isReactive,
+  xe as compose,
+  fe as createTag,
+  me as default,
+  Me as getCustomEvent,
+  _ as isReactive,
   j as isSignal,
   A as read,
   $ as setValue,

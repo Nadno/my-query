@@ -1,49 +1,60 @@
-let o = null;
-function c(n = o) {
+let e = null;
+function i(n = e) {
   return { cleanups: [], parent: n };
 }
-function s(n, e) {
-  const r = o;
-  o = n;
+function s(n, o) {
+  const t = e;
+  e = n;
   try {
-    return e();
+    return o();
   } finally {
-    o = r;
+    e = t;
   }
 }
-function t(n) {
-  o && o.cleanups.push(n);
+function c(n) {
+  e && e.cleanups.push(n);
 }
 function a(n) {
-  const { cleanups: e } = n;
-  for (let r = e.length - 1; r >= 0; r--)
+  const { cleanups: o } = n;
+  for (let t = o.length - 1; t >= 0; t--)
     try {
-      e[r]();
-    } catch (u) {
-      console.error("[mini-q] cleanup error", u);
+      o[t]();
+    } catch (r) {
+      console.error("[mini-q] cleanup error", r);
     }
-  e.length = 0;
+  o.length = 0;
 }
-function i(n) {
-  if (!o) {
+function l(n) {
+  if (!e) {
     console.warn("[mini-q] onUnmounted fora de escopo — passe um builder a $.mount");
     return;
   }
-  t(n);
+  c(n);
 }
-function l(n) {
-  if (!o) {
+function p(n) {
+  if (!e) {
     console.warn("[mini-q] onMounted fora de escopo — passe um builder a $.mount"), n();
     return;
   }
-  const e = n();
-  typeof e == "function" && t(e);
+  const o = e;
+  u.push({ scope: o, fn: n });
+}
+const u = [];
+function f() {
+  if (u.length === 0) return;
+  const n = u.splice(0, u.length);
+  for (const { scope: o, fn: t } of n)
+    s(o, () => {
+      const r = t();
+      typeof r == "function" && c(r);
+    });
 }
 export {
   s as a,
-  i as b,
-  c,
+  l as b,
+  i as c,
   a as d,
-  l as o,
-  t as r
+  f,
+  p as o,
+  c as r
 };

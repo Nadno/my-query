@@ -27,8 +27,16 @@ export declare function disposeScope(scope: Scope): void;
  */
 export declare function onUnmounted(fn: Cleanup): void;
 /**
- * Roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn`
- * retornar uma função, ela é registrada como teardown via `onUnmounted` — o idioma
- * "monta um recurso e devolve sua limpeza". Fora de escopo `warn` (mas ainda roda `fn`).
+ * Roda `fn` **depois de montar** (o nó já conectado ao documento, o escopo ativo).
+ * Se `fn` retornar uma função, ela é registrada como teardown via `onUnmounted` — o
+ * idioma "monta um recurso e devolve sua limpeza". Fora de escopo `warn` (mas ainda
+ * roda `fn`). A execução é **deferida** por `flushMounted()` — chamado por `$mount` e
+ * pelas regiões após anexar a árvore — para que o callback já encontre o elemento na DOM.
  */
 export declare function onMounted(fn: () => void | Cleanup): void;
+/**
+ * Roda os `onMounted` pendentes (na ordem de registro), cada um no seu escopo,
+ * registrando o teardown retornado nesse escopo. Chamado por `$mount` e pelas regiões
+ * logo após os nós serem anexados.
+ */
+export declare function flushMounted(): void;
