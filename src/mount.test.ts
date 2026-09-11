@@ -48,7 +48,7 @@ describe('LIF.7.3 — $mount com árvore pronta (débito conhecido)', () => {
 });
 
 describe('LIF.7.7 — timing do onMounted', () => {
-  it('roda no build, antes do nó ser conectado ao document', () => {
+  it('roda quando o nó já está conectado ao document (pós-mount)', () => {
     $useSignal(preact);
     let el: HTMLElement | null = null;
     let connectedAtMount: boolean | null = null;
@@ -60,8 +60,23 @@ describe('LIF.7.7 — timing do onMounted', () => {
       return el;
     };
     const unmount = $mount(document.body, App);
-    expect(connectedAtMount).toBe(false); // construiu, ainda não conectado
-    expect(document.getElementById('x')).not.toBeNull(); // após o mount, conectado
+    expect(connectedAtMount).toBe(true); // montado: nó já no document
+    expect(document.getElementById('x')).toBe(el);
+    unmount();
+  });
+
+  it('dentro do onMounted o elemento já é encontrável por document.getElementById', () => {
+    $useSignal(preact);
+    let found: HTMLElement | null = null;
+    const App = () => {
+      const el = $.div({ id: 'y' }, 'y');
+      $onMounted(() => {
+        found = document.getElementById('y');
+      });
+      return el;
+    };
+    const unmount = $mount(document.body, App);
+    expect(found).not.toBeNull();
     unmount();
   });
 });

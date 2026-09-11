@@ -6,7 +6,7 @@
  * move apenas nós fora de posição e restaura o foco de um nó reusado que precisou mover.
  */
 
-import { createScope, disposeScope, registerCleanup, runInScope, type Scope } from '../lifecycle';
+import { createScope, disposeScope, registerCleanup, runInScope, flushMounted, type Scope } from '../lifecycle';
 import { getAdapter, read, untrack, type Bindable } from '../reactive';
 import { toNodes, isTeleported } from '../dom/nodes';
 import { isComponentTuple } from './guards';
@@ -115,6 +115,8 @@ export function mountReactiveRegion(parent: Node, source: Bindable<unknown>): vo
   const stop = getAdapter().effect(() => {
     const scope = createScope();
     runInScope(scope, () => reconcile(read(source), scope));
+    // nós já anexados: roda os onMounted pendentes desta reconciliação
+    flushMounted();
   });
   registerCleanup(stop);
 

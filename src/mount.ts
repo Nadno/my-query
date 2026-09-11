@@ -1,6 +1,6 @@
 /** `mount` — abre o escopo raiz de lifecycle e injeta a árvore no alvo. */
 
-import { createScope, disposeScope, runInScope } from './lifecycle';
+import { createScope, disposeScope, runInScope, flushMounted } from './lifecycle';
 import { getElement } from './dom/nodes';
 import { appendChild } from './element';
 import type { Component } from './types';
@@ -33,6 +33,9 @@ export function mount(
       if (n) nodes.push(n);
     }
   });
+
+  // nó já conectado: roda os `onMounted` pendentes (cada um no seu escopo)
+  flushMounted();
 
   return () => {
     disposeScope(scope);

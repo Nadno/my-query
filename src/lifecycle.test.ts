@@ -7,6 +7,7 @@ import {
   currentScope,
   onMounted,
   onUnmounted,
+  flushMounted,
 } from './lifecycle';
 
 describe('lifecycle — contrato de escopo e cleanup', () => {
@@ -77,13 +78,15 @@ describe('lifecycle — contrato de escopo e cleanup', () => {
 });
 
 describe('lifecycle — onMounted / onUnmounted (hooks públicos)', () => {
-  it('onMounted roda fn imediatamente (síncrono) dentro do escopo', () => {
+  it('onMounted fica pendente: roda só no flushMounted (pós-montagem)', () => {
     const scope = createScope(null);
     const fn = vi.fn();
     runInScope(scope, () => {
       onMounted(fn);
-      expect(fn).toHaveBeenCalledTimes(1); // já rodou, sem esperar dispose
+      expect(fn).not.toHaveBeenCalled(); // ainda não montado
     });
+    flushMounted();
+    expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('onMounted cujo fn retorna função → o retorno vira teardown no disposeScope', () => {
@@ -95,6 +98,7 @@ describe('lifecycle — onMounted / onUnmounted (hooks públicos)', () => {
         order.push('mount');
         return () => order.push('teardown');
       });
+      flushMounted();
     });
 
     expect(order).toEqual(['mount']); // só o mount rodou até aqui
@@ -109,6 +113,7 @@ describe('lifecycle — onMounted / onUnmounted (hooks públicos)', () => {
       onMounted(() => {
         /* efeito sem teardown */
       });
+      flushMounted();
     });
     expect(() => disposeScope(scope)).not.toThrow();
   });
@@ -132,7 +137,9 @@ describe('lifecycle — onMounted / onUnmounted (hooks públicos)', () => {
     onMounted(fn);
     expect(fn).toHaveBeenCalledTimes(1);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('onMounted fora de escopo'));
-    // não havia escopo → o teardown retornado não roda nunca
+    // sem escopo → não é fila de flush; o teardown retornado não roda nunca
+    expect(teardown).not.toHaveBeenCalled();
+    flushMounted(); // nada pendente (registrado apenas em escopo)
     expect(teardown).not.toHaveBeenCalled();
     expect(currentScope()).toBeNull();
     warn.mockRestore();

@@ -68,9 +68,11 @@ export function onUnmounted(fn: Cleanup): void {
 }
 
 /**
- * Roda `fn` **agora** (o componente acabou de construir, já no escopo). Se `fn`
- * retornar uma função, ela é registrada como teardown via `onUnmounted` — o idioma
- * "monta um recurso e devolve sua limpeza". Fora de escopo `warn` (mas ainda roda `fn`).
+ * Roda `fn` **depois de montar** (o nó já conectado ao documento, o escopo ativo).
+ * Se `fn` retornar uma função, ela é registrada como teardown via `onUnmounted` — o
+ * idioma "monta um recurso e devolve sua limpeza". Fora de escopo `warn` (mas ainda
+ * roda `fn`). A execução é **deferida** por `flushMounted()` — chamado por `$mount` e
+ * pelas regiões após anexar a árvore — para que o callback já encontre o elemento na DOM.
  */
 export function onMounted(fn: () => void | Cleanup): void {
   if (!current) {
@@ -78,6 +80,29 @@ export function onMounted(fn: () => void | Cleanup): void {
     fn(); // roda uma vez; sem escopo, o cleanup retornado não tem onde ser registrado
     return;
   }
-  const cleanup = fn();
-  if (typeof cleanup === 'function') registerCleanup(cleanup);
+  const scope = current;
+  pendingMounted.push({ scope, fn });
+}
+
+interface PendingMounted {
+  scope: Scope;
+  fn: () => void | Cleanup;
+}
+
+const pendingMounted: PendingMounted[] = [];
+
+/**
+ * Roda os `onMounted` pendentes (na ordem de registro), cada um no seu escopo,
+ * registrando o teardown retornado nesse escopo. Chamado por `$mount` e pelas regiões
+ * logo após os nós serem anexados.
+ */
+export function flushMounted(): void {
+  if (pendingMounted.length === 0) return;
+  const jobs = pendingMounted.splice(0, pendingMounted.length);
+  for (const { scope, fn } of jobs) {
+    runInScope(scope, () => {
+      const cleanup = fn();
+      if (typeof cleanup === 'function') registerCleanup(cleanup);
+    });
+  }
 }

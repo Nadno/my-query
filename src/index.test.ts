@@ -170,7 +170,7 @@ describe('lifecycle / mount → unmount', () => {
 });
 
 describe('onMounted / onUnmounted', () => {
-  it('setup: onMounted roda no build; onUnmounted roda no unmount da raiz', () => {
+  it('setup: onMounted roda pós-montagem; onUnmounted roda no unmount da raiz', () => {
     const order: string[] = [];
     const App = () => {
       $onMounted(() => {
