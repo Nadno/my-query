@@ -24,6 +24,19 @@ test('switch: alterna aria-checked no clique e no teclado', async ({ page }) => 
   await expect(som).toHaveAttribute('aria-checked', 'true');
 });
 
+test('switch: fundo reflete o estado checked (regressão do estilo aninhado inline)', async ({ page }) => {
+  await page.goto('/examples/wai-aria/switch.html');
+
+  // Notificações inicia checked=true → o fundo deve ser o azul "on" (#3b82f6),
+  // não o grisalho do estado off. Regride se o `&[aria-checked]` não for compilado.
+  const notif = page.getByRole('switch', { name: 'Notificações' });
+  await expect(notif).toHaveCSS('background-color', 'rgb(59, 130, 246)');
+
+  // desligar → volta ao estado off (grisalho translúcido)
+  await notif.click();
+  await expect(notif).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.12)');
+});
+
 test('switch: grupo exclusivo (multiple:false) desmarca o outro', async ({ page }) => {
   await page.goto('/examples/wai-aria/switch.html');
 
