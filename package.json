@@ -5,15 +5,31 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./style": "./src/style/index.ts",
-    "./reactive": "./src/reactive.ts",
-    "./events": "./src/events/index.ts",
-    "./adapters/preact": "./src/adapters/preact.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style": {
+      "types": "./dist/style.d.ts",
+      "import": "./dist/style.js"
+    },
+    "./reactive": {
+      "types": "./dist/reactive.d.ts",
+      "import": "./dist/reactive.js"
+    },
+    "./events": {
+      "types": "./dist/events.d.ts",
+      "import": "./dist/events.js"
+    },
+    "./adapters/preact": {
+      "types": "./dist/adapters/preact.d.ts",
+      "import": "./dist/adapters/preact.js"
+    }
   },
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build:lib": "tsc -p tsconfig.json --noEmit && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

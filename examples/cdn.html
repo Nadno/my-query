@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mini-q — via CDN (import map)</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a1a;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+      }
+      .card {
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        text-align: center;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <!--
+      Prova de conceito: mini-q importado direto do CDN, sem build e sem Vite.
+      Troque o prefixo `https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q`
+      por `/dist` para testar localmente (servindo a raiz do repo com `vite`).
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { signal } from '@preact/signals-core';
+
+      $useSignal(preact);
+
+      const count = signal(0);
+
+      const App = () =>
+        $.div(
+          { class: 'card' },
+          $.h1('mini-q via CDN'),
+          $.p(() => `count: ${count.value}`),
+          $.button({ on: { click: () => count.value++ } }, '+'),
+        );
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

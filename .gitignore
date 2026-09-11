@@ -1,5 +1,6 @@
 node_modules/
-dist/
+dist-demo/
+examples/auth/web/dist/
 *.log
 
 # VitePress build cache (docs das std libs do exemplo)
