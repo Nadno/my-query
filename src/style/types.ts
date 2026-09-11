@@ -1,4 +1,4 @@
-/** Tipos públicos do subsistema de estilo (`$.style`). */
+/** Tipos públicos do subsistema de estilo (`style` de `mini-q/style`). */
 
 export type CSSValue = string | number | boolean | null | undefined;
 
@@ -10,15 +10,18 @@ export type CSSObject = {
 export type StyleObject = CSSObject;
 
 /**
- * Corpo de uma flag/variante: declarações no topo + override opcional de `parts`
- * (partes descendentes) e `slots` (blocos hospedados). Mesmo shape nos dois.
+ * Corpo de uma flag/variante: declarações no topo + override opcional de partes
+ * (chave `$nome`) e/ou de hosts (`hosts:` = blocos estrangeiros hospedados).
+ * Legacy: `parts`/`slots` ainda aceitos durante a transição (deprecados).
  */
 export type FlagBody = CSSObject & {
+  $?: never;
   parts?: Record<string, CSSObject>;
   slots?: Record<string, CSSObject>;
+  hosts?: Record<string, CSSObject>;
 };
 
-/** Referência de um slot na declaração: qualquer handle (lê `.self`) ou uma classe crua. */
+/** Referência de um host na declaração: qualquer handle (lê `.self`) ou uma classe crua. */
 export type SlotRef = { readonly self: string } | string;
 
 /** Motor de escopo do bloco. `native` emite via `@scope` CSS; `prefixed` usa classes prefixadas. */
@@ -34,45 +37,68 @@ export interface ScopeConfig {
   to?: string;
 }
 
-export interface StyleConfig {
-  /** Motor/nome/limite de escopo do bloco (mesclado com o global do `config`). */
+/**
+ * Ficha técnica do bloco (chave exata `$:` no config). NÃO gera regra CSS —
+ * tudo aqui é configuração (escopo, hosts, defaults) ou CSS condicional
+ * (flags/variants) / recursos (keyframes).
+ */
+export interface StyleMeta {
+  /** Motor/nome/limite de escopo (mesclado com o global do `config`). */
   scope?: ScopeConfig;
-  /** Partes descendentes (recursivo). Classe = `-{bloco}-{chave}`, combinador descendente. */
-  parts?: Record<string, StyleConfig>;
-  /** Atalho para partes descendentes: `'>title': { ... }` equivale a `parts: { title: { ... } }`. */
-  [shortcutPart: `>${string}`]: StyleConfig;
+  /** Blocos estrangeiros hospedados; flags/variants os miram por `$: { hosts }`. */
+  hosts?: Record<string, SlotRef>;
+  /** Alias legacy de `hosts` (topo `slots:{}` durante a transição). */
+  slots?: Record<string, SlotRef>;
+  /** Valor default por grupo de variante. */
+  defaults?: Record<string, string>;
   /** Flags booleanas independentes. Classe composta `.sel.--is-{nome}`. */
   flags?: Record<string, FlagBody>;
   /** Grupos de variantes exclusivas. Classe composta `.sel.--{grupo}-{valor}`. */
   variants?: Record<string, Record<string, FlagBody>>;
-  /** Valor default por grupo de variante. */
-  defaults?: Record<string, string>;
-  /** Blocos estrangeiros hospedados; flags/variants os miram por `slots`. */
-  slots?: Record<string, SlotRef>;
   /** Keyframes escopados por bloco (`{bloco}-{nome}`). */
   keyframes?: Record<string, CSSObject>;
+}
+
+/** Chave `$nome` = parte (filho direto `& > .-bloco-nome`). `$:` é a ficha técnica. */
+const DOLLAR_PART = /^\$[A-Za-z0-9_-]+$/;
+
+export function isDollarPartKey(key: string): boolean {
+  return DOLLAR_PART.test(key) && key !== '$';
+}
+
+export interface StyleConfig {
+  /** Ficha técnica (chave exata `$:`): scope/hosts/defaults/flags/variants/keyframes. */
+  $?: StyleMeta;
+  /** Partes descendentes (recursivo). Chave `$nome`; CSS `& > .-bloco-nome`. */
+  parts?: Record<string, StyleConfig>;
+  /** Atalho legacy `>nome` (equivale a `$nome`; deprecado, avisa). */
+  [shortcutPart: `>${string}`]: StyleConfig;
   /** Escalares/`&…`/`@…` no topo são as declarações da própria parte. */
   [key: string]: unknown;
 }
 
 type VariantProps<T extends StyleConfig> =
-  & { [G in keyof T['variants']]?: keyof NonNullable<T['variants']>[G] }
-  & { [F in keyof T['flags']]?: boolean };
+  & { [G in keyof NonNullable<T['$']>['variants']]?: keyof NonNullable<NonNullable<T['$']>['variants']>[G] }
+  & { [F in keyof NonNullable<T['$']>['flags']]?: boolean };
 
-type ReservedName = 'self' | 'flags' | 'variants' | 'keyframes' | 'slots';
+type ReservedName = 'self' | 'flags' | 'variants' | 'keyframes' | 'hosts' | 'slots';
 
-/** Tipo que normaliza partes explícitas + atalhos `\u003enome` num único record recursivo. */
+/** Tipo que normaliza `$nome` (e o legacy `parts`/`>nome`) num único record recursivo. */
 type ResolvedParts<T extends StyleConfig> =
   & (T extends { parts?: infer P } ? (P extends Record<string, StyleConfig> ? P : {}) : {})
   & (T extends Record<string, unknown>
     ? {
-        [K in keyof T as K extends `>${infer R}` ? R : never]: T[K] extends StyleConfig
-          ? T[K]
-          : StyleConfig;
+        [K in keyof T as K extends `$${infer R}`
+          ? K extends '$'
+            ? never
+            : R
+          : never]: T[K] extends StyleConfig ? T[K] : StyleConfig;
       }
     : {});
 
 type PartKeys<T extends StyleConfig> = Exclude<keyof ResolvedParts<T>, ReservedName>;
+
+type MetaOf<T extends StyleConfig> = NonNullable<T['$']>;
 
 interface StyleHandleBase<T extends StyleConfig> {
   /** Monta a string de classes: `self` + tokens de variante/flag ativos. */
@@ -80,18 +106,20 @@ interface StyleHandleBase<T extends StyleConfig> {
   /** Classe própria (`'field'` no bloco, `'-field-input'` numa parte). */
   readonly self: string;
   /** Token de cada flag (`'--is-invalid'`). */
-  readonly flags: { [K in keyof T['flags']]: string };
+  readonly flags: { [K in keyof MetaOf<T>['flags']]: string };
   /** Token de cada variante (`variants.size.sm === '--size-sm'`). */
-  readonly variants: { [G in keyof T['variants']]: { [V in keyof NonNullable<T['variants']>[G]]: string } };
+  readonly variants: { [G in keyof MetaOf<T>['variants']]: { [V in keyof MetaOf<T>['variants'][G]]: string } };
   /** Nome escopado de cada keyframe (`'field-pulse'`). */
-  readonly keyframes: { [K in keyof T['keyframes']]: string };
-  /** Classe resolvida de cada slot hospedado. */
-  readonly slots: { [K in keyof T['slots']]: string };
+  readonly keyframes: { [K in keyof MetaOf<T>['keyframes']]: string };
+  /** Classe resolvida de cada host hospedado (rename de `slots`). */
+  readonly hosts: { [K in keyof MetaOf<T>['hosts']]: string };
+  /** Alias legacy de {@link hosts}. */
+  readonly slots: { [K in keyof MetaOf<T>['hosts']]: string };
 }
 
 /**
- * Retorno de `$.style(name, config)`: callable (`field({ size })`) com `self` e as partes
- * **promovidas** ao próprio objeto (`field.input`), além de `flags`/`variants`/`keyframes`/`slots`.
+ * Retorno de `style(name, config)`: callable (`field({ size })`) com `self` e as partes
+ * **promovidas** ao próprio objeto (`field.input`), além de `flags`/`variants`/`keyframes`/`hosts`.
  * `class`/`$class`/`cx` aceitam o handle diretamente (ele é chamado).
  */
 export type StyleHandle<T extends StyleConfig = StyleConfig> =

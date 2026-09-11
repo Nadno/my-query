@@ -6,6 +6,7 @@
 
 import { getGlobalScope } from './config';
 import { toKebab } from './emit';
+import type { PartRefs } from './emit';
 import type { ScopeConfig, StyleConfig } from './types';
 
 /** Hash curto e estável de um nome (base36, 4 chars) para `name: 'hashed'`. */
@@ -53,15 +54,18 @@ export interface BuildCtx {
   native: boolean;
   /** Regras CSS geradas (seletor plano). Em `native`, embrulhadas em `@scope` ao final. */
   out: string[];
-  /** Mapa nome de slot → classe selecionada (para flags/variants mirarem). */
-  slots: Record<string, string>;
-  /** Resolve a classe selecionada de um slot declarado neste nó. */
-  slotSel?: (k: string) => string | undefined;
+  /** Mapa de refs `$` GLOBAL do bloco (todas as partes, depth-independent). */
+  partRefs: PartRefs;
+  /** Resolve a classe do host declarado em `$: { hosts }`. */
+  hostSel?: (k: string) => string | undefined;
 }
 
 /** Chaves reservadas do `StyleConfig` (não são declarações de CSS). */
-export const RESERVED = new Set(['parts', 'scope', 'flags', 'variants', 'defaults', 'slots', 'keyframes']);
+export const RESERVED = new Set(['$', 'parts', 'scope', 'flags', 'variants', 'defaults', 'slots', 'hosts', 'keyframes']);
 
+/** Lê o escopo local do bloco: da ficha técnica `$: { scope }`. (Legacy: `scope` no topo.) */
 export function parseLocalScope(config: StyleConfig): ScopeConfig | undefined {
-  return config.scope as ScopeConfig | undefined;
+  const meta = (config as { $?: { scope?: ScopeConfig } }).$;
+  if (meta?.scope) return meta.scope;
+  return (config as { scope?: ScopeConfig }).scope as ScopeConfig | undefined;
 }

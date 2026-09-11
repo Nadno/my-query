@@ -14,15 +14,12 @@ describe('style — handle: partes promovidas e nomes', () => {
   it('self do bloco, partes promovidas (nome completo do bloco), flags --is-*, keyframes escopado', () => {
     const card = style('h-category-card', {
       padding: 16,
-      flags: { featured: { borderColor: 'gold' } },
-      keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
-      parts: {
-        title: { fontWeight: 700 },
-        content: {
-          color: '#333',
-          parts: { description: { opacity: 0.8 } },
-        },
+      $: {
+        flags: { featured: { borderColor: 'gold' } },
+        keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
       },
+      $title: { fontWeight: 700 },
+      $content: { color: '#333', $description: { opacity: 0.8 } },
     });
 
     expect(card.self).toBe('h-category-card');
@@ -46,9 +43,8 @@ describe('style — handle: partes promovidas e nomes', () => {
 describe('style — class/cx aceitam o handle', () => {
   it('cx chama o handle (bloco → self+defaults, parte → classe da parte)', () => {
     const box = style('h-cx-box', {
-      variants: { tone: { warn: {}, ok: {} } },
-      defaults: { tone: 'ok' },
-      parts: { head: {} },
+      $: { variants: { tone: { warn: {}, ok: {} } }, defaults: { tone: 'ok' } },
+      $head: {},
     });
     expect(cx(box)).toBe('h-cx-box --tone-ok');
     expect(cx(box.head)).toBe('-h-cx-box-head');

@@ -260,13 +260,12 @@ describe('behaviors', () => {
 
 describe('style / cx (DX)', () => {
   it('classes legíveis nomeadas', () => {
-    const card = style('card', { parts: { title: {}, body: {} } });
+    const card = style('card', { $title: {}, $body: {} });
     expect(card.self).toBe('card');
     expect(card.title.self).toBe('-card-title');
     expect(card.body.self).toBe('-card-body');
     const btn = style('btn', {
-      variants: { size: { sm: {}, md: {} } },
-      defaults: { size: 'md' },
+      $: { variants: { size: { sm: {}, md: {} } }, defaults: { size: 'md' } },
     });
     expect(typeof btn).toBe('function');
     expect(btn({ size: 'sm' })).toBe('btn --size-sm');
@@ -290,13 +289,13 @@ describe('style / cx (DX)', () => {
 
     const field = style('mq-auth-field', {
       display: 'flex',
-      parts: { label: { fontSize: 14 } },
+      $label: { fontSize: 14 },
     });
     expect(field.self).toBe('mq-auth-field');
     expect(field.label.self).toBe('-mq-auth-field-label');
     expect(sheet?.textContent).toContain('.mq-auth-field { display: flex; }');
     expect(sheet?.textContent).toContain(
-      '.mq-auth-field .-mq-auth-field-label { font-size: 14px; }',
+      '.mq-auth-field > .-mq-auth-field-label { font-size: 14px; }',
     );
 
     style.css('.mq-auth-global', { margin: 0 });

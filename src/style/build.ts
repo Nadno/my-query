@@ -10,6 +10,7 @@
 
 import { inject, pushRule, scopeBlock } from './emit';
 import { buildNode } from './buildNode';
+import { collectPartRefs } from './parts';
 import type { BuildCtx } from './scope';
 import { parseLocalScope, resolveScope, rootOf } from './scope';
 import type { StyleApi, StyleConfig, StyleHandle } from './types';
@@ -28,16 +29,18 @@ function warnDup(name: string): void {
 function styleFn<T extends StyleConfig>(name: string, config: T): StyleHandle<T> {
   warnDup(name);
   const scope = resolveScope(parseLocalScope(config), name);
+  // Refs globais do bloco: uma única passada resolve `$parte` de qualquer profundidade.
+  const globalRefs = collectPartRefs(scope, name, config);
   const ctx: BuildCtx = {
     scope,
     block: name,
     root: rootOf(scope, name),
     native: scope.strategy === 'native',
     out: [],
-    slots: {},
+    partRefs: globalRefs,
   };
 
-  const handle = buildNode(config, ctx, [ctx.root]);
+  const handle = buildNode(config, ctx, [{ cls: ctx.root, direct: true }]);
 
   const rules = ctx.native ? scopeBlock(ctx.out, `.${ctx.root}`, scope.to) : ctx.out;
   for (const rule of rules) pushRule(rule);

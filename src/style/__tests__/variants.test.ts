@@ -12,10 +12,12 @@ describe('style — flags e variants coexistem; callable', () => {
   it('bloco com partes E variantes E flags; tokens no call-site', () => {
     const btn = style('var-btn', {
       border: 'none',
-      parts: { icon: { width: 16 } },
-      variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
-      flags: { block: { display: 'block' } },
-      defaults: { size: 'md' },
+      $icon: { width: 16 },
+      $: {
+        variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
+        flags: { block: { display: 'block' } },
+        defaults: { size: 'md' },
+      },
     });
 
     expect(btn.icon.self).toBe('-var-btn-icon'); // parte não descartada com variants
@@ -29,31 +31,37 @@ describe('style — flags e variants coexistem; callable', () => {
     const css = sheet();
     expect(css).toContain('.var-btn.--size-sm { padding: 4px; }');
     expect(css).toContain('.var-btn.--is-block { display: block; }');
-    expect(css).toContain('.var-btn .-var-btn-icon { width: 16px; }');
+    expect(css).toContain('.var-btn > .-var-btn-icon { width: 16px; }');
   });
 
-  it('variante pode sobrescrever uma parte descendente (variants → parts)', () => {
+  it('variante pode sobrescrever uma parte descendente (variants → $parte)', () => {
     style('var-parts', {
-      parts: { label: {} },
-      variants: { tone: { danger: { parts: { label: { color: 'red' } } } } },
+      $label: {},
+      $: {
+        variants: { tone: { danger: { $label: { color: 'red' } } } },
+      },
     });
-    expect(sheet()).toContain('.var-parts.--tone-danger .-var-parts-label { color: red; }');
+    expect(sheet()).toContain('.var-parts.--tone-danger > .-var-parts-label { color: red; }');
   });
 
-  it('variante pode sobrescrever um slot hospedado (variants → slots)', () => {
+  it('variante pode sobrescrever um host hospedado (variants → hosts)', () => {
     const control = style('var-slot-input', { padding: 8 });
     style('var-slot-field', {
-      slots: { control },
-      variants: { tone: { danger: { slots: { control: { borderColor: 'crimson' } } } } },
+      $: {
+        hosts: { control },
+        variants: { tone: { danger: { hosts: { control: { borderColor: 'crimson' } } } } },
+      },
     });
     expect(sheet()).toContain('.var-slot-field.--tone-danger .var-slot-input { border-color: crimson; }');
   });
 
   it('call-site: false desliga a default, valor inexistente é ignorado, flag só liga com true', () => {
     const btn = style('var-callsite', {
-      variants: { size: { sm: {}, md: {} } },
-      flags: { block: {} },
-      defaults: { size: 'md' },
+      $: {
+        variants: { size: { sm: {}, md: {} } },
+        flags: { block: {} },
+        defaults: { size: 'md' },
+      },
     });
     // Entradas defensivas que a assinatura tipada proíbe (false/valor fora do grupo,
     // truthy não-boolean): o runtime as trata, então miramos a call por baixo dos tipos.

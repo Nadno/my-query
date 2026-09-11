@@ -1,85 +1,168 @@
-# Proposta: refs de parte e "nivelamento" no `style()` (design em aberto)
+# Spec: refs de parte e "nivelamento" no `style()` — `$` como idioma único de parte
 
-Status: **DESIGN EM ABERTO (2026-09-11)** — ainda não implementado. Surge da refatoração dos
-exemplos WAI-ARIA: `parts` aninhado complica a leitura e o `$parte` cru dentro de `&[...]` resolve
-só nomes do **mesmo nó**. Antes de migrar os exemplos, o usuário levantou duas direções de API.
+Status: **ENGINE IMPLEMENTADO (2026-09-11)**. Implementado em `src/style/*` com testes
+(`dollar.test.ts` + migração dos testes legacy) e `dist/` rebuildado. **Pendente da fase de
+migração** (adiada pelo usuário — "esquece os exemplos por agora"):
+- remoção do legacy (`parts:{}`, `>nome`, `slots:`, topo `flags/variants/defaults`),
+  hoje mantido como **compat de transição** para `examples/wai-aria` e `examples/auth` passarem;
+- migração dos exemplos para o idioma `$` + docs derivadas.
 
-## Contexto / decisão travada
+---
 
-- **`style()` (sem `$`)** é o nome do namespace de subsistema, decidido em
-  [style-namespace.md](style-namespace.md): *raiz usa `$`* (coisas chamadas escrevendo view:
-  `$mount`, `$when`, `$cx`); *namespace/subsistema não* (`style`, `handle`, e `mini-q/aria` também:
-  `RovingFocus`, `CheckGroup`). `mini-q/style` já separa por contexto de import.
-- **`$style` já existe como prop reativa** no caminho comum (`$.div({ $style: () => ({...}) })`,
-  [USAGE](../USAGE.md) §2). Nesse contexto, `$` = "reativo", não "namespace".
-- O **atalho `>nome`** (partes no topo, `>title` ≡ `parts: { title }`) já está implementado
-  (`src/style/parts.ts`, `splitShortcutParts`/`mergeParts`) e documentado em
-  [STYLE](../STYLE.md). Recursivo. Este é o idioma atual preferido de declaração.
+## 1. Decisões fechadas
 
-## Problema real (nivelamento)
+1. **`$nome` é a ÚNICA forma de declarar parte.** Remove-se `parts:{}` e o atalho `>nome`
+   (que emitia descendente apesar do símbolo prometer filho direto).
+2. **Parte declarada em chave `$nome` emite filho direto:** `& > .-bloco-nome`.
+   Em parte aninhada dentro de outra parte, o "pai" da regra é o self da parte-pai:
+   `.field > .-content > .-field-description` (neta filha direta de `content`).
+3. **Refs `$` em seletor são GLOBAIS ao bloco** — resolvem de qualquer nível, não só do nó atual.
+   Regra de precedência: o mais próximo do nó vence em colisão de nome (explicita no §4).
+4. **Composição via string crua** com `$`-refs dentro (autor controla o seletor):
+   `'$foo > $bar + $qux'`, `'&[aria-checked="true"] > $dot'`, `'& $nome'` (descendente explícito).
+   Sem `_$nome` (descendente implícito), sem `$$nome` (subcomponente) — cortados por YAGNI.
+5. **Chave exata `$:` = ficha técnica do bloco** (não gera regra): `scope`, `hosts`, `defaults`,
+   `flags`, `variants`, `keyframes`. Tudo o mais no topo = CSS incondicional (decls/`&`/`$parte`/composto).
+6. **`slots:` é substituído por `hosts:`** — "blocos estrangeiros que este bloco hospeda" (o
+   vocabulário da doc já é hospeda/hospedado). Override em flag continua: `hosts: { control: {...} }`.
+   `hosts` é **somente estilístico** (emite seletor até a classe do hospedado); o caso popup/teleport
+   (render em outra árvore + contexto) continua sendo um composable runtime à parte, fora do stylesheet.
+7. **flags/variants/kefyrames vivem em `$:`** (são o "CSS condicional" / recursos). O topo nunca mistura
+   condicional com declaração incondicional.
+8. **Call-site do handle NÃO muda** — `field.label.self === '-field-label'`, `field.content.description.self`
+   (depth-independent, `src/style/scope.ts`), `field({ size, invalid })` idêntico. Só muda o **CSS emitido**
+   (combinador) e a **forma de escrever** o config.
 
-O resolver de refs de parte (`src/style/emit.ts`, `resolvePartRefs`) só conhece os nomes de parte
-**do nó atual** (`src/style/buildNode.ts:60-66`: `PartRefs` montado por nó). Consequências:
+---
 
-- `'&[aria-checked="true"] $dot'` funciona **dentro** da parte `radio` (o `dot` é filho dela);
-- no **root** do bloco **não** dá para escrever `'& $radio $dot'` mirando um neto 2 níveis abaixo —
-  o mapa de refs é local, não global do bloco.
+## 2. Forma final (referência)
 
-Isso força declarações aninhadas profundas (a forma `parts` explícito) e é uma das razões de os
-exemplos ficarem com `parts` aninhado em vez do shortcut `>nome`.
-
-**Evidência (2026-09-11, `examples/wai-aria/`):** dos 10 exemplos, **todos (10/10)** declaram a
-árvore com `parts: {}` (accordion 3, radio-group/switch 2, os demais 1) e **nenhum** usa o shortcut
-`>nome` (0/10). O `>nome` existe desde 2026-09-10 ([BACKLOG](../BACKLOG.md)) mas não virou o idioma
-— a falta do documento-guia (`AGENTS.md` anterior) e o costume das referências explicam o desvio.
-
-> Nota: as **classes** de parte já são **depth-independent** (`-{bloco}-{chave}` em toda
-> profundidade, `src/style/scope.ts`, `partClass`) — o bloqueio é só no **resolver de refs no
-> seletor**, não na nomenclatura.
-
-## Proposta do usuário (a avaliar)
-
-Rename `style` → `$style` (decisão apontada como "passada batido") **e** um shape declarativo novo
-para partes com refs de selector:
-
-```js
-$style({
-  $partName: { $: '>', ... },              // $partName permite `$: ':scope > .prefixo'`
-  '$parentPartName >': { ... },
-  '$parentPartName > $partName': { ... },    // referência entre níveis
+```ts
+const field = style('field', {
+  $: {
+    scope: { strategy: 'native' },
+    hosts: { control: inputHandle },
+    defaults: { size: 'md' },
+    flags: { invalid: { $error: { color: 'red' } } },
+    variants: { size: { sm: { gap: 4 }, md: { gap: 8 } } },
+    keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
+  },
+  display: 'flex', flexDirection: 'column',
+  $label: { fontSize: '.9rem' },
+  $status: { $icon: { transition: 'transform .2s' } },   // .field > .-field-status > .-field-icon
+  '&:hover': { boxShadow: '0 0 0 2px rgba(255,255,255,.2)' },
+  '&[aria-checked="true"] > $dot': { '::after': { transform: 'scale(1)' } },  // composto c/ ref
+  '& $muted': { opacity: 0.8 },                         // descendente EXPLÍCITO quando quiser
 });
 ```
 
-A ideia central: fazer as partes referenciadas por `$` **resolverem entre níveis** (nivelamento),
-em vez de só do próprio nó — `$: '$parentPartName >'` ou `'$parentPartName > $partName'`.
+**CSS emitido (prefixed):**
 
-## Análise honesta
+```css
+.field { display: flex; flex-direction: column; }
+.field > .-field-label { font-size: .9rem; }
+.field > .-field-status > .-field-icon { transition: transform .2s; }
+.field:hover { box-shadow: 0 0 0 2px rgba(255,255,255,.2); }
+.field[aria-checked="true"] > .-field-dot::after { transform: scale(1); }
+.field .-field-muted { opacity: 0.8; }
+.field.--is-invalid > .-field-error { color: red; }
+.field.--size-sm { gap: 4px; }  .field.--size-md { gap: 8px; }
+@keyframes field-pulse { … }
+```
 
-1. **Rename `style` → `$style`: não recomendo.**
-   - Conflito léxico real com a prop reativa `$style` no caminho comum — a mesma string com dois
-     significados no mesmo ecossistema.
-   - Derruba a régua raiz-vs-namespace já travada (style-namespace.md) sem ganho claro: o contexto
-     `mini-q/style` no import já desambigua.
-   - Mudança de contrato pública (docs, tests `STY.*`, call-sites) por um ganho de cosmética.
+**Handle** (não muda): `field.label.self === '-field-label'`, `field.status.icon.self`,
+`field.hosts.control === 'input'`, `field({ size:'sm', invalid:true })`.
 
-2. **Resolver refs de parte globalmente no bloco: tem mérito real.**
-   - Atende a dor concreta (mexer um neto a partir do root / de um nível irmão).
-   - Como as classes são depth-independent, o `$nome` global é tecnicamente trivial: o `PartRefs`
-     de cada nó já poderia incluir **todas** as partes declaradas no bloco (ou herdar as do pai).
-   - O formato `$nome` em seletor já existe; o risco é de **colisão de nomes** entre níveis
-     (dois `dot` em lugares diferentes) — precisa de regra de precedência (o mais próximo vence?)
-     ou de qualificação (`$pai.filho`?).
+---
 
-3. **`parts:` aninhado vs `>nome`:** a migração dos exemplos **não precisa esperar** essa decisão.
-   `>nome` já dá a leitura plana; `$dot`/`$icon` atuais (mesmo nó) já funcionam.
+## 3. Parsing determinístico (a régua)
 
-## Recomendação
+| chave em `config` | tratamento |
+|---|---|
+| exatamente `$:` | ficha técnica (`scope`/`hosts`/`defaults`/`flags`/`variants`/`keyframes`) |
+| `$nome` (`^\$[A-Za-z0-9_-]+$`) | parte direta → `& > .-prefixo-nome` (no contexto do self do nó) |
+| qualquer outra string | seletor CSS; refs `$ref` dentro resolvidas para classes de parte (global) |
+| escalar (`padding: 8`…) | declaração CSS do self atual |
+| `&…` / `@…` | pseudo/at-rule preservadas (aninhamento atual) |
+| `_$nome`, `$$nome`, … | chave comum — sem refs (não casa a regex); cai no caminho de seletor/ignorada p/ warn se objeto |
 
-Separar as duas decisões:
+Em JS, `{ $label: … }` e `{ '$label': … }` são idênticos ⇒ **impossível** distinguir "parte filha direta"
+de "parte" — ambas são filho direto. `'$label '` (com espaço, composta) não casa a regex e vira seletor.
+Sem exceção, sem estado.
 
-- **Agora:** refatorar os exemplos com o idioma atual (`>nome` + flags de parte no `$class`),
-  matando os bugs silenciosos encontrados (`&[aria-checked]` dentro de `style:` inline — nunca
-  compila; `value:` cru recebendo signal).
-- **Separado (spike/plano próprio):** o nivelamento global de `$partes` — mexe no contrato do
-  engine e nos 324 testes `src/style/__tests__`; merece proposta independente com regras de
-  precedência/qualificação antes de qualquer implementação.
+---
+
+## 4. Resolver `$` global (nivelamento)
+
+`resolvePartRefs` (`src/style/emit.ts`) hoje usa `PartRefs` do **nó atual** (`buildNode.ts:60-66`).
+Nova regra: cada nó constrói seu mapa = **próprios `$parte` + herdado do pai**, mais distante vence
+(o mais próximo sobrescreve em colisão de nome). As classes continuam `partClass` depth-independent,
+então `$dot` no root resolve `-field-dot` do bloco. Efeito:
+
+- `'&[aria-checked="true"] > $dot'` no **root** passa a funcionar (hoje só dentro da parte `radio`).
+- `'$foo > $bar + $qux'` compõe três refs de nível qualquer.
+
+Colisão (dois `$dot` em níveis diferentes): o do nó corrente (o mais próximo) vence. Documentado; se a
+prática cobrar qualificação (`pai.filho`), é adição futura — YAGNI hoje.
+
+---
+
+## 5. Superfície de mudança
+
+**Engine — `src/style/`:**
+- `types.ts` — `StyleConfig`: `$:` (subset tipado), index `$nome`/composto; remove índice `>nome`
+  e `parts`; `slots`→`hosts` (rename só de chave).
+- `parts.ts` — **morre** (`splitShortcutParts`), substituído por separador `$:`/`$nome`/topo.
+- `build.ts`/`buildNode.ts` — monta `selfSel` com combinador **filho-direto** para partes (`& >`);
+  `PartRefs` global (acumula pai); handle idêntico; `injectBody` (flags/variants) passa a mirar
+  partes por `$error` e hosts por `hosts`.
+- `scope.ts` — inalterado (classes/ids já depth-independent).
+- `emit.ts` — `resolvePartRefs` ganha o mapa global (acumulado) — mecânica continua igual.
+
+**Testes existentes (contrato que muda):**
+- `emit.test.ts:12-39` — `parts`→`$nome`/`$:{}`; seletor descendente→`>` (ex.: `.-content .-description`
+  vira `> .-content > .-description`); override `flags: { invalid: { parts:… } }`→`$: { flags: { invalid: { $error } } }`.
+- `slots.test.ts:11-38` — `slots:`→`hosts:`; override idêntico; aviso renomeia ("host").
+- `variants.test.ts`, `handle.test.ts`, `warns.test.ts`, `scope.test.ts`, `media.test.ts` —
+  onde usam `parts:`/`>nome`/`slots`, migram; asserts de CSS atualizam combinador.
+- **NOVOS testes** (TDD antes da migração dos exemplos):
+  - `$nome` → `.field > .-field-label` (filho direto).
+  - Neta: `$status: { $icon }` → `.field > .-field-status > .-field-icon`
+  (classe depth-independent `-{bloco}-{chave}`, `./scope.ts` `partClass`).
+  - Composto: `'$foo > $bar + $qux'` e `'& $muted'` (descendente explícito) resolvem refs globais.
+  - Ref global: `'&[aria-checked="true"] > $dot'` **no root** resolve o neto do bloco.
+  - `$:` com `hosts` + `flags` mirando host; `defaults`; `scope`; `keyframes` no `$:`.
+  - Colisão: duas `$dot` → a mais próxima vence.
+  - Warn: `_$nome`/`$$nome`/objeto desconhecido no topo avisam (não viram parte silenciosa).
+
+**Exemplos — `examples/wai-aria/*.html` (10):** migração `>nome`→`$nome` (o commit `3668ead` recém
+migrou para `>nome`; reverter para a forma `$`). Os usos `'& \$icon'`/`'& \$dot'` dentro de `&[...]`
+continuam (agora globais). `switch` já usa flags; `disclosure` idêntico com `$`.
+
+**`examples/auth/web/src/**/*.style.ts` (~12 arquivos, todos `parts:`/`slots:`):** migrar. Casos:
+Flat — `shell`, `Modal`, `Tabs`, `Accordion`, `Stepper`, `Switch`, `Carousel`, `Settings`, `Login`,
+`PartnersFields`, `Field` (`slots`→`hosts`, flags `invalid`). Sem neta real no auth (verificadas —
+`Field` usa host `input`; `Switch`/`Tabs` usam `flags` locais de parte). Call-sites (`sField.label`,
+`field({ invalid })`) não mudam de nome.
+
+**Docs:** `docs/STYLE.md` (reforma do §config/partes/hosts/`$:`), `docs/GLOSSARY.md`,
+`docs/USAGE.md` §Referência (§11, linha 561: `class/$class/$style` — sem `parts`/`slots`),
+`docs/TEST-SPEC.md` (STY.9.x: partes `>$nome`→`$nome`, slots→hosts), `AGENTS.md` §4
+(exemplos + tabela de chaves + idioma `$class:`), `docs/proposals/style-scope.md`/`style-namespace.md`
+(referem `parts`/`slots`).
+
+---
+
+## 6. Ordem de execução (plano dedicado)
+
+1. Rewrite do engine (`types`→separador→`buildNode`→`emit` global) com testes **novos** primeiro
+   (TDD, §5) e os existentes ajustados ao contrato novo.
+2. Migração `examples/wai-aria` (10) — specs como oráculo (já cobrem comportamento, não CSS string).
+3. Migração `examples/auth` (12 `.style.ts`) — testes do auth (vitest+playwright do exemplo) verdes.
+4. Docs (STYLE/GLOSSARY/USAGE/TEST-SPEC/AGENTS) + BACKLOG anotado.
+5. Verificação de fechamento obrigatória: `npx vitest run`, `npx tsc --noEmit`,
+   `npm run build:lib`, `npx playwright test`, `npx playwright test static.spec.ts`.
+
+> Não-decisões: keepyframes na árvore (sob `$:`), `style.css/shortcut do `$` em prop reativa `$style`
+> permanece (régua raiz-vs-namespace, style-namespace.md). `hosts` só estilístico — popup/teleport
+> é composable runtime à parte, fora desta spec.

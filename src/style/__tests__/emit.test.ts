@@ -9,33 +9,35 @@ $useSignal(preact);
 const sheet = () => document.getElementById('mq-styles')?.textContent ?? '';
 
 describe('style — CSS gerado', () => {
-  it('descendente, pseudo via &, flag --is composta, override de parte em flag, keyframes', () => {
+  it('filho-direto, pseudo via &, flag --is composta, override de parte em flag, keyframes', () => {
     style('emit-category-card', {
       padding: 16,
       '&:hover': { boxShadow: '0 0 0' },
-      flags: { featured: { borderColor: 'gold' } },
-      keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
-      parts: {
-        title: { fontWeight: 700 },
-        content: { parts: { description: { opacity: 0.8 } } },
+      $: {
+        flags: { featured: { borderColor: 'gold' } },
+        keyframes: { pulse: { from: { opacity: 0.6 }, to: { opacity: 1 } } },
       },
+      $title: { fontWeight: 700 },
+      $content: { color: '#ccc', $description: { opacity: 0.8 } },
     });
     style('emit-field', {
-      parts: { input: {} },
-      flags: { invalid: { parts: { input: { borderColor: 'red' } } } },
+      $input: {},
+      $: {
+        flags: { invalid: { $input: { borderColor: 'red' } } },
+      },
     });
 
     const css = sheet();
     expect(css).toContain('.emit-category-card { padding: 16px; }');
     expect(css).toContain('.emit-category-card:hover { box-shadow: 0 0 0; }');
     expect(css).toContain('.emit-category-card.--is-featured { border-color: gold; }');
-    expect(css).toContain('.emit-category-card .-emit-category-card-title { font-weight: 700; }');
+    expect(css).toContain('.emit-category-card > .-emit-category-card-title { font-weight: 700; }');
     expect(css).toContain(
-      '.emit-category-card .-emit-category-card-content .-emit-category-card-description { opacity: 0.8; }',
+      '.emit-category-card > .-emit-category-card-content > .-emit-category-card-description { opacity: 0.8; }',
     );
     expect(css).toMatch(/@keyframes emit-category-card-pulse \{ from \{ opacity: 0\.6; \} to \{ opacity: 1; \} \}/);
     // override de parte dentro de flag
-    expect(css).toContain('.emit-field.--is-invalid .-emit-field-input { border-color: red; }');
+    expect(css).toContain('.emit-field.--is-invalid > .-emit-field-input { border-color: red; }');
   });
 
   it('números viram px, exceto propriedades unitless', () => {
@@ -102,39 +104,39 @@ describe('style — CSS gerado', () => {
     expect(occurrences).toBe(1);
   });
 
-  it('atalho \u003eparte declara partes descendentes de forma plana', () => {
+  it('\u0024nome declara partes planas com filho-direto \u0026 \u003e', () => {
     const card = style('emit-card-shortcut', {
       display: 'block',
-      '>title': { fontWeight: 700 },
-      '>content': {
+      $title: { fontWeight: 700 },
+      $content: {
         padding: 16,
-        '>description': { color: '#666' },
+        $description: { color: '#666' },
       },
     });
 
     const css = sheet();
     expect(css).toContain('.emit-card-shortcut { display: block; }');
-    expect(css).toContain('.emit-card-shortcut .-emit-card-shortcut-title { font-weight: 700; }');
-    expect(css).toContain('.emit-card-shortcut .-emit-card-shortcut-content { padding: 16px; }');
+    expect(css).toContain('.emit-card-shortcut > .-emit-card-shortcut-title { font-weight: 700; }');
+    expect(css).toContain('.emit-card-shortcut > .-emit-card-shortcut-content { padding: 16px; }');
     expect(css).toContain(
-      '.emit-card-shortcut .-emit-card-shortcut-content .-emit-card-shortcut-description { color: #666; }',
+      '.emit-card-shortcut > .-emit-card-shortcut-content > .-emit-card-shortcut-description { color: #666; }',
     );
     expect(card.title.self).toBe('-emit-card-shortcut-title');
     expect(card.content.description.self).toBe('-emit-card-shortcut-description');
   });
 
-  it('atalho \u003eparte mistura com parts explícito e shortcut prevalece em conflito', () => {
+  it('\u0024nome vs \u0024nome prevalece em conflito (mescla decls)', () => {
     const card = style('emit-card-mixed', {
-      parts: {
-        header: { color: 'blue' },
-      },
+      $header: { color: 'blue' },
       '>header': { background: 'white' },
-      '>footer': { color: 'gray' },
+      $footer: { color: 'gray' },
     });
 
     const css = sheet();
-    expect(css).toContain('.emit-card-mixed .-emit-card-mixed-header { color: blue; background: white; }');
-    expect(css).toContain('.emit-card-mixed .-emit-card-mixed-footer { color: gray; }');
+    expect(css).toContain('.emit-card-mixed > .-emit-card-mixed-header');
+    expect(css).toContain('background: white;');
+    expect(css).toContain('color: blue;');
+    expect(css).toContain('.emit-card-mixed > .-emit-card-mixed-footer { color: gray; }');
     expect(card.header.self).toBe('-emit-card-mixed-header');
     expect(card.footer.self).toBe('-emit-card-mixed-footer');
   });
@@ -142,32 +144,29 @@ describe('style — CSS gerado', () => {
   it('combinador filho-direto \u0026 \u003e $nome mirado por dentro de uma parte', () => {
     style('emit-direct', {
       display: 'block',
-      parts: {
-        card: {
-          '& > $heading': { color: '#333' },
-          '& > $icon': { width: 16 },
-          parts: { heading: {}, icon: {} },
-        },
+      $card: {
+        '& > $heading': { color: '#333' },
+        '& > $icon': { width: 16 },
+        $heading: {},
+        $icon: {},
       },
     });
 
     const css = sheet();
-    expect(css).toContain('.emit-direct .-emit-direct-card > .-emit-direct-heading { color: #333; }');
-    expect(css).toContain('.emit-direct .-emit-direct-card > .-emit-direct-icon { width: 16px; }');
+    expect(css).toContain('.emit-direct > .-emit-direct-card > .-emit-direct-heading { color: #333; }');
+    expect(css).toContain('.emit-direct > .-emit-direct-card > .-emit-direct-icon { width: 16px; }');
   });
 
   it('seletor de atributo real \u0026\u003e [type] não é tocado (só $nome resolve)', () => {
     style('emit-attr', {
-      parts: {
-        input: {
-          '& > [type="text"]': { color: 'blue' },
-          '& > [data-x]': { margin: 0 },
-        },
+      $input: {
+        '& > [type="text"]': { color: 'blue' },
+        '& > [data-x]': { margin: 0 },
       },
     });
 
     const css = sheet();
-    expect(css).toContain('.emit-attr .-emit-attr-input > [type="text"] { color: blue; }');
-    expect(css).toContain('.emit-attr .-emit-attr-input > [data-x] { margin: 0px; }');
+    expect(css).toContain('.emit-attr > .-emit-attr-input > [type="text"] { color: blue; }');
+    expect(css).toContain('.emit-attr > .-emit-attr-input > [data-x] { margin: 0px; }');
   });
 });

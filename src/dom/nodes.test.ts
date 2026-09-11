@@ -42,8 +42,7 @@ describe('resolveClass', () => {
 
   it('StyleHandle (callable com brand) → classe com defaults', () => {
     const btn = style('nodes-btn', {
-      variants: { size: { sm: {}, md: {} } },
-      defaults: { size: 'md' },
+      $: { variants: { size: { sm: {}, md: {} } }, defaults: { size: 'md' } },
     });
     expect(resolveClass(btn)).toBe('nodes-btn --size-md');
   });

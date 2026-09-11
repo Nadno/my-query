@@ -181,9 +181,9 @@ const card = style('card', {
 ```css
 .card { display: flex; flex-direction: column; gap: 8px; }
 .card:hover { box-shadow: 0 0 0 2px rgba(255,255,255,.2); }
-.card .-card-title { font-weight: 700; font-size: 1.1rem; }
-.card .-card-content { color: rgba(255,255,255,.75); }
-.card .-card-content .-card-description { opacity: 0.8; }
+.card > .-card-title { font-weight: 700; font-size: 1.1rem; }
+.card > .-card-content { color: rgba(255,255,255,.75); }
+.card > .-card-content > .-card-description { opacity: 0.8; }
 .card.--is-featured { border-color: gold; }
 .card.--size-sm { padding: 4px; }  .card.--size-md { padding: 8px; }
 ```
@@ -193,7 +193,7 @@ const card = style('card', {
 ```js
 card.self                       // 'card'
 card.title.self                 // '-card-title'   (parte promovida, nome completo do bloco)
-card.content.description.self   // '-card-content-description' (neto: mesmo prefixo)
+card.content.description.self   // '-card-description' (neto: MESMO prefixo — classes são depth-independent)
 card.flags.featured             // '--is-featured'
 card.variants.size.md           // '--size-md'
 card({ size: 'sm', featured: true })   // 'card --size-sm --is-featured'
