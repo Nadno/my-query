@@ -61,15 +61,16 @@ no entry **opcional** `mini-q/style`.
 O profundo (filosofia, blocos, exemplos, breakpoints) está no **[STYLE](STYLE.md)**.
 
 - **`style` (namespace)** — `style(nome, config)` define entidade e injeta; `style.css(sel, obj)` = escape hatch global. · `style('category-card', {...})`
-- **StyleHandle** — retorno de `style`: **callable** (`field({ size, invalid })` → string de classes) com **partes promovidas** (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`slots`; `class`/`$class`/`$cx` aceitam o handle.
+- **StyleHandle** — retorno de `style`: **callable** (`field({ size, invalid })` → string de classes) com **partes promovidas** (`field.input`), mais `self`/`flags`/`variants`/`keyframes`/`hosts`; `class`/`$class`/`$cx` aceitam o handle.
 - **Bloco** — entidade raiz estilizada; nome `escopo-elemento` (semântica: **Layout** ⊃ **Componente** ⊃ **Elemento visual**). · `category-card`
-- **Parte** — descendente do bloco (sob `parts` ou via atalho `>nome`, recursivo), **promovida ao handle**; classe `-{bloco}-{chave}` em toda profundidade. · `card.title`, `style('card', { '>title': {...} })`
+- **Parte** — descendente **filho direto** do bloco, declarada como chave `$nome` (recursivo), **promovida ao handle**; classe `-{bloco}-{chave}` em toda profundidade. · `card.title`, `style('card', { $title: {...} })`
 - **Flag / Variante** — estado booleano independente `.bloco.--is-{nome}` · grupo exclusivo `.bloco.--{grupo}-{valor}`. · `--is-featured`, `--size-sm`
-- **Slot** — bloco **estrangeiro** hospedado, mirado por flags/variants; composição de 1ª classe. · `slots: { control: bloco }`
+- **Host** — bloco **estrangeiro** hospedado (declarado em `$: { hosts }`), mirado por flags/variants; composição de 1ª classe. · `$: { hosts: { control: bloco } }`
 - **Keyframe escopado** — animação nomeada `bloco-nome`. · `card.keyframes.pulse`
-- **Decls no topo** — declarações do bloco no topo do config (**sem `base`**); chaves reservadas `parts`/`flags`/`variants`/`defaults`/`slots`/`keyframes`.
+- **Decls no topo** — declarações do bloco no topo do config (**sem `base`**); a **ficha técnica** vive em `$:` (`hosts`/`defaults`/`flags`/`variants`/`keyframes`/`scope`); `$nome` = parte.
+- **Refs `$` globais** — refs de parte em selector são **globais ao bloco** (nivelamento): `'& > $dot'` no root resolve o neto; composto `'$foo > $bar + $qux'`. Classes depth-independent.
 - **Breakpoint / `@nome` / `media`** — media registrada em `config({ breakpoints })`; `@md`/`@768` no CSS; `media(nome|query)` → `signal<boolean>`. · `config({ breakpoints: { md: 768 } })`
-- **Deprecados** — `parts(nome, tree)` → `style(nome, { parts: tree })`.
+- **Deprecados (transição)** — `parts(nome, tree)`, `parts:{}`, `>nome`, `slots:` e topo `flags/variants/defaults` ainda funcionam (combinador descendente), mas avisam — use o idioma `$`.
 
 ## Ciclo de vida / infra
 

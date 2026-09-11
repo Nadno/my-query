@@ -47,8 +47,13 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 
 - Prefixo/namespace configurável (evitar colisão em monolito).
 - GC de regras (`injected` só cresce).
-- ~~Combinador filho-direto opt-in por parte (`'>parte': {}`)~~ — **feito**: atalho `>nome` no topo do
-  `style()` para declarar partes de forma plana (`style('card', { '>title': { ... } })` → `sCard.title`).
+- ~~Combinador filho-direto opt-in por parte (`'>parte': {}`)~~ — **feito e depois substituído**: o atalho
+  `>nome` (2026-09-10) foi removido em favor do **idioma `$`** (`$nome` = parte filho-direto; `$:` =
+  ficha técnica; `hosts` no lugar de `slots`; refs `$` globais ao bloco). Ver
+  [proposals/style-part-refs.md](proposals/style-part-refs.md).
+- **Migração dos consumidores para o idioma `$`** (pendente): `examples/wai-aria` (10 HTML com `>nome`/`parts:{}`)
+  e `examples/auth` (12 `.style.ts` com `parts:`/`slots:`) — o legacy segue como compat de transição
+  (descendente, avisa).
 - Compound variants.
 - Extração em build-time (plugin Vite).
 - Tokens/variáveis de design — **deferida** (native-first: custom properties/`@scope`); ver
@@ -95,3 +100,4 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
   hover-touch + canal de opções do `EventSource`; açúcar `$.tag(...children)` sem `{}`. **171 testes**.
 - **2026-09-10** — `$model(signal, options?)`: `trueValue`/`falseValue`, `lazy`, `number`, `trim` (paridade Vue). **185 testes**.
 - **2026-09-10** — Style engine: atalho `>nome` para declarar partes de forma plana (`style('card', { '>title': {...} })` → `sCard.title`). **187 testes**.
+- **2026-09-11** — Style engine: **idioma `$`** — `$nome` parte (filho direto, refs globais/nivelamento), `$:` ficha técnica, `hosts` no lugar de `slots`, legacy deprecado em transição. **338 testes**.

@@ -144,22 +144,23 @@
 |---|---|---|
 | STY.9.1 | `style(name, config)` → `StyleHandle` | define bloco, injeta regras num `<style id="mq-styles">`, devolve handle callable e único |
 | STY.9.2 | Decls no topo do config (sem `base`) | `.bloco { … }`; camelCase; números viram `px` (exceto unitless: `opacity`/`zIndex`/`lineHeight`); aninhamento `&` (`&:hover`, `& .filho`); um nível de `@media`/`@supports` |
-| STY.9.3 | `parts` (recursivo) | `.bloco .-bloco-parte { … }`; nome = completo do bloco + chave em **toda profundidade**; mover parte de nível não renomeia |
-| STY.9.4 | Atalho `>nome` | `' >title': {...}` ≡ `parts: { title: {...} }`; `.bloco .-bloco-nome`; pode misturar com `parts`; chaves iguais se mesclam, `parts` prevalece em conflito direto |
+| STY.9.3 | **`$nome` parte (filho direto, recursivo)** | `$title` declara parte; `.bloco > .-bloco-parte { … }` (**combinador `>`**); nome = completo do bloco + chave em **toda profundidade**; mover parte de nível não renomeia |
+| STY.9.4 | **`$:` ficha técnica** | `$: { hosts/defaults/flags/variants/keyframes/scope }`; não gera regra; topo carrega só CSS incondicional |
 | STY.9.5 | `flags` | `.bloco.--is-flag { … }`; booleanas independentes |
 | STY.9.6 | `variants` + `defaults` | `.bloco.--grupo-valor { … }`; grupos exclusivos; `defaults` = valor default por grupo |
-| STY.9.7 | `slots` | bloco estrangeiro hospedado; mirado por flags/variants → `.bloco.--is-flag .hospedado`; distingue-se de parte |
-| STY.9.8 | Override em flag/variante | corpo unificado: decls + `parts: { p: {...} }` e/ou `slots: { s: {...} }` |
+| STY.9.7 | **`hosts`** | bloco estrangeiro hospedado (`$: { hosts: { control: bloco } }`); mirado por flags/variants → `.bloco.--is-flag .hospedado`; distingue-se de parte |
+| STY.9.8 | Override em flag/variante | corpo unificado: decls + `$parte` (filho direto) e/ou `hosts: { s: {…} }` |
 | STY.9.9 | `keyframes` escopado | `@keyframes bloco-nome { … }`; exposto em `card.keyframes.pulse` |
-| STY.9.10 | StyleHandle callable | `field({ size: 'sm', invalid: true })` → `'field --size-sm --is-invalid'`; `field.self` → `'field'`; `field.label.self` → `'-field-label'`; `field.flags.invalid` → `'--is-invalid'`; `field.variants.size.sm` → `'--size-sm'`; `field.slots.control` → `'input'` |
+| STY.9.10 | StyleHandle callable | `field({ size: 'sm', invalid: true })` → `'field --size-sm --is-invalid'`; `field.self` → `'field'`; `field.label.self` → `'-field-label'`; `field.flags.invalid` → `'--is-invalid'`; `field.variants.size.sm` → `'--size-sm'`; `field.hosts.control` → `'input'` |
 | STY.9.11 | Handle aceito em `class`/`$class`/`$cx` | `class: field.label` (parte) e `class: card` (bloco simples) chamam o handle; `$class: () => field({ invalid: err.value })` |
-| STY.9.12 | Nomes reservados de parte | `self`/`flags`/`variants`/`keyframes`/`slots` → `warn` |
+| STY.9.12 | Nomes reservados de parte | `self`/`flags`/`variants`/`keyframes`/`hosts`/`slots` → `warn` |
 | STY.9.13 | `config({ breakpoints })` | registra medias nomeadas; número = `(min-width: Npx)`; string numérica (`'768'`) ou query crua (`'(max-width: 767px)'`) também valem |
 | STY.9.14 | `@nome`/`@número` no CSS | `{ '@md': {...} }` → `@media (min-width: 768px) { … }`; chave resolvida pelo registro; número cru também aceito |
 | STY.9.15 | `media(nome\|query)` → `signal<boolean>` | via `matchMedia`, com cleanup registrado no escopo; `media('md')`, `media(768)`, `media('(min-width: 768px)')`; sem `matchMedia` (SSR/teste sem mock) → signal estático `false`; requer adapter com `signal?` (senão lança) |
 | STY.9.16 | `css(sel, obj)` global | seletor cru → regra global; `style.css(sel, obj)` é a mesma função |
-| STY.9.17 | Warnings | bloco registrado mais de uma vez → warn; chave-objeto inesperada no topo → warn (não vira parte silenciosa); parte com nome reservado → warn; slot mirado mas não declarado em `slots` → warn |
-| STY.9.18 | Deprecado `parts(name, tree)` | `parts(nome, tree)` ≡ `style(nome, { parts: tree })` |
+| STY.9.17 | Warnings | bloco registrado mais de uma vez → warn; chave-objeto inesperada no topo → warn (não vira parte silenciosa); parte com nome reservado → warn; host mirado mas não declarado em `hosts` → warn; uso de `parts:`/`>nome`/`slots:`/topo-flags → warn de depreciação |
+| STY.9.18 | `parts(name, tree)` (deprecado) | `parts(nome, tree)` ≡ `style(nome, { $nome: tree })` (combinador descendente; avisa) |
+| STY.9.19 | **Refs `$` globais (nivelamento) + composto** | `'& > $dot'` no root resolve o neto (declarado em qualquer nível); `'& $muted'` = descendente explícito; `'$foo > $bar + $qux'` compõe refs em seletor; classes depth-independent |
 
 ## 10. Proposals implementadas (referência cruzada)
 

@@ -55,8 +55,8 @@ const unmount = $mount('#app', App); // unmount() desfaz tudo
    `[Comp, { ...item, key }]`). `Comp` recebe o item como props. `key` é reservada — não carregue
    dado sob `key`.
 7. **`$mount` recebe builder/componente, não árvore pronta.**
-8. **Estilo**: caminho comum `class`/`$class`/`$style`/`$cx`; o engine completo (`style`, parts,
-   flags/variants, slots, breakpoints) → [§4](#4-estilo--mini-qlibstyle---o-engine).
+8. **Estilo**: caminho comum `class`/`$class`/`$style`/`$cx`; o engine completo (`style`, `$nome`,
+   `$:`/flags/variants/hosts, breakpoints) → [§4](#4-estilo--mini-qlibstyle---o-engine).
 
 ---
 
@@ -139,43 +139,41 @@ const Dialog = () => {
 
 Define um **bloco** (um componente/entidade de UI), injeta as regras num `<style id="mq-styles">`
 e devolve um **`StyleHandle` callable e único** com as **partes promovidas** (`handle.parte`),
-mais `self`/`flags`/`variants`/`keyframes`/`slots`. `class`/`$class`/`$cx` aceitam o handle direto
+mais `self`/`flags`/`variants`/`keyframes`/`hosts`. `class`/`$class`/`$cx` aceitam o handle direto
 (o engine o chama).
 
-**Chaves do config:**
+**Chaves do config (idioma `$`):**
 
 | chave | o que faz | CSS emitido |
 |---|---|---|
 | *(topo)* | declarações do bloco (escalares/`&`/`@`) | `.bloco { … }` |
-| `>nome` | **shortcut para parte** (`>title` ≡ `parts: { title: {…} }`) | `.bloco .-bloco-nome { … }` |
-| `parts` | partes descendentes (recursivo); **prefira `>nome`** para rastreio dos seletores | `.bloco .-bloco-parte { … }` |
-| `flags` | booleanas independentes | `.bloco.--is-flag { … }` |
-| `variants` | grupos exclusivos | `.bloco.--grupo-valor { … }` |
-| `defaults` | valor default por grupo de variante | — |
-| `slots` | bloco estrangeiro hospedado (composição) | mirado por flags/variants |
-| `keyframes` | animação escopada por bloco | `@keyframes bloco-nome { … }` |
+| `$nome` | **parte** (filho direto do self) — `$title` ≡ `parts: { title: {…} }` mas descendência de **1 nível** | `.bloco > .-bloco-nome { … }` |
+| `$:` | **ficha técnica** do bloco (`scope`/`hosts`/`defaults`/`flags`/`variants`/`keyframes`) | condicional/at-rules (não declara) |
+| composto | seletor com refs `$`: `'& > $dot'`, `'$foo > $bar + $qux'`, `'& $muted'` (descendente explícito) | autor controla o seletor |
 
-**Preferência do projeto:** declare partes com o **shortcut `>nome` no topo** — dá rastreio visual
-e os seletores emitidos ficam óbvios. Funciona recursivo:
-`'>content': { padding: 16, '>description': { color: '#666' } }` →
-`.bloco .-bloco-content .-bloco-description`.
+> **Refs `$` são GLOBAIS ao bloco** — `$dot` escrito no root resolve o neto em qualquer nível
+> (classes são depth-independent `-{bloco}-{chave}`).
+> **Legacy em transição (deprecado):** `parts:{}`, `>nome`, `slots:` e `flags`/`variants`/
+> `defaults`/`keyframes`/`scope` no topo ainda funcionam (combinador **descendente**), mas avisam.
 
 **Exemplo completo (padrão de referência):**
 
 ```js
 const card = style('card', {
+  $: {
+    flags: { featured: { borderColor: 'gold' } },      // .card.--is-featured
+    variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
+    defaults: { size: 'md' },
+  },
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
   '&:hover': { boxShadow: '0 0 0 2px rgba(255,255,255,.2)' },
-  '>title': { fontWeight: 700, fontSize: '1.1rem' },
-  '>content': {
+  $title: { fontWeight: 700, fontSize: '1.1rem' },
+  $content: {
     color: 'rgba(255,255,255,.75)',
-    '>description': { opacity: 0.8 }, // parte aninhada
+    $description: { opacity: 0.8 }, // parte aninhada
   },
-  flags: { featured: { borderColor: 'gold' } },       // .card.--is-featured
-  variants: { size: { sm: { padding: 4 }, md: { padding: 8 } } },
-  defaults: { size: 'md' },
 });
 ```
 ```css
@@ -208,8 +206,13 @@ $.div({ class: card.title }, 'Título');
 // estado reativo — NUNCA `class: { objeto }`; use `$class` com o callable do handle
 $.div({ $class: () => card({ featured: featured.value }) }, filho);
 
-// flag de uma parte reativa (ex.: ícone gira quando aberto)
-const item = style('item', { '>icon': { transition: 'transform .2s ease', flags: { open: { transform: 'rotate(45deg)' } } } });
+// flag de uma parte reativa (ex.: ícone gira quando aberto) — flag declarada na PRÓPRIA parte
+const item = style('item', {
+  $icon: {
+    transition: 'transform .2s ease',
+    $: { flags: { open: { transform: 'rotate(45deg)' } } },
+  },
+});
 $.span({ $class: () => item.icon({ open: open.value }), 'aria-hidden': true }, '+');
 ```
 
@@ -219,17 +222,19 @@ $.span({ $class: () => item.icon({ open: open.value }), 'aria-hidden': true }, '
 
 ### 4.2 Partes, flags, variantes — quando usar cada
 
-- **Parte** = elemento que a entidade **possui** (`card.title`). Combinador descendente automático
-  (`.card .-card-title`); mover parte de nível não renomeia. Acesse promovida, em qualquer
-  profundidade (`theme.btn.icon`).
+- **Parte** = elemento que a entidade **possui** (`card.title`). Combinador **filho direto**
+  (`.card > .-card-title`); mover parte de nível não renomeia. Acesse promovida, em qualquer
+  profundidade (`theme.btn.icon`). Para descendência mais profunda, use seletor composto
+  (`'& $muted'`).
 - **Flag** = estado **booleano independente** → classe `.bloco.--is-{nome}`. É o padrão para
   `checked`/`open`/`loading`/`error` reativos.
 - **Variante** = grupo **exclusivo** (um valor por vez) → `.bloco.--{grupo}-{valor}`. É o padrão para
   `size`/`tone`/`variant` etc., com `defaults`.
-- **Override**: uma flag/variante pode sobrescrever partes/slots: `flags: { invalid: { parts: { input: { borderColor: 'red' } } } }`.
-- **Slot** = bloco **estrangeiro** hospedado (`slots: { control: outroBloco }`), mirado por
-  flags/variants por `slots: { control: { … } }`. Composição de 1ª classe em vez de CSS cru.
-- Nomes reservados de parte: `self`/`flags`/`variants`/`keyframes`/`slots` (virarão `warn`).
+- **Override**: uma flag/variante pode sobrescrever partes/hosts: `$: { flags: { invalid: { $input: { borderColor: 'red' }, hosts: { control: { … } } } } }`.
+- **Host** = bloco **estrangeiro** hospedado (`$: { hosts: { control: outroBloco } }`), mirado por
+  flags/variants por `hosts: { control: { … } }` (descendente até a classe do hospedado). Composição
+  de 1ª classe em vez de CSS cru.
+- Nomes reservados de parte: `self`/`flags`/`variants`/`keyframes`/`hosts`/`slots` (→ `warn`).
 - **Valores**: camelCase, números viram `px` (exceto unitless: `opacity`, `zIndex`, `lineHeight`,
   `flex`, `fontWeight`, …), `&:` pseudos/at-rule, `@media (…)`/`@supports` crus preservados.
 
@@ -241,7 +246,7 @@ $.span({ $class: () => item.icon({ open: open.value }), 'aria-hidden': true }, '
 - `scope: { name: 'acme' }` — prefixo de leitura das classes (`acme-card` root).
 - `scope: { name: 'hashed' }` — hash estável do bloco (idempotente p/ SSR/hydration).
 - **Handle segue o motor ativo** (`self`/partes batem com as classes emitidas) — sempre aplique a
-  classe do root num ancestral para o combinador descendente das partes encontrar alvo.
+  classe do root num ancestral para o combinador das partes (`& >`, ou `& ` composto) encontrar alvo.
 - Motor global em `config({ scope: { strategy, name } })` — padrão para todos os blocos.
 
 ### 4.4 Globais e breakpoints

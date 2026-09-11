@@ -2,6 +2,8 @@
 
 Status: **✅ IMPLEMENTADA (2026-09-06)**. Origem: review externo, 2026-09-06. Substituiu o módulo de
 estilo de entidade (chaves reservadas + heurística de filho). Ver `docs/GLOSSARY.md` p/ vocabulário.
+Nota: o idioma de parte evoluiu em **2026-09-11** para `$nome`/`$:`/`hosts`
+(`docs/proposals/style-part-refs.md`); esta spec é o registro histórico do namespace `style`.
 
 > **Decisões finais do usuário** (divergem do §"Decisões acopladas" abaixo, que era pré-implementação):
 > **(1)** nome = **completo do bloco sempre**, depth-independent (`-category-card-title`); sem `elementWord`,

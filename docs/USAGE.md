@@ -106,7 +106,7 @@ $.div({ $data: { count: sig, ok: true } });      // count reativo, ok estático
 
 **`$cx(...)`** compõe classes condicionais (clsx-like): `$cx('a', x && 'b', ['c', null])` → `'a b c'`.
 Aceita `StyleHandle` direto (é chamado). O **engine completo** — blocos, partes, flags, variantes,
-slots e breakpoints — fica em `mini-q/style`: **[STYLE.md](STYLE.md)**.
+hosts e breakpoints — fica em `mini-q/style`: **[STYLE.md](STYLE.md)**.
 
 ---
 
@@ -528,7 +528,7 @@ fora do tutorial.
 5. **Custom events** (que disparam) vão em `on`; **behaviors** (que só se comportam) vão em `use`; **`$on`** é o primitivo para hooks de eventos em behaviors/setups.
 6. **Listas**: `$each(fonte, Comp, t => t.id)` — sempre com `key`; tupla crua só para branching/props derivadas.
 7. **`$mount` recebe um builder/componente**, não árvore pronta.
-8. **Estilo**: caminho comum `class`/`$class`/`$style`/`$cx`; o engine (parts/flags/variants/slots/breakpoints) fica em `mini-q/style` — **[STYLE.md](STYLE.md)**.
+8. **Estilo**: caminho comum `class`/`$class`/`$style`/`$cx`; o engine (`$nome`/`$:`/`hosts`/flags/variants/breakpoints) fica em `mini-q/style` — **[STYLE.md](STYLE.md)**.
 
 ---
 

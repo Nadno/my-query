@@ -89,7 +89,7 @@ nunca o usa: ele aparece na doc, no autocomplete e no código alheio. Poder tem 
 Antes de adicionar um conceito, pergunte: o caso comum pode ser trivial **sem** ele? Se sim, o
 conceito vira **opt-in** (entry separado, opção, camada) — não o caminho padrão.
 
-Exemplo: o engine de estilo (parts/flags/variants/slots/keyframes) é o maior orçamento de
+Exemplo: o engine de estilo (`$nome`/`$:`/flags/variants/hosts/keyframes) é o maior orçamento de
 vocabulário da lib. Quem só quer estilizar um botão paga o custo de conhecer (ou ignorar) tudo isso.
 O default deveria ser o caminho simples (CSS + tokens); o engine, a opção para o caso dinâmico.
 

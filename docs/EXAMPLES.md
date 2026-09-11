@@ -19,7 +19,7 @@ examples/
   form/             # $model: text, checkbox, radio, select, + options (trim/number/lazy)
   list/             # $each keyed: add/remove/reorder, item como tupla [Comp, props]
   control-flow/     # $when / $match / $switch / $else lado a lado
-  todos-style/      # app pequeno com mini-q/style: bloco, parts, flags, breakpoints
+  todos-style/      # app pequeno com mini-q/style: bloco, $nome, flags, breakpoints
   ui/               # componentes primitivos estilo radix (um por arquivo)
     button.ts       # style: bloco + variants (size, tone) — base dos outros
     toggle.ts       # signal interno + $aria + pressed flag
@@ -41,7 +41,7 @@ examples/
 | `$when`/`$match`/`$switch`/`$else` | control-flow |
 | `Component` setup + props tipadas | list (item), ui/* |
 | `class`/`$class` (ClassValue) | todos-style |
-| style: bloco + parts + flags + variants | ui/button, todos-style |
+| style: bloco + `$nome` + flags + variants | ui/button, todos-style |
 | style: breakpoints + `media()` | todos-style |
 | `$useTeleport` + `clickOutside` | ui/popover |
 | `$aria`/`aria` | ui/toggle, ui/dialog, ui/tabs |

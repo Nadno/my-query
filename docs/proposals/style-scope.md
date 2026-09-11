@@ -2,6 +2,9 @@
 
 Status: **EM PLANEJAMENTO (2026-09-10)**. Origem: pedido do usuário — o engine hoje só tem uma
 estratégia de escopo (classes globais planas `-card-title` num `<style id="mq-styles">`).
+Nota: `scope` agora declara-se em `$: { scope: {...} }` (ficha técnica do bloco — idioma `$` de
+[style-part-refs.md](style-part-refs.md)); o topo-legacy ainda funciona em transição.
+estratégia de escopo (classes globais planas `-card-title` num `<style id="mq-styles">`).
 
 Complementa [style-tokens.md](style-tokens.md) (deferida, native-first) e
 [style-namespace.md](style-namespace.md).
