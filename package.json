@@ -37,7 +37,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "serve:aria": "node scripts/serve.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
