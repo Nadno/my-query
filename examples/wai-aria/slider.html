@@ -50,25 +50,23 @@
       style.css('main', { maxWidth: 720, margin: '0 auto' });
 
       const theme = style('slider', {
-        parts: {
-          slider: {
-            display: 'block',
-            width: '100%',
-            height: 6,
-            borderRadius: 3,
-            background: 'linear-gradient(to right, #fff var(--fill), rgba(255,255,255,0.15) var(--fill))',
-            cursor: 'pointer',
-            touchAction: 'none',
-            '&:focus-visible': { outline: '2px solid #fff', outlineOffset: 4 },
-          },
-          row: { margin: '1rem 0 2rem' },
-          label: {
-            display: 'flex',
-            justifyContent: 'space-between',
-            marginBottom: 6,
-            fontSize: '0.9rem',
-            color: 'rgba(255,255,255,0.7)',
-          },
+        '>slider': {
+          display: 'block',
+          width: '100%',
+          height: 6,
+          borderRadius: 3,
+          background: 'linear-gradient(to right, #fff var(--fill), rgba(255,255,255,0.15) var(--fill))',
+          cursor: 'pointer',
+          touchAction: 'none',
+          '&:focus-visible': { outline: '2px solid #fff', outlineOffset: 4 },
+        },
+        '>row': { margin: '1rem 0 2rem' },
+        '>label': {
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginBottom: 6,
+          fontSize: '0.9rem',
+          color: 'rgba(255,255,255,0.7)',
         },
       });
 
@@ -83,7 +81,7 @@
         const slider = $.div(
           {
             role: 'slider',
-            tabindex: '0',
+            tabIndex: 0,
             'aria-label': label,
             'aria-valuemin': String(MIN),
             'aria-valuemax': String(MAX),

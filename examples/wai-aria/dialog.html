@@ -53,47 +53,45 @@
       style.css('main', { maxWidth: 720, margin: '0 auto' });
 
       const theme = style('dialog', {
-        parts: {
-          trigger: {
-            padding: '10px 16px',
+        '>trigger': {
+          padding: '10px 16px',
+          border: '1px solid var(--line)',
+          borderRadius: 8,
+          background: 'rgba(255,255,255,0.04)',
+          color: 'var(--fg)',
+          cursor: 'pointer',
+        },
+        '>overlay': {
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.6)',
+          display: 'grid',
+          placeItems: 'center',
+          zIndex: 100,
+        },
+        '>dialog': {
+          width: 'min(90%, 420px)',
+          border: '1px solid var(--line)',
+          borderRadius: 12,
+          background: '#222',
+          padding: '1.5rem',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+        },
+        '>title': { margin: '0 0 0.5rem' },
+        '>actions': {
+          display: 'flex',
+          gap: 8,
+          justifyContent: 'flex-end',
+          marginTop: '1.5rem',
+          '& button': {
+            padding: '8px 14px',
             border: '1px solid var(--line)',
             borderRadius: 8,
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(255,255,255,0.06)',
             color: 'var(--fg)',
             cursor: 'pointer',
           },
-          overlay: {
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'grid',
-            placeItems: 'center',
-            zIndex: 100,
-          },
-          dialog: {
-            width: 'min(90%, 420px)',
-            border: '1px solid var(--line)',
-            borderRadius: 12,
-            background: '#222',
-            padding: '1.5rem',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
-          },
-          title: { margin: '0 0 0.5rem' },
-          actions: {
-            display: 'flex',
-            gap: 8,
-            justifyContent: 'flex-end',
-            marginTop: '1.5rem',
-            '& button': {
-              padding: '8px 14px',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              background: 'rgba(255,255,255,0.06)',
-              color: 'var(--fg)',
-              cursor: 'pointer',
-            },
-            '& button[data-primary]': { background: '#3b82f6', borderColor: 'transparent' },
-          },
+          '& button[data-primary]': { background: '#3b82f6', borderColor: 'transparent' },
         },
       });
 

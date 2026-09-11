@@ -52,27 +52,25 @@
       style.css('main', { maxWidth: 720, margin: '0 auto' });
 
       const theme = style('tabs', {
-        parts: {
-          tablist: {
-            display: 'flex',
-            gap: 4,
-            borderBottom: '1px solid var(--line)',
-          },
-          tab: {
-            padding: '10px 16px',
-            border: 'none',
-            background: 'none',
-            color: 'var(--fg)',
-            font: 'inherit',
-            cursor: 'pointer',
-            borderBottom: '2px solid transparent',
-            '&[aria-selected="true"]': { borderBottomColor: '#fff', fontWeight: 600 },
-            '&:focus-visible': { outline: '2px solid #fff', outlineOffset: -2 },
-          },
-          panel: {
-            padding: '1rem 0.25rem',
-            color: 'rgba(255, 255, 255, 0.75)',
-          },
+        '>tablist': {
+          display: 'flex',
+          gap: 4,
+          borderBottom: '1px solid var(--line)',
+        },
+        '>tab': {
+          padding: '10px 16px',
+          border: 'none',
+          background: 'none',
+          color: 'var(--fg)',
+          font: 'inherit',
+          cursor: 'pointer',
+          borderBottom: '2px solid transparent',
+          '&[aria-selected="true"]': { borderBottomColor: '#fff', fontWeight: 600 },
+          '&:focus-visible': { outline: '2px solid #fff', outlineOffset: -2 },
+        },
+        '>panel': {
+          padding: '1rem 0.25rem',
+          color: 'rgba(255, 255, 255, 0.75)',
         },
       });
 

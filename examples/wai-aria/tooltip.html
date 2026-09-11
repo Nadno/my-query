@@ -51,29 +51,27 @@
       style.css('main', { maxWidth: 720, margin: '0 auto' });
 
       const theme = style('tooltip', {
-        parts: {
-          wrap: { position: 'relative', display: 'inline-block', margin: '1rem 1rem 3rem 0' },
-          btn: {
-            padding: '10px 14px',
-            border: '1px solid var(--line)',
-            borderRadius: 8,
-            background: 'rgba(255,255,255,0.04)',
-            color: 'var(--fg)',
-            cursor: 'pointer',
-          },
-          tip: {
-            position: 'absolute',
-            bottom: 'calc(100% + 8px)',
-            left: 0,
-            padding: '8px 10px',
-            borderRadius: 6,
-            background: '#fff',
-            color: '#111',
-            fontSize: '0.85rem',
-            boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
-            display: 'none',
-            '&[data-show="true"]': { display: 'block' },
-          },
+        '>wrap': { position: 'relative', display: 'inline-block', margin: '1rem 1rem 3rem 0' },
+        '>btn': {
+          padding: '10px 14px',
+          border: '1px solid var(--line)',
+          borderRadius: 8,
+          background: 'rgba(255,255,255,0.04)',
+          color: 'var(--fg)',
+          cursor: 'pointer',
+        },
+        '>tip': {
+          position: 'absolute',
+          bottom: 'calc(100% + 8px)',
+          left: 0,
+          padding: '8px 10px',
+          borderRadius: 6,
+          background: '#fff',
+          color: '#111',
+          fontSize: '0.85rem',
+          boxShadow: '0 4px 14px rgba(0,0,0,0.5)',
+          display: 'none',
+          '&[data-show="true"]': { display: 'block' },
         },
       });
 
