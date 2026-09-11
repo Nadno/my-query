@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Switch</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Switch</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/aria": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/aria.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { CheckGroup } from 'mini-q/aria';
+      import { style } from 'mini-q/style';
+      import { signal } from '@preact/signals-core';
+      import { useGroup } from './aria-utils.js';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('switch', {
+        parts: {
+          fieldset: {
+            border: '1px solid var(--line)',
+            borderRadius: 10,
+            margin: '0 0 2rem',
+            padding: '1rem 1.25rem',
+            parts: { legend: { padding: '0 8px' } },
+          },
+          row: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '8px 0',
+          },
+        },
+      });
+
+      /**
+       * Um switch com role=switch — usa <button> nativo (Enter/Espaço de graça).
+       * `$aria: { checked }` reage ao signal `on`.
+       */
+      function switchView({ on, label, onToggle }) {
+        return $.div(
+          { class: theme.row },
+          $.span(label),
+          $.button(
+            {
+              type: 'button',
+              role: 'switch',
+              'aria-label': label,
+              $aria: { checked: on },
+              on: { click: onToggle },
+              style: {
+                width: '44px',
+                height: '24px',
+                border: '1px solid var(--line)',
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.12)',
+                color: 'var(--fg)',
+                cursor: 'pointer',
+                position: 'relative',
+                '&[aria-checked="true"]': { background: '#3b82f6' },
+              },
+            },
+            $.span({ 'aria-hidden': 'true' }, 'ON/OFF'),
+          ),
+        );
+      }
+
+      function SwitchGroup({ title, items, group }) {
+        return $.fieldset(
+          { class: theme.fieldset },
+          $.legend({ class: theme.fieldset.legend }, title),
+          ...items.map((it) =>
+            switchView({
+              label: it.label,
+              on: group.sigs[it.name],
+              onToggle: () => group.set(it.name, !group.isChecked(it.name)),
+            }),
+          ),
+        );
+      }
+
+      const prefs = useGroup({ names: ['notif', 'som'], initial: { notif: true }, multiple: true });
+
+      const tema = useGroup({
+        names: ['claro', 'escuro', 'auto'],
+        multiple: false,
+        allowAllUnchecked: false,
+        defaultChecked: 'claro',
+      });
+
+      const App = () =>
+        $.div(
+          { class: theme },
+          SwitchGroup({
+            title: 'Preferências (múltiplo: pode ligar vários)',
+            items: [
+              { name: 'notif', label: 'Notificações', checked: true },
+              { name: 'som', label: 'Som', checked: false },
+            ],
+            group: prefs,
+          }),
+          SwitchGroup({
+            title: 'Tema (exclusivo: um só; não pode desligar todos)',
+            items: [
+              { name: 'claro', label: 'Claro', checked: true },
+              { name: 'escuro', label: 'Escuro', checked: false },
+              { name: 'auto', label: 'Automático', checked: false },
+            ],
+            group: tema,
+          }),
+        );
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

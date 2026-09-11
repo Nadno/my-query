@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Slider</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Slider</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { style } from 'mini-q/style';
+      import { effect, signal } from '@preact/signals-core';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('slider', {
+        parts: {
+          slider: {
+            display: 'block',
+            width: '100%',
+            height: 6,
+            borderRadius: 3,
+            background: 'linear-gradient(to right, #fff var(--fill), rgba(255,255,255,0.15) var(--fill))',
+            cursor: 'pointer',
+            touchAction: 'none',
+            '&:focus-visible': { outline: '2px solid #fff', outlineOffset: 4 },
+          },
+          row: { margin: '1rem 0 2rem' },
+          label: {
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+            fontSize: '0.9rem',
+            color: 'rgba(255,255,255,0.7)',
+          },
+        },
+      });
+
+      const STEP = 5;
+      const MIN = 0;
+      const MAX = 100;
+
+      function clamp(v) { return Math.min(MAX, Math.max(MIN, v)); }
+
+      function Slider({ label, initial = 40 }) {
+        const value = signal(clamp(initial));
+        const slider = $.div(
+          {
+            role: 'slider',
+            tabindex: '0',
+            'aria-label': label,
+            'aria-valuemin': String(MIN),
+            'aria-valuemax': String(MAX),
+            $aria: { valueNow: value },
+            class: theme.slider,
+            on: {
+              keydown: (e) => {
+                let next = null;
+                switch (e.key) {
+                  case 'ArrowRight': case 'ArrowUp': next = value.value + STEP; break;
+                  case 'ArrowLeft': case 'ArrowDown': next = value.value - STEP; break;
+                  case 'PageUp': next = value.value + 20; break;
+                  case 'PageDown': next = value.value - 20; break;
+                  case 'Home': next = MIN; break;
+                  case 'End': next = MAX; break;
+                }
+                if (next === null) return;
+                e.preventDefault();
+                value.value = clamp(next);
+              },
+            },
+            // o $aria:valueNow reage; o fill da barra é pintado pelo effect abaixo
+          },
+          // preenche a barra conforme o valor (a barra usa o CSS var --fill)
+          $.span({ 'aria-hidden': 'true' }),
+        );
+        // mantém o fill da barra e o valor lido sincronos
+        effect(() => {
+          slider.style.setProperty('--fill', `${clamp(value.value)}%`);
+        });
+        const readout = $.span({ 'aria-live': 'polite' }, () => `R$ ${value.value}`);
+        return $.div({ class: theme.row },
+          $.div({ class: theme.label }, $.span(label), readout),
+          slider,
+        );
+      }
+
+      const App = () =>
+        $.div(
+          { class: theme },
+          Slider({ label: 'Volume', initial: 40 }),
+          Slider({ label: 'Brilho', initial: 70 }),
+        );
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

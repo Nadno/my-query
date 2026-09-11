@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Radio Group</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Radio Group</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/aria": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/aria.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { style } from 'mini-q/style';
+      import { computed } from '@preact/signals-core';
+      import { useGroup, useRoving } from './aria-utils.js';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('radio', {
+        parts: {
+          radio: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 12px',
+            border: '1px solid var(--line)',
+            borderRadius: 10,
+            background: 'rgba(255,255,255,0.03)',
+            cursor: 'pointer',
+            '&:focus-visible': { outline: '2px solid #fff', outlineOffset: 2 },
+            '&[aria-checked="true"] $dot': { '::after': { transform: 'scale(1)' } },
+            parts: {
+              dot: {
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.6)',
+                display: 'grid',
+                placeItems: 'center',
+                flex: 'none',
+                '::after': {
+                  content: '""',
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  transform: 'scale(0)',
+                  transition: 'transform 0.15s ease',
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const PLANOS = [
+        { name: 'free', label: 'Gratuito' },
+        { name: 'pro', label: 'Profissional' },
+        { name: 'team', label: 'Time' },
+      ];
+
+      // Regras do grupo APG radio: exclusivo (multiple:false) e nunca fica vazio.
+      const group = useGroup({ names: PLANOS.map((p) => p.name), allowAllUnchecked: false, defaultChecked: 'free' });
+
+      const escolha = computed(() => {
+        const item = PLANOS.find((p) => group.sigs[p.name].value);
+        return item ? item.label : '';
+      });
+
+      const pick = (name) => group.set(name, true);
+
+      const RadioItem = ({ plano }) =>
+        $.div(
+          {
+            role: 'radio',
+            tabIndex: -1,
+            $aria: { checked: group.sigs[plano.name] },
+            'aria-label': plano.label,
+            class: theme.radio,
+            data: { name: plano.name },
+            on: {
+              click: () => pick(plano.name),
+              keydown: (e) => {
+                // Enter/Espaço confirmam a opção focada
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(plano.name); }
+              },
+            },
+          },
+          $.span({ class: theme.radio.dot }),
+          $.span(plano.label),
+        );
+
+      const App = () => {
+        const list = $.div(
+          { role: 'radiogroup', 'aria-label': 'Plano', style: { display: 'grid', gap: 8 } },
+          ...PLANOS.map((p) => RadioItem({ plano: p })),
+        );
+
+        // Roving tabindex (APG): um no tab order; setas/Home/End movem e selecionam.
+        useRoving(list, {
+          target: '[role=radio]',
+          orientation: 'vertical',
+          loop: true,
+          onMove: (el) => pick(el.dataset.name),
+        });
+
+        return $.div(
+          { class: theme },
+          $.h2('Escolha um plano'),
+          list,
+          $.p({ 'aria-live': 'polite' }, 'Selecionado: ', escolha),
+        );
+      };
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

@@ -11,9 +11,9 @@ import type { Page, Route } from '@playwright/test';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const DIST = path.join(ROOT, 'dist');
-const SIGNALS = path.join(ROOT, 'node_modules', '@preact', 'signals-core', 'dist');
+const SIGNALS = path.join(ROOT, 'node_modules', '@preact', 'signals-core');
 
-const GH_MINIQ = /^\/gh\/Nadno\/my-query@[^/]*\/dist\//;
+const GH_MINIQ = /^\/gh\/Nadno\/my-query@.+?\/dist\//;
 const NPM_SIGNALS = /^\/npm\/@preact\/signals-core@[^/]*\//;
 
 async function fulfillFile(route: Route, rel: string, base: string) {
@@ -22,7 +22,10 @@ async function fulfillFile(route: Route, rel: string, base: string) {
     const body = await readFile(abs);
     await route.fulfill({
       status: 200,
-      contentType: abs.endsWith('.js') ? 'text/javascript' : 'application/octet-stream',
+      // Módulos ESM cross-origin (import map → CDN) são fetched em CORS mode:
+      // sem ACAO, o browser aborta com net::ERR_FAILED mesmo com o fulfill.
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      contentType: /\.(m?js|cjs)$/.test(abs) ? 'text/javascript' : 'application/octet-stream',
       body,
     });
   } catch {

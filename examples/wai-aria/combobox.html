@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Combobox</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Combobox Listbox</h1>
+      <p style="color:rgba(255,255,255,.7)">Digite para filtrar; setas movem o destaque (activedescendant), Enter escolhe, Esc fecha.</p>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/aria": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/aria.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal, $each, $when, $handle, $model } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { style } from 'mini-q/style';
+      import { computed, signal } from '@preact/signals-core';
+      import { moveIndex } from './aria-utils.js';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('combo', {
+        parts: {
+          cbo: { position: 'relative' },
+          field: {
+            width: '100%',
+            display: 'flex',
+            gap: 8,
+            alignItems: 'center',
+            border: '1px solid var(--line)',
+            borderRadius: 8,
+            padding: '0 10px',
+            background: 'rgba(255,255,255,0.04)',
+            '& input': {
+              flex: 1,
+              border: 'none',
+              background: 'none',
+              color: 'var(--fg)',
+              font: 'inherit',
+              padding: '10px 0',
+              outline: 'none',
+            },
+            '& input[aria-expanded="true"]': { outline: '1px solid rgba(255,255,255,0.5)' },
+          },
+          popup: {
+            position: 'absolute',
+            zIndex: 11,
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: 4,
+            border: '1px solid var(--line)',
+            borderRadius: 8,
+            background: '#222',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+            maxHeight: 220,
+            overflow: 'auto',
+            padding: 4,
+          },
+          option: {
+            display: 'block',
+            width: '100%',
+            textAlign: 'left',
+            padding: '8px 10px',
+            border: 'none',
+            background: 'none',
+            color: 'var(--fg)',
+            font: 'inherit',
+            borderRadius: 6,
+            cursor: 'pointer',
+            '&[aria-selected="true"]': { background: 'rgba(255,255,255,0.12)' },
+          },
+          empty: { padding: 10, color: 'rgba(255,255,255,0.5)' },
+          status: { marginTop: '1rem', color: 'rgba(255,255,255,0.7)' },
+        },
+      });
+
+      const FRUTAS = ['Abacaxi', 'Banana', 'Caqui', 'Damasco', 'Figo', 'Goiaba', 'Jaca', 'Laranja', 'Maçã', 'Manga', 'Pêra', 'Uva'];
+
+      const query = signal('');
+      const open = signal(false);
+      const chosen = signal('');
+
+      // lista filtrada de objetos { label } — reativa ao query (cada item estável em $each)
+      const items = computed(() => {
+        const q = query.value.trim().toLowerCase();
+        const list = q ? FRUTAS.filter((f) => f.toLowerCase().startsWith(q)) : FRUTAS;
+        return list.map((label) => ({ label }));
+      });
+
+      // roving matemático para o índice ativo (aria-activedescendant, sem mover foco real)
+      const activeIdx = signal(0);
+
+      const selectAt = (i) => {
+        const item = items.value[i];
+        if (item === undefined) return;
+        chosen.value = item.label;
+        query.value = item.label;
+        open.value = false;
+      };
+
+      const Option = (props) => {
+        const idx = items.value.findIndex((it) => it.label === props.label);
+        return $.button(
+          {
+            type: 'button',
+            role: 'option',
+            id: `opt-${idx}`,
+            class: theme.option,
+            $aria: { selected: () => activeIdx.value === idx },
+            on: { click: () => selectAt(idx) },
+          },
+            props.label,
+        );
+      };
+
+      const App = () =>
+        $.div(
+          { class: theme },
+          $.div(
+            { class: theme.cbo },
+            $.div(
+              { class: theme.field },
+              $.input({
+                type: 'text',
+                role: 'combobox',
+                'aria-label': 'Fruta',
+                'aria-autocomplete': 'list',
+                'aria-controls': 'listbox',
+                $aria: {
+                  expanded: open,
+                  activeDescendant: () => (open.value ? `opt-${activeIdx.value}` : null),
+                },
+                value: query,
+                use: $model(query),
+                on: {
+                  input: (e) => {
+                    query.value = e.target.value;
+                    open.value = true;
+                    // reseta o destaque para o primeiro
+                    activeIdx.value = 0;
+                  },
+                  focus: () => (open.value = true),
+                  keydown: [
+                    (e) => {
+                      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const next = moveIndex({ index: activeIdx.value, count: items.value.length, step: e.key === 'ArrowDown' ? 1 : -1, loop: true });
+                        if (next !== null) activeIdx.value = next;
+                      }
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        selectAt(activeIdx.value);
+                      }
+                      if (e.key === 'Escape') open.value = false;
+                      if (e.key === 'Home') {
+                        e.preventDefault();
+                        if (items.value.length) activeIdx.value = 0;
+                      }
+                      if (e.key === 'End') {
+                        e.preventDefault();
+                        const n = items.value.length;
+                        if (n) activeIdx.value = n - 1;
+                      }
+                    },
+                    $handle.stop,
+                  ],
+                },
+              }),
+            ),
+            $when(
+              () => open.value && items.value.length > 0,
+              () => $.div(
+                { role: 'listbox', id: 'listbox', 'aria-label': 'Fruta', class: theme.popup },
+                $each(items, (item) => Option({ label: item.label }), (item) => item.label),
+              ),
+            ),
+            $when(() => open.value && items.value.length === 0, () => $.div({ class: theme.empty, id: 'listbox' }, 'Nada encontrado')),
+          ),
+          $.p({ class: [theme.status, 'status'], 'aria-live': 'polite' }, 'Escolhida: ', () => chosen.value || '—'),
+        );
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

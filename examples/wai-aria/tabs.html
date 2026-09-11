@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Tabs</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Tabs</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/aria": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/aria.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal, $switch } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { style } from 'mini-q/style';
+      import { signal } from '@preact/signals-core';
+      import { useRoving } from './aria-utils.js';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('tabs', {
+        parts: {
+          tablist: {
+            display: 'flex',
+            gap: 4,
+            borderBottom: '1px solid var(--line)',
+          },
+          tab: {
+            padding: '10px 16px',
+            border: 'none',
+            background: 'none',
+            color: 'var(--fg)',
+            font: 'inherit',
+            cursor: 'pointer',
+            borderBottom: '2px solid transparent',
+            '&[aria-selected="true"]': { borderBottomColor: '#fff', fontWeight: 600 },
+            '&:focus-visible': { outline: '2px solid #fff', outlineOffset: -2 },
+          },
+          panel: {
+            padding: '1rem 0.25rem',
+            color: 'rgba(255, 255, 255, 0.75)',
+          },
+        },
+      });
+
+      const TABS = [
+        { name: 'descricao', label: 'Descrição', content: 'Tabs economizam espaço e organizam conteúdo relacionado em painéis.' },
+        { name: 'teclado', label: 'Teclado', content: 'Aba ativa alterna com as setas (roving tabindex) e Home/End (RovingFocus).' },
+        { name: 'marca', label: 'Marcação', content: 'role=tablist/tab/tabpanel; aria-selected/controls/labelledby; um só tabindex=0.' },
+      ];
+
+      // Uma aba sempre ativa — o signal `active` é a fonte única de verdade.
+      const active = signal('descricao');
+
+      const tabPanel = (name) =>
+        $.div(
+          { id: `panel-${name}`, role: 'tabpanel', 'aria-labelledby': `tab-${name}`, class: theme.panel },
+          TABS.find((t) => t.name === name).content,
+        );
+
+      const App = () => {
+        const tablist = $.div(
+          { role: 'tablist', 'aria-label': 'Conteúdo', class: theme.tablist },
+          ...TABS.map((t) =>
+            $.button(
+              {
+                id: `tab-${t.name}`,
+                role: 'tab',
+                type: 'button',
+                tabIndex: t.name === 'descricao' ? 0 : -1,
+                $aria: {
+                  selected: () => active.value === t.name,
+                  controls: `panel-${t.name}`,
+                },
+                class: theme.tab,
+                on: { click: () => (active.value = t.name) },
+              },
+              t.label,
+            ),
+          ),
+        );
+
+        useRoving(tablist, {
+          target: '[role=tab]',
+          orientation: 'horizontal',
+          loop: true,
+          onMove: (el) => {
+            active.value = el.id.replace(/^tab-/, '');
+          },
+        });
+
+        return $.div(
+          { class: theme },
+          tablist,
+          $switch(active, {
+            descricao: () => tabPanel('descricao'),
+            teclado: () => tabPanel('teclado'),
+            marca: () => tabPanel('marca'),
+          }),
+        );
+      };
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WAI-ARIA — Accordion</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1a1a1a;
+        --fg: #fff;
+        --line: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Accordion</h1>
+      <div id="app"></div>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "mini-q": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/index.js",
+          "mini-q/style": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/style.js",
+          "mini-q/aria": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/aria.js",
+          "mini-q/adapters/preact": "https://cdn.jsdelivr.net/gh/Nadno/my-query@feat/mini-q/dist/adapters/preact.js",
+          "@preact/signals-core": "https://cdn.jsdelivr.net/npm/@preact/signals-core@1.14.4/dist/signals-core.mjs"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import $, { $mount, $useSignal, $show } from 'mini-q';
+      import { preact } from 'mini-q/adapters/preact';
+      import { style } from 'mini-q/style';
+      import { useGroup } from './aria-utils.js';
+
+      $useSignal(preact);
+
+      style.css('body', {
+        margin: 0,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        background: 'var(--bg)',
+        color: 'var(--fg)',
+        lineHeight: 1.6,
+        padding: '2rem 1rem',
+      });
+      style.css('*', { boxSizing: 'border-box' });
+      style.css('main', { maxWidth: 720, margin: '0 auto' });
+
+      const theme = style('acc', {
+        parts: {
+          acc: { display: 'grid', gap: 8 },
+          item: {
+            border: '1px solid var(--line)',
+            borderRadius: 10,
+            background: 'rgba(255, 255, 255, 0.03)',
+          },
+          btn: {
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '12px 16px',
+            background: 'none',
+            border: 'none',
+            color: 'var(--fg)',
+            font: 'inherit',
+            fontSize: '1rem',
+            textAlign: 'left',
+            cursor: 'pointer',
+            '&:hover': { background: 'rgba(255, 255, 255, 0.04)' },
+            '&[aria-expanded="true"] $icon': { transform: 'rotate(45deg)' },
+            parts: {
+              icon: { transition: 'transform .2s ease' },
+            },
+          },
+          panel: { padding: '0 16px 16px', color: 'rgba(255, 255, 255, 0.7)' },
+        },
+      });
+
+      const themeFieldset = style('acc-group', {
+        parts: {
+          fieldset: { border: '1px solid var(--line)', borderRadius: 10, margin: '0 0 2rem', padding: '1rem 1.25rem' },
+          legend: { padding: '0 8px' },
+        },
+      });
+
+      const FAQ = [
+        { name: 'o-que', title: 'O que é o mini-q?', body: 'Uma lib sem build/JSX para DOM e reatividade granular, plugando qualquer lib de signal via adapter.' },
+        { name: 'build', title: 'Preciso de build?', body: 'Não para desenvolvimento: o dist/ é publicado e importado via CDN (import map).' },
+        { name: 'dollar', title: 'Como funciona o $ em props?', body: 'Qualquer prop reativa recebe um signal ou função e reage de forma granular.' },
+      ];
+
+      /** Um grupo de seções accordion — exposto single (abre uma) ou multi? */
+      function Accordion({ title, items, multiple }) {
+        const group = useGroup({ names: items.map((it) => it.name), initial: { [items[0].name]: true }, multiple, allowAllUnchecked: false });
+
+        const toggle = (name) => group.set(name, !group.isChecked(name));
+
+        return $.fieldset(
+          { class: themeFieldset.fieldset },
+          $.legend({ class: themeFieldset.legend }, title),
+          $.div(
+            { class: theme.acc },
+            ...items.map((it) =>
+              $.div(
+                { class: theme.item },
+                $.h3({ style: { margin: 0 } },
+                  $.button(
+                    {
+                      type: 'button',
+                      class: theme.btn,
+                      id: `h-${it.name}`,
+                      $aria: { expanded: group.sigs[it.name], controls: `p-${it.name}` },
+                      on: { click: () => toggle(it.name) },
+                    },
+                    it.title,
+                    $.span({ class: theme.btn.icon, 'aria-hidden': 'true' }, '+'),
+                  ),
+                ),
+                $.div(
+                  {
+                    id: `p-${it.name}`,
+                    role: 'region',
+                    class: theme.panel,
+                    $aria: { labelledBy: `h-${it.name}` },
+                    use: $show(group.sigs[it.name]),
+                  },
+                  it.body,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
+      const App = () =>
+        $.div(
+          { class: [theme, themeFieldset] },
+          Accordion({ title: 'Perguntas frequentes (single)', multiple: false, items: FAQ }),
+          // versão com dois painéis abertos ao mesmo tempo
+          Accordion({ title: 'Vários abertos (múltiplo)', multiple: true, items: FAQ }),
+        );
+
+      $mount('#app', App);
+    </script>
+  </body>
+</html>
