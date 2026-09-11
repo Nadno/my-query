@@ -93,6 +93,26 @@ describe('style — $ como idioma de parte (spec style-part-refs)', () => {
     );
   });
 
+  it('parte pode ter meta próprio ($: na própria sub-parte: flags/variants locais)', () => {
+    style('d-part-meta', {
+      $tabs: {
+        display: 'flex',
+        $: {
+          variants: { size: { sm: { gap: 4 }, md: { gap: 8 } } },
+        },
+        $tab: {},
+        '& > $tab': { color: '#333' },
+      },
+    });
+    // a flag/variante da parte é escopada ao seletor da parte (não ao root)
+    expect(sheet()).toContain(
+      '.d-part-meta > .-d-part-meta-tabs.--size-sm { gap: 4px; }',
+    );
+    expect(sheet()).toContain(
+      '.d-part-meta > .-d-part-meta-tabs > .-d-part-meta-tab { color: #333; }',
+    );
+  });
+
   it('override de host (bloco estrangeiro) em flag via hosts, descendente até o host', () => {
     const input = style('d-input-slot2', { padding: 4 });
     style('d-host2', {
