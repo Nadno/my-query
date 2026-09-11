@@ -19,6 +19,7 @@ export default defineConfig({
         'adapters/preact': fileURLToPath(
           new URL('./src/adapters/preact.ts', import.meta.url),
         ),
+        aria: fileURLToPath(new URL('./src/aria/index.ts', import.meta.url)),
       },
       formats: ['es'],
     },

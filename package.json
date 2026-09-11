@@ -24,6 +24,10 @@
     "./adapters/preact": {
       "types": "./dist/adapters/preact.d.ts",
       "import": "./dist/adapters/preact.js"
+    },
+    "./aria": {
+      "types": "./dist/aria.d.ts",
+      "import": "./dist/aria.js"
     }
   },
   "scripts": {
@@ -32,11 +36,14 @@
     "build:lib": "tsc -p tsconfig.json --noEmit && vite build --config vite.lib.config.ts && tsc -p tsconfig.lib.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@types/node": "^22.10.0",
     "@vitest/coverage-v8": "^2.1.8",
+    "happy-dom": "^20.14.3",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",

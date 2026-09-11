@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>mini-q — Padrões WAI-ARIA</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a1a;
+        color: #fff;
+        line-height: 1.6;
+        padding: 2rem 1rem;
+      }
+      main { max-width: 720px; margin: 0 auto; }
+      ul { display: grid; gap: 8px; list-style: none; padding: 0; }
+      a {
+        display: block;
+        padding: 12px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 500;
+      }
+      a:hover { background: rgba(255, 255, 255, 0.06); }
+      a span { display: block; font-weight: 400; font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Padrões WAI-ARIA com mini-q</h1>
+      <p>Cada exemplo é um único arquivo HTML — importa a lib via CDN (import map), zero build.</p>
+      <ul>
+        <li><a href="disclosure.html"><strong>Disclosure</strong> <span>botão + região; aria-expanded reativo</span></a></li>
+        <li><a href="switch.html"><strong>Switch</strong> <span>role=switch; aria-checked</span></a></li>
+        <li><a href="radio-group.html"><strong>Radio Group</strong> <span>roving tabindex; setas</span></a></li>
+        <li><a href="tabs.html"><strong>Tabs</strong> <span>tablist + roving; aria-selected/controls; painel</span></a></li>
+        <li><a href="accordion.html"><strong>Accordion</strong> <span>seções; single/multi; expanded</span></a></li>
+        <li><a href="slider.html"><strong>Slider</strong> <span>role=slider; valuemin/max/now; setas</span></a></li>
+        <li><a href="tooltip.html"><strong>Tooltip</strong> <span>custom event hover; teleport</span></a></li>
+        <li><a href="menu-button.html"><strong>Menu Button</strong> <span>haspopup/expanded; roving; Esc</span></a></li>
+        <li><a href="combobox.html"><strong>Combobox</strong> <span>activedescendant; $each keyed</span></a></li>
+        <li><a href="dialog.html"><strong>Dialog</strong> <span>modal; foco preso; aria-modal; Esc</span></a></li>
+      </ul>
+    </main>
+  </body>
+</html>
