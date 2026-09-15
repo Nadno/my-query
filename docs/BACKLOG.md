@@ -73,7 +73,8 @@ Estado de referência do MVP + o que falta / precisa mudar. O histórico detalha
 ### Infra / entrega (P3)
 
 - Pacote publicável: build em `dist/` e `exports` apontando para o build (hoje apontam p/ `.ts`).
-- SSR/hydration — proposta em [proposals/ssg.md](proposals/ssg.md). (P3)
+- SSR/hydration — proposta em [proposals/ssg.md](proposals/ssg.md); **`$adopt`** (religar comportamento
+  a HTML existente de qualquer origem — SSG/SSR/CMS/estático) em [proposals/adopt.md](proposals/adopt.md) (stage 0). (P3)
 - Organização modular do `src/` — quando as features estabilizarem: `reactivity/`/`behaviors/` para os
   arquivos soltos do topo; quebrar `dom/nodes.ts` (acumula node-helpers + `resolveClass`/`cx`). (P3)
 

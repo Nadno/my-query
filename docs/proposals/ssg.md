@@ -56,6 +56,9 @@ Duas rotas, da mais barata à mais limpa:
 **Reatividade no SSG:** effects rodam uma vez para produzir o **valor inicial**; não há re-render. Para saída
 puramente estática, descartar os `stop`/cleanups após serializar (o "escopo" do SSG é a passada de render).
 
+> **Complementar:** para dar vida a HTML que já está na DOM **de qualquer origem** (não só SSG próprio),
+> ver [adopt.md](adopt.md) (stage 0) — runtime puro (`$adopt`), sem cursor de builder.
+
 ### Fase 2 (opcional) — progressive hydration
 Só quando/se fizer sentido. A base é o `RenderBackend`: um **HydrateBackend** que, em vez de `createElement`,
 **reivindica o próximo nó existente** via um cursor que caminha o DOM do SSR na mesma ordem do builder.
